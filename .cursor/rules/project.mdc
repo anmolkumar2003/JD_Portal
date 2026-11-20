@@ -1,0 +1,25 @@
+---
+description: Project-wide rules for the HR Recruitment Portal (ATS)
+alwaysApply: true
+---
+
+You are building an enterprise HR Recruitment Portal (ATS). Source of truth: @docs/SPEC.md
+and the split docs in /docs. Do not invent features; reference requirement IDs (e.g. CV-05).
+
+Stack: Next.js 14 App Router + TypeScript + Tailwind + shadcn/ui + TanStack Query +
+React Hook Form + Zod (apps/web); FastAPI + SQLAlchemy 2 + Alembic + Pydantic v2 +
+Celery/Redis + PostgreSQL (apps/api).
+
+General rules:
+- TypeScript strict mode. No `any`. Python fully type-hinted; Ruff + mypy clean.
+- Backend layering: router -> service -> model. No business logic in routers.
+- Every endpoint: Pydantic request/response schemas, auth dependency, RBAC check,
+  record-level access check, and an audit/activity log entry for mutations.
+- Never put secrets in code; use environment variables and .env.example.
+- Every migration through Alembic. Never edit the DB by hand.
+- Write tests with each feature: pytest for services/routers, Playwright for critical flows.
+- The CV engine must stay a pure Python package (no FastAPI imports).
+- AI/match scores are advisory: never auto-reject or auto-advance candidates.
+- Never use name, gender, age, photo, or nationality as a scoring feature.
+- Handle PII carefully: no PII in logs, signed URLs for files, consent recorded.
+- Small, focused commits; explain assumptions in the PR description.

@@ -1,0 +1,12 @@
+---
+description: Backend rules for apps/api (FastAPI)
+globs: apps/api/**
+alwaysApply: false
+---
+
+- Async SQLAlchemy sessions via dependency; repository helpers for queries.
+- Pagination, sorting and filtering via a shared helper; always index filter columns.
+- Uploads: validate MIME + magic bytes, size limit, store to S3/MinIO, signed URLs only.
+- Long work (parse, score, email) goes to Celery; endpoints return quickly.
+- Errors use the standard error envelope in @docs/api.md.
+- Use a request-id middleware and structured logging.
