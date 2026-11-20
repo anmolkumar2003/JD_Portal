@@ -27,7 +27,9 @@ async def _create_application(
         client, slug, data=_form(email=email), file=("cv.pdf", PDF, "application/pdf")
     )
     assert response.status_code == 201, response.text
-    return response.json()["reference_no"]
+    reference_no = response.json()["reference_no"]
+    assert isinstance(reference_no, str)
+    return reference_no
 
 
 async def test_list_applications_filters_and_pagination(
