@@ -188,6 +188,16 @@ export interface PublicJob extends PublicJobListItem {
   education_level: string | null;
 }
 
+export interface PublicJobFilters {
+  departments: NamedRef[];
+  locations: NamedRef[];
+}
+
+export interface ApplyResult {
+  reference_no: string;
+  job_title: string;
+}
+
 export interface PublicJobListParams {
   page?: number;
   page_size?: number;

@@ -201,3 +201,8 @@ class PublicJobOut(PublicJobListItem):
     preferred_skills: list[str]
     min_experience: Decimal | None
     education_level: str | None
+
+
+class PublicJobFilters(BaseModel):
+    departments: list[NamedRef]
+    locations: list[NamedRef]

@@ -130,6 +130,8 @@ services:
       context: ./apps/web
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001}
+      # Server-side rendering (careers pages) calls the API over the compose network.
+      INTERNAL_API_URL: http://api:8000
       WATCHPACK_POLLING: "true"
     ports:
       - "${WEB_PORT:-3000}:3000"

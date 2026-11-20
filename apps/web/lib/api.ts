@@ -1,5 +1,6 @@
 import type {
   ApiErrorBody,
+  ApplyResult,
   Department,
   HealthResponse,
   Job,
@@ -11,6 +12,7 @@ import type {
   LoginRequest,
   Page,
   PublicJob,
+  PublicJobFilters,
   PublicJobListItem,
   PublicJobListParams,
   RequirementsInput,
@@ -60,17 +62,19 @@ function isErrorBody(value: unknown): value is ApiErrorBody {
 type SendOptions = Omit<RequestOptions, "acceptStatuses" | "skipAuthRetry">;
 
 async function send(path: string, { body, headers, ...init }: SendOptions): Promise<Response> {
+  // FormData goes as-is so the browser sets the multipart boundary header itself.
+  const isForm = body instanceof FormData;
   try {
     return await fetch(`${API_URL}${path}`, {
       ...init,
       credentials: "include",
       headers: {
         Accept: "application/json",
-        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+        ...(body !== undefined && !isForm ? { "Content-Type": "application/json" } : {}),
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         ...headers,
       },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: isForm ? body : body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch (cause) {
     throw new ApiError(0, "network_error", "Could not reach the API", cause);
@@ -132,7 +136,7 @@ export function refreshSession(): Promise<TokenResponse | null> {
 
 type QueryValue = string | number | undefined | null;
 
-function withQuery(path: string, params: object): string {
+export function withQuery(path: string, params: object): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params) as [string, QueryValue][]) {
     if (value !== undefined && value !== null && value !== "") search.set(key, String(value));
@@ -184,6 +188,13 @@ export const api = {
     list: (params: PublicJobListParams = {}) =>
       request<Page<PublicJobListItem>>(withQuery("/api/v1/public/jobs", params)),
     get: (slug: string) => request<PublicJob>(`/api/v1/public/jobs/${encodeURIComponent(slug)}`),
+    filters: () => request<PublicJobFilters>("/api/v1/public/jobs/filters"),
+    apply: (slug: string, form: FormData) =>
+      request<ApplyResult>(`/api/v1/public/jobs/${encodeURIComponent(slug)}/apply`, {
+        method: "POST",
+        body: form,
+        skipAuthRetry: true,
+      }),
   },
 };
 

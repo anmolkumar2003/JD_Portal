@@ -125,6 +125,33 @@ To verify:
 4. Sign in as `manager@acme.example.com`: **Jobs** lists only the two jobs they manage and
    there is no **Create job** button.
 
+## Careers site and applications
+
+- Public pages (no login): `/careers`, `/careers/{slug}`, `/careers/{slug}/apply` (3 steps),
+  `/careers/{slug}/applied?ref=…`.
+- `POST /api/v1/public/jobs/{slug}/apply` (multipart): the CV must really be a PDF or DOCX
+  (checked by file content) and at most 5 MB. A hidden honeypot field (`website`) stands in for
+  a CAPTCHA, and each IP may apply 5 times per hour (Redis).
+- Each application reuses the candidate with the same email (or creates one), starts in the
+  "Applied" stage, gets a reference like `APP-2026-000001`, stores the CV in MinIO (`cvs`
+  bucket), adds a `documents` row and a `parsed_profiles` row with status `pending`, and emails
+  a confirmation.
+- `GET /api/v1/documents/{id}/download-url` returns a signed link that expires in 5 minutes,
+  for staff who can see the job.
+
+To verify:
+
+1. Open http://localhost:3000/careers, pick a job, click **Apply for this role**, complete the
+   three steps with a real PDF or DOCX CV and submit. Note the reference number.
+2. Mailpit (http://localhost:8025) shows "Application received: … (APP-2026-…)".
+3. MinIO console (http://localhost:9001, login `minioadmin` / the `MINIO_ROOT_PASSWORD` in
+   `.env`): bucket `cvs` contains `{org_id}/{candidate_id}/{document_id}.pdf`.
+4. The new row:
+   ```bash
+   docker compose exec postgres psql -U hrportal -d hrportal -c \
+     "SELECT a.reference_no, s.name AS stage, c.email, d.file_name, p.parse_status FROM applications a JOIN pipeline_stages s ON s.id = a.stage_id JOIN candidates c ON c.id = a.candidate_id JOIN documents d ON d.application_id = a.id JOIN parsed_profiles p ON p.document_id = d.id ORDER BY a.applied_at DESC;"
+   ```
+
 ## Make targets
 
 | Target         | Does                                                     |

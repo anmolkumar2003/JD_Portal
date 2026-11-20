@@ -11,6 +11,7 @@ from sqlalchemy import (
     Index,
     Integer,
     Numeric,
+    Sequence,
     String,
     Text,
     UniqueConstraint,
@@ -19,7 +20,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import BaseModel, SoftDeleteMixin
+from app.models.base import Base, BaseModel, SoftDeleteMixin
 from app.models.enums import (
     ApplicationStatus,
     CandidateSource,
@@ -75,6 +76,9 @@ class Candidate(BaseModel, SoftDeleteMixin):
     anonymized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     consent_given_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     consent_version: Mapped[str | None] = mapped_column(String(20))
+
+
+APPLICATION_REFERENCE_SEQ = Sequence("application_reference_seq", metadata=Base.metadata)
 
 
 class Application(BaseModel):

@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import AppError
 from app.core.pagination import PageParams, apply_sort, paginate
 from app.models import Department, Job, JobRequirement, Location
-from app.schemas.job import PublicJobListItem, PublicJobOut
+from app.schemas.job import NamedRef, PublicJobFilters, PublicJobListItem, PublicJobOut
 from app.services.jobs import named_ref, public_job_conditions
 
 
@@ -53,6 +53,25 @@ async def list_public_jobs(
     stmt = apply_sort(stmt, params.sort, sortable, default="-published_at")
     rows, total = await paginate(session, stmt, params)
     return [_list_item(*row) for row in rows], total
+
+
+async def get_public_filters(session: AsyncSession) -> PublicJobFilters:
+    """Departments and locations that currently have at least one public job."""
+    open_jobs = select(Job.department_id, Job.location_id).where(*public_job_conditions())
+    departments = await session.execute(
+        select(Department.id, Department.name)
+        .where(Department.id.in_(open_jobs.with_only_columns(Job.department_id)))
+        .order_by(Department.name)
+    )
+    locations = await session.execute(
+        select(Location.id, Location.name)
+        .where(Location.id.in_(open_jobs.with_only_columns(Job.location_id)))
+        .order_by(Location.name)
+    )
+    return PublicJobFilters(
+        departments=[NamedRef(id=i, name=n) for i, n in departments],
+        locations=[NamedRef(id=i, name=n) for i, n in locations],
+    )
 
 
 async def get_public_job(session: AsyncSession, slug: str) -> PublicJobOut:

@@ -55,7 +55,7 @@ async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
 
 
 class FakeRedis:
-    """Just enough of redis.asyncio.Redis for refresh-token revocation."""
+    """Just enough of redis.asyncio.Redis for token revocation and rate limiting."""
 
     def __init__(self) -> None:
         self.store: dict[str, str] = {}
@@ -66,6 +66,17 @@ class FakeRedis:
 
     async def exists(self, *names: str) -> int:
         return sum(name in self.store for name in names)
+
+    async def incr(self, name: str) -> int:
+        value = int(self.store.get(name, "0")) + 1
+        self.store[name] = str(value)
+        return value
+
+    async def expire(self, name: str, seconds: int) -> bool:
+        return name in self.store
+
+    async def ttl(self, name: str) -> int:
+        return 3600 if name in self.store else -2
 
 
 def _test_database_url() -> str:
@@ -147,7 +158,24 @@ def sent_emails(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
             sent.append({"to": to, "subject": subject, "body": body})
 
     monkeypatch.setattr("app.services.auth.send_email", _Task)
+    monkeypatch.setattr("app.services.applications.send_email", _Task)
     return sent
+
+
+@pytest.fixture
+def stored_objects(monkeypatch: pytest.MonkeyPatch) -> dict[str, bytes]:
+    """In-memory stand-in for MinIO uploads."""
+    objects: dict[str, bytes] = {}
+
+    async def put_object(key: str, data: bytes, content_type: str) -> None:
+        objects[key] = data
+
+    async def delete_object(key: str) -> None:
+        objects.pop(key, None)
+
+    monkeypatch.setattr("app.core.storage.put_object", put_object)
+    monkeypatch.setattr("app.core.storage.delete_object", delete_object)
+    return objects
 
 
 async def login(client: AsyncClient, handle: str, password: str = DEMO_PASSWORD) -> str:

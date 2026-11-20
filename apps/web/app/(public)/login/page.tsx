@@ -128,7 +128,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="flex justify-center pt-10">
+    <div className="container flex justify-center py-16">
       <Suspense
         fallback={<div className="h-80 w-full max-w-sm animate-pulse rounded-lg bg-muted" />}
       >
