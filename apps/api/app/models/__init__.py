@@ -1,5 +1,29 @@
 """SQLAlchemy models. Import every model module here so Alembic autogenerate can see it."""
 
+from app.models.activity import ActivityLog
 from app.models.base import Base
+from app.models.candidate import Application, Candidate, Document
+from app.models.cv import AtsCheck, MatchResult, ParsedProfile
+from app.models.job import Job, JobRequirement, JobTeam
+from app.models.org_setup import Department, Location, PipelineStage
+from app.models.organization import Organization
+from app.models.user import User
 
-__all__ = ["Base"]
+__all__ = [
+    "ActivityLog",
+    "Application",
+    "AtsCheck",
+    "Base",
+    "Candidate",
+    "Department",
+    "Document",
+    "Job",
+    "JobRequirement",
+    "JobTeam",
+    "Location",
+    "MatchResult",
+    "Organization",
+    "ParsedProfile",
+    "PipelineStage",
+    "User",
+]

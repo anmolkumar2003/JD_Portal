@@ -1,6 +1,6 @@
-import type { ApiErrorBody, HealthResponse } from "@/types/api";
+import type { ApiErrorBody, HealthResponse, LoginRequest, TokenResponse, User } from "@/types/api";
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
 
 export class ApiError extends Error {
   constructor(
@@ -19,6 +19,15 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   body?: unknown;
   /** Non-2xx statuses whose body should be parsed as a normal response. */
   acceptStatuses?: readonly number[];
+  /** Do not try to refresh the session and retry on 401 (used by the auth endpoints). */
+  skipAuthRetry?: boolean;
+}
+
+// The access token lives in memory only; the refresh token is an httpOnly cookie set by the API.
+let accessToken: string | null = null;
+
+export function setAccessToken(token: string | null): void {
+  accessToken = token;
 }
 
 function isErrorBody(value: unknown): value is ApiErrorBody {
@@ -30,23 +39,35 @@ function isErrorBody(value: unknown): value is ApiErrorBody {
   );
 }
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { body, acceptStatuses = [], headers, ...init } = options;
+type SendOptions = Omit<RequestOptions, "acceptStatuses" | "skipAuthRetry">;
 
-  let response: Response;
+async function send(path: string, { body, headers, ...init }: SendOptions): Promise<Response> {
   try {
-    response = await fetch(`${API_URL}${path}`, {
+    return await fetch(`${API_URL}${path}`, {
       ...init,
       credentials: "include",
       headers: {
         Accept: "application/json",
         ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         ...headers,
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch (cause) {
     throw new ApiError(0, "network_error", "Could not reach the API", cause);
+  }
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const { acceptStatuses = [], skipAuthRetry = false, ...sendOptions } = options;
+  let response = await send(path, sendOptions);
+
+  if (response.status === 401 && !skipAuthRetry && accessToken) {
+    const session = await refreshSession();
+    if (session) {
+      response = await send(path, sendOptions);
+    }
   }
 
   const requestId = response.headers.get("X-Request-ID") ?? undefined;
@@ -67,6 +88,49 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   throw new ApiError(response.status, "http_error", response.statusText, data, requestId);
 }
 
+// Refresh tokens rotate on use, so concurrent callers must share one in-flight refresh.
+let refreshInFlight: Promise<TokenResponse | null> | null = null;
+
+/** Exchange the refresh cookie for a new access token. Resolves to null if there is no session. */
+export function refreshSession(): Promise<TokenResponse | null> {
+  refreshInFlight ??= request<TokenResponse>("/api/v1/auth/refresh", {
+    method: "POST",
+    skipAuthRetry: true,
+  })
+    .then((session) => {
+      setAccessToken(session.access_token);
+      return session;
+    })
+    .catch((error: unknown) => {
+      setAccessToken(null);
+      if (error instanceof ApiError && error.status === 401) return null;
+      throw error;
+    })
+    .finally(() => {
+      refreshInFlight = null;
+    });
+  return refreshInFlight;
+}
+
 export const api = {
   health: () => request<HealthResponse>("/health", { acceptStatuses: [503] }),
+  auth: {
+    login: async (body: LoginRequest): Promise<TokenResponse> => {
+      const session = await request<TokenResponse>("/api/v1/auth/login", {
+        method: "POST",
+        body,
+        skipAuthRetry: true,
+      });
+      setAccessToken(session.access_token);
+      return session;
+    },
+    logout: async (): Promise<void> => {
+      try {
+        await request<null>("/api/v1/auth/logout", { method: "POST", skipAuthRetry: true });
+      } finally {
+        setAccessToken(null);
+      }
+    },
+    me: () => request<User>("/api/v1/auth/me"),
+  },
 };

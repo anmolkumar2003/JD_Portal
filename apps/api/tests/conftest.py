@@ -1,5 +1,6 @@
 import os
 from collections.abc import AsyncIterator, Iterator
+from typing import Any
 
 # Settings are read at import time, so test values must be set before importing the app.
 _TEST_ENV = {
@@ -17,8 +18,25 @@ for _key, _value in _TEST_ENV.items():
 import pytest  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402
+from sqlalchemy import make_url, text  # noqa: E402
+from sqlalchemy.ext.asyncio import (  # noqa: E402
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlalchemy.pool import NullPool  # noqa: E402
 
+from app.core.config import get_settings  # noqa: E402
+from app.core.db import get_db  # noqa: E402
+from app.core.redis import get_redis  # noqa: E402
 from app.main import app as fastapi_app  # noqa: E402
+from app.models import Base  # noqa: E402
+from app.seed import DEMO_PASSWORD, seed  # noqa: E402
+
+__all__ = ["DEMO_PASSWORD", "login"]
+
+_schema_ready = False
 
 
 @pytest.fixture
@@ -31,3 +49,112 @@ def app() -> Iterator[FastAPI]:
 async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
+
+
+# --- Database-backed fixtures -----------------------------------------------------------------
+
+
+class FakeRedis:
+    """Just enough of redis.asyncio.Redis for refresh-token revocation."""
+
+    def __init__(self) -> None:
+        self.store: dict[str, str] = {}
+
+    async def set(self, name: str, value: str, ex: int | None = None) -> bool:
+        self.store[name] = value
+        return True
+
+    async def exists(self, *names: str) -> int:
+        return sum(name in self.store for name in names)
+
+
+def _test_database_url() -> str:
+    """A separate `<db>_test` database on the same server, so dev data is never touched."""
+    url = make_url(get_settings().database_url)
+    return url.set(database=f"{url.database}_test").render_as_string(hide_password=False)
+
+
+async def _prepare_schema(url: str) -> None:
+    global _schema_ready  # noqa: PLW0603
+    if _schema_ready:
+        return
+    target = make_url(url)
+    admin = create_async_engine(
+        target.set(database="postgres"), poolclass=NullPool, isolation_level="AUTOCOMMIT"
+    )
+    async with admin.connect() as conn:
+        exists = await conn.scalar(
+            text("SELECT 1 FROM pg_database WHERE datname = :name"), {"name": target.database}
+        )
+        if not exists:
+            await conn.execute(text(f'CREATE DATABASE "{target.database}"'))
+    await admin.dispose()
+
+    engine = create_async_engine(url, poolclass=NullPool)
+    async with engine.begin() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+    await engine.dispose()
+    _schema_ready = True
+
+
+@pytest.fixture
+async def db_engine() -> AsyncIterator[AsyncEngine]:
+    url = _test_database_url()
+    try:
+        await _prepare_schema(url)
+    except OSError as exc:
+        pytest.skip(f"Postgres not reachable for DB tests: {exc}")
+    engine = create_async_engine(url, poolclass=NullPool)
+    yield engine
+    async with engine.begin() as conn:
+        tables = ", ".join(f'"{t.name}"' for t in Base.metadata.sorted_tables)
+        await conn.execute(text(f"TRUNCATE {tables} CASCADE"))
+    await engine.dispose()
+
+
+@pytest.fixture
+def fake_redis() -> FakeRedis:
+    return FakeRedis()
+
+
+@pytest.fixture
+async def db(
+    app: FastAPI, db_engine: AsyncEngine, fake_redis: FakeRedis
+) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
+    """Point the app at the test database, seeded with the demo org, users and jobs."""
+    factory = async_sessionmaker(db_engine, expire_on_commit=False)
+
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    app.dependency_overrides[get_redis] = lambda: fake_redis
+    async with factory() as session:
+        await seed(session)
+    yield factory
+
+
+@pytest.fixture
+def sent_emails(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
+    sent: list[dict[str, Any]] = []
+
+    class _Task:
+        @staticmethod
+        def delay(to: str, subject: str, body: str) -> None:
+            sent.append({"to": to, "subject": subject, "body": body})
+
+    monkeypatch.setattr("app.services.auth.send_email", _Task)
+    return sent
+
+
+async def login(client: AsyncClient, handle: str, password: str = DEMO_PASSWORD) -> str:
+    response = await client.post(
+        "/api/v1/auth/login",
+        json={"email": f"{handle}@acme.example.com", "password": password},
+    )
+    assert response.status_code == 200, response.text
+    token: str = response.json()["access_token"]
+    return token

@@ -6,10 +6,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
 from app.core.db import engine
+from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import REQUEST_ID_HEADER, RequestIDMiddleware
 from app.core.redis import redis_client
-from app.routers import health
+from app.routers import auth, health, users
 
 
 @asynccontextmanager
@@ -36,7 +37,10 @@ def create_app() -> FastAPI:
     # Added last so it is outermost and also covers CORS preflight responses.
     app.add_middleware(RequestIDMiddleware)
 
+    register_error_handlers(app)
     app.include_router(health.router)
+    app.include_router(auth.router)
+    app.include_router(users.router)
     return app
 
 

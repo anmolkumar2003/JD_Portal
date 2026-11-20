@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
+    password_reset_expire_minutes: int = 30
+    max_failed_logins: int = 5
+    lockout_minutes: int = 15
+    # Set true behind HTTPS so the refresh cookie is never sent over plain HTTP.
+    cookie_secure: bool = False
 
     s3_endpoint_url: str
     s3_public_endpoint_url: str | None = None

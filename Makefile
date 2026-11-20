@@ -43,5 +43,5 @@ format: ## Auto-format API and web code
 	$(API_RUN) sh -c "ruff check --fix . && ruff format ."
 	$(WEB_RUN) npm run format
 
-seed: ## Seed development data (placeholder until the auth/data-model slices)
-	@echo "Nothing to seed yet: seed data arrives with the auth and data-model slices."
+seed: ## Seed demo org, users, pipeline stages and jobs (stack must be up, run migrate first)
+	$(COMPOSE) exec api python -m app.seed
