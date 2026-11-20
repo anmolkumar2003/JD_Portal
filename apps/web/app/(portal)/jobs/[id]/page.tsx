@@ -107,11 +107,7 @@ function PipelineTab({ jobId }: { jobId: string }) {
       </div>
 
       {view === "board" ? (
-        <KanbanBoard
-          jobId={jobId}
-          board={board.data}
-          onOpenApplication={setDrawerId}
-        />
+        <KanbanBoard jobId={jobId} board={board.data} onOpenApplication={setDrawerId} />
       ) : (
         <PipelineTable
           board={board.data}

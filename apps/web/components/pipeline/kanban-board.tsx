@@ -99,11 +99,7 @@ export function KanbanBoard({ jobId, board, onOpenApplication }: KanbanBoardProp
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
       >
-        <div
-          className="flex gap-3 overflow-x-auto pb-2"
-          role="list"
-          aria-label="Pipeline stages"
-        >
+        <div className="flex gap-3 overflow-x-auto pb-2" role="list" aria-label="Pipeline stages">
           {board.stages.map((column) => (
             <KanbanColumn
               key={column.stage.id}

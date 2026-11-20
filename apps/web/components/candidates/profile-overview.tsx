@@ -43,11 +43,7 @@ export function ProfileOverview({ detail }: { detail: ApplicationDetail }) {
         <Field label="Location" value={c.current_location ?? "—"} />
         <Field
           label="Experience"
-          value={
-            c.total_experience_years
-              ? formatExperience(c.total_experience_years, null)
-              : "—"
-          }
+          value={c.total_experience_years ? formatExperience(c.total_experience_years, null) : "—"}
         />
         <Field label="Source" value={SOURCE_LABELS[c.source]} />
         <Field label="Applied" value={formatDate(detail.applied_at)} />

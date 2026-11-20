@@ -23,14 +23,7 @@ import type { ApplicationListItem, ApplicationListParams, CandidateSource } from
 
 const PAGE_SIZE = 20;
 const DEFAULT_SORT = "-applied_at";
-const FILTER_KEYS = [
-  "q",
-  "job_id",
-  "stage_id",
-  "source",
-  "applied_from",
-  "applied_to",
-] as const;
+const FILTER_KEYS = ["q", "job_id", "stage_id", "source", "applied_from", "applied_to"] as const;
 
 const COLUMNS: Column<ApplicationListItem>[] = [
   {

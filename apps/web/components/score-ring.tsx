@@ -68,8 +68,7 @@ export function ScoreRing({ score, size = "sm", className, label }: ScoreRingPro
     >
       {score === null || score === undefined ? (
         <span className={cn("flex items-center gap-0.5", text)}>
-          <Icon className="h-3 w-3" aria-hidden />
-          —
+          <Icon className="h-3 w-3" aria-hidden />—
         </span>
       ) : (
         <span className={cn("flex items-center gap-0.5", text)}>

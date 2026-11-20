@@ -48,7 +48,9 @@ function CandidateProfileContent() {
   if (!applicationId && !list.isPending) {
     return (
       <div className="space-y-6">
-        <Breadcrumbs items={[{ label: "Candidates", href: "/candidates" }, { label: "Not found" }]} />
+        <Breadcrumbs
+          items={[{ label: "Candidates", href: "/candidates" }, { label: "Not found" }]}
+        />
         <EmptyState
           icon={FileQuestion}
           title="Candidate not found"
@@ -69,7 +71,9 @@ function CandidateProfileContent() {
     const notFound = detail.error instanceof ApiError && detail.error.status === 404;
     return (
       <div className="space-y-6">
-        <Breadcrumbs items={[{ label: "Candidates", href: "/candidates" }, { label: "Not found" }]} />
+        <Breadcrumbs
+          items={[{ label: "Candidates", href: "/candidates" }, { label: "Not found" }]}
+        />
         {notFound ? (
           <EmptyState
             icon={FileQuestion}

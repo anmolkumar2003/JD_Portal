@@ -218,20 +218,9 @@ export interface ApiErrorBody {
 // --- Candidates & pipeline (CAND / PIPE) ------------------------------------------------------
 
 export type StageType =
-  | "applied"
-  | "screening"
-  | "interview"
-  | "offer"
-  | "hired"
-  | "rejected"
-  | "custom";
+  "applied" | "screening" | "interview" | "offer" | "hired" | "rejected" | "custom";
 
-export type CandidateSource =
-  | "career_site"
-  | "referral"
-  | "linkedin"
-  | "agency"
-  | "manual";
+export type CandidateSource = "career_site" | "referral" | "linkedin" | "agency" | "manual";
 
 export type ApplicationStatus = "active" | "rejected" | "withdrawn" | "hired";
 

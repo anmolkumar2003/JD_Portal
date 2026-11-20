@@ -43,11 +43,11 @@ export function CandidateFilters({ value, onChange }: CandidateFiltersProps) {
 
   const hasFilters = Boolean(
     value.q ||
-      value.job_id ||
-      value.stage_id ||
-      value.source ||
-      value.applied_from ||
-      value.applied_to,
+    value.job_id ||
+    value.stage_id ||
+    value.source ||
+    value.applied_from ||
+    value.applied_to,
   );
 
   return (
