@@ -1,4 +1,22 @@
-import type { ApiErrorBody, HealthResponse, LoginRequest, TokenResponse, User } from "@/types/api";
+import type {
+  ApiErrorBody,
+  Department,
+  HealthResponse,
+  Job,
+  JobCreateInput,
+  JobFieldsInput,
+  JobListItem,
+  JobListParams,
+  Location,
+  LoginRequest,
+  Page,
+  PublicJob,
+  PublicJobListItem,
+  PublicJobListParams,
+  RequirementsInput,
+  TokenResponse,
+  User,
+} from "@/types/api";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
 
@@ -112,6 +130,19 @@ export function refreshSession(): Promise<TokenResponse | null> {
   return refreshInFlight;
 }
 
+type QueryValue = string | number | undefined | null;
+
+function withQuery(path: string, params: object): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params) as [string, QueryValue][]) {
+    if (value !== undefined && value !== null && value !== "") search.set(key, String(value));
+  }
+  const query = search.toString();
+  return query ? `${path}?${query}` : path;
+}
+
+const jobPath = (id: string, suffix = "") => `/api/v1/jobs/${encodeURIComponent(id)}${suffix}`;
+
 export const api = {
   health: () => request<HealthResponse>("/health", { acceptStatuses: [503] }),
   auth: {
@@ -133,4 +164,28 @@ export const api = {
     },
     me: () => request<User>("/api/v1/auth/me"),
   },
+  org: {
+    departments: () => request<Department[]>("/api/v1/departments"),
+    locations: () => request<Location[]>("/api/v1/locations"),
+  },
+  jobs: {
+    list: (params: JobListParams = {}) =>
+      request<Page<JobListItem>>(withQuery("/api/v1/jobs", params)),
+    get: (id: string) => request<Job>(jobPath(id)),
+    create: (body: JobCreateInput) => request<Job>("/api/v1/jobs", { method: "POST", body }),
+    update: (id: string, body: Partial<JobFieldsInput>) =>
+      request<Job>(jobPath(id), { method: "PATCH", body }),
+    replaceRequirements: (id: string, body: RequirementsInput) =>
+      request<Job>(jobPath(id, "/requirements"), { method: "PUT", body }),
+    publish: (id: string) => request<Job>(jobPath(id, "/publish"), { method: "POST" }),
+    close: (id: string) => request<Job>(jobPath(id, "/close"), { method: "POST" }),
+  },
+  publicJobs: {
+    list: (params: PublicJobListParams = {}) =>
+      request<Page<PublicJobListItem>>(withQuery("/api/v1/public/jobs", params)),
+    get: (slug: string) => request<PublicJob>(`/api/v1/public/jobs/${encodeURIComponent(slug)}`),
+  },
 };
+
+export const publicJobUrl = (slug: string) =>
+  `${API_URL}/api/v1/public/jobs/${encodeURIComponent(slug)}`;

@@ -60,7 +60,7 @@ async def _http_error(_: Request, exc: Exception) -> JSONResponse:
 async def _validation_error(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, RequestValidationError)  # noqa: S101
     return _envelope(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         "validation_error",
         "Request validation failed",
         exc.errors(),

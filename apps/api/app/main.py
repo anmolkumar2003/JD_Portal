@@ -10,7 +10,7 @@ from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import REQUEST_ID_HEADER, RequestIDMiddleware
 from app.core.redis import redis_client
-from app.routers import auth, health, users
+from app.routers import auth, health, jobs, org, public_jobs, users
 
 
 @asynccontextmanager
@@ -41,6 +41,9 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(users.router)
+    app.include_router(org.router)
+    app.include_router(jobs.router)
+    app.include_router(public_jobs.router)
     return app
 
 

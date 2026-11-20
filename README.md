@@ -101,8 +101,29 @@ login() { curl -s -X POST $API/auth/login -H 'Content-Type: application/json' \
      "SELECT \"order\", name, type FROM pipeline_stages ORDER BY \"order\";" -c \
      "SELECT j.title, j.status, d.name AS dept, l.name AS location, jsonb_array_length(r.required_skills) AS req, jsonb_array_length(r.preferred_skills) AS pref FROM jobs j JOIN departments d ON d.id = j.department_id JOIN locations l ON l.id = j.location_id JOIN job_requirements r ON r.job_id = j.id;"
    ```
-6. **Automated checks**: `make test-api` (with the stack up) runs the auth, RBAC, lockout and
-   record-level access tests against a separate `<db>_test` database.
+6. **Automated checks**: `make test-api` (with the stack up) runs the auth, RBAC, lockout,
+   record-level access and jobs tests against a separate `<db>_test` database.
+
+## Jobs module
+
+- Portal: `/jobs` (filters, search, sort, pagination), `/jobs/new` (4-step form),
+  `/jobs/{id}` (Details and Applicants tabs, Publish / Close), `/jobs/{id}/edit`.
+- API: `GET/POST /api/v1/jobs`, `GET/PATCH /jobs/{id}`, `POST /jobs/{id}/publish|close`,
+  `PUT /jobs/{id}/requirements|team`, plus read-only `GET /departments` and `GET /locations`.
+- Public, no auth: `GET /api/v1/public/jobs` and `GET /api/v1/public/jobs/{slug}` (open jobs only).
+- Recruiters, HR admins and super admins create and edit; hiring managers and interviewers only
+  see jobs they are on the team for.
+
+To verify:
+
+1. Sign in as `recruiter@acme.example.com`, open **Jobs**, click **Create job**, fill in the
+   four steps (a description is required to publish) and click **Save and publish**.
+2. The detail page shows status **Open**, the slug (e.g. `my-new-job`) and a
+   **View public listing** link.
+3. Open `http://localhost:8001/api/v1/public/jobs/{slug}`: it returns the job without salary
+   or team. Click **Close job** and the same URL returns 404.
+4. Sign in as `manager@acme.example.com`: **Jobs** lists only the two jobs they manage and
+   there is no **Create job** button.
 
 ## Make targets
 
