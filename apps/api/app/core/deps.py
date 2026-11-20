@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_db
 from app.core.errors import AppError
 from app.core.security import InvalidTokenError, decode_token
-from app.models import Job, JobTeam, User
+from app.models import Application, Job, JobTeam, User
 from app.models.enums import TeamRole, UserRole
 
 _bearer = HTTPBearer(auto_error=False)
@@ -100,3 +100,27 @@ async def ensure_job_access(session: AsyncSession, user: User, job_id: uuid.UUID
     """Raise 404 (not 403) so users cannot probe for jobs they are not assigned to."""
     if not await can_access_job(session, user, job_id):
         raise AppError(status.HTTP_404_NOT_FOUND, "not_found", "Job not found")
+
+
+def scope_applications_query(user: User, stmt: Select[_RowT]) -> Select[_RowT]:
+    """Limit applications to the user's org and jobs they may see (via Job join)."""
+    return stmt.join(Job, Job.id == Application.job_id).where(
+        Job.org_id == user.org_id, Job.deleted_at.is_(None), job_access_clause(user)
+    )
+
+
+async def can_access_application(
+    session: AsyncSession, user: User, application_id: uuid.UUID
+) -> bool:
+    stmt = scope_applications_query(
+        user, select(Application.id).where(Application.id == application_id)
+    )
+    return (await session.scalar(stmt)) is not None
+
+
+async def ensure_application_access(
+    session: AsyncSession, user: User, application_id: uuid.UUID
+) -> None:
+    """Raise 404 so callers cannot probe applications outside their job access."""
+    if not await can_access_application(session, user, application_id):
+        raise AppError(status.HTTP_404_NOT_FOUND, "not_found", "Application not found")

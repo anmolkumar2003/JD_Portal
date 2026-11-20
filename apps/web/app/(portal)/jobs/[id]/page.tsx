@@ -1,21 +1,38 @@
 "use client";
 
-import { ExternalLink, FileQuestion, Loader2, Pencil, Send, Users, XCircle } from "lucide-react";
+import {
+  ExternalLink,
+  FileQuestion,
+  LayoutGrid,
+  List,
+  Loader2,
+  Pencil,
+  Send,
+  Users,
+  XCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useState } from "react";
 
+import { CandidateDrawer } from "@/components/candidates/candidate-drawer";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { JobDetails } from "@/components/jobs/job-details";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { KanbanBoard } from "@/components/pipeline/kanban-board";
+import { PipelineTable } from "@/components/pipeline/pipeline-table";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
+import { useApplications } from "@/hooks/use-applications";
 import { useCloseJob, useJob, usePublishJob } from "@/hooks/use-jobs";
+import { useJobBoard, useMoveApplicationStage } from "@/hooks/use-pipeline";
 import { ApiError, publicJobUrl } from "@/lib/api";
 import { canManageJobs } from "@/lib/permissions";
+import type { PipelineStage } from "@/types/api";
 
 function JobDetailSkeleton() {
   return (
@@ -27,6 +44,157 @@ function JobDetailSkeleton() {
         <Skeleton className="h-96 lg:col-span-2" />
         <Skeleton className="h-96" />
       </div>
+    </div>
+  );
+}
+
+function PipelineTab({ jobId }: { jobId: string }) {
+  const board = useJobBoard(jobId);
+  const move = useMoveApplicationStage(jobId);
+  const [view, setView] = useState<"board" | "table">("board");
+  const [drawerId, setDrawerId] = useState<string | null>(null);
+
+  const onMoveTo = (applicationId: string, stage: PipelineStage) => {
+    // Rejection requires a reason dialog — open the drawer which hosts it.
+    if (stage.type === "rejected") {
+      setDrawerId(applicationId);
+      return;
+    }
+    move.mutate({ id: applicationId, body: { stage_id: stage.id } });
+  };
+
+  if (board.isPending) {
+    return <Skeleton className="h-96 w-full" aria-label="Loading pipeline" />;
+  }
+  if (board.isError || !board.data) {
+    return (
+      <ErrorState
+        error={board.error}
+        title="Could not load pipeline"
+        onRetry={() => void board.refetch()}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">
+          Drag cards between stages, or use Move to on each card.
+        </p>
+        <div className="flex gap-1 rounded-md border p-1">
+          <Button
+            type="button"
+            size="sm"
+            variant={view === "board" ? "secondary" : "ghost"}
+            onClick={() => setView("board")}
+            aria-pressed={view === "board"}
+          >
+            <LayoutGrid aria-hidden />
+            Board
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={view === "table" ? "secondary" : "ghost"}
+            onClick={() => setView("table")}
+            aria-pressed={view === "table"}
+          >
+            <List aria-hidden />
+            Table
+          </Button>
+        </div>
+      </div>
+
+      {view === "board" ? (
+        <KanbanBoard
+          jobId={jobId}
+          board={board.data}
+          onOpenApplication={setDrawerId}
+        />
+      ) : (
+        <PipelineTable
+          board={board.data}
+          onOpenApplication={setDrawerId}
+          onMoveTo={onMoveTo}
+          disabled={move.isPending}
+        />
+      )}
+
+      {move.isError && view === "table" && (
+        <p role="alert" className="text-sm text-destructive">
+          {move.error instanceof ApiError ? move.error.message : "Could not move candidate."}
+        </p>
+      )}
+
+      <CandidateDrawer
+        applicationId={drawerId}
+        open={Boolean(drawerId)}
+        onOpenChange={(open) => {
+          if (!open) setDrawerId(null);
+        }}
+      />
+    </div>
+  );
+}
+
+function ApplicantsTab({ jobId }: { jobId: string }) {
+  const apps = useApplications({
+    job_id: jobId,
+    page: 1,
+    page_size: 50,
+    sort: "-applied_at",
+  });
+  const [drawerId, setDrawerId] = useState<string | null>(null);
+
+  if (apps.isPending) return <Skeleton className="h-48 w-full" />;
+  if (apps.isError) {
+    return (
+      <ErrorState
+        error={apps.error}
+        title="Could not load applicants"
+        onRetry={() => void apps.refetch()}
+      />
+    );
+  }
+  if (!apps.data || apps.data.total === 0) {
+    return (
+      <EmptyState
+        icon={Users}
+        title="No applicants yet"
+        description="Applications will appear here as candidates apply."
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <ul className="divide-y rounded-lg border">
+        {apps.data.items.map((item) => (
+          <li key={item.id}>
+            <button
+              type="button"
+              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-muted/50"
+              onClick={() => setDrawerId(item.id)}
+            >
+              <span>
+                <span className="font-medium">
+                  {item.candidate.first_name} {item.candidate.last_name}
+                </span>
+                <span className="ml-2 text-sm text-muted-foreground">{item.stage.name}</span>
+              </span>
+              <span className="font-mono text-xs text-muted-foreground">{item.reference_no}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <CandidateDrawer
+        applicationId={drawerId}
+        open={Boolean(drawerId)}
+        onOpenChange={(open) => {
+          if (!open) setDrawerId(null);
+        }}
+      />
     </div>
   );
 }
@@ -73,6 +241,7 @@ export default function JobDetailPage() {
   const canClose = canEdit && data.status !== "closed" && data.status !== "filled";
   const actionError = publish.error ?? close.error;
   const busy = publish.isPending || close.isPending;
+  const defaultTab = data.status === "open" || data.applicants_count > 0 ? "pipeline" : "details";
 
   const onClose = () => {
     if (window.confirm(`Close "${data.title}"? It will no longer accept applications.`)) {
@@ -153,24 +322,20 @@ export default function JobDetailPage() {
         )}
       </div>
 
-      <Tabs defaultValue="details">
+      <Tabs defaultValue={defaultTab}>
         <TabsList>
-          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="applicants">Applicants ({data.applicants_count})</TabsTrigger>
+          <TabsTrigger value="details">Details</TabsTrigger>
         </TabsList>
-        <TabsContent value="details" className="pt-4">
-          <JobDetails job={data} />
+        <TabsContent value="pipeline" className="pt-4">
+          <PipelineTab jobId={data.id} />
         </TabsContent>
         <TabsContent value="applicants" className="pt-4">
-          <EmptyState
-            icon={Users}
-            title="No applicants yet"
-            description={
-              data.status === "open"
-                ? "Applications will appear here as candidates apply."
-                : "Publish this job to start receiving applications."
-            }
-          />
+          <ApplicantsTab jobId={data.id} />
+        </TabsContent>
+        <TabsContent value="details" className="pt-4">
+          <JobDetails job={data} />
         </TabsContent>
       </Tabs>
     </div>

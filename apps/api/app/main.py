@@ -10,7 +10,17 @@ from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import REQUEST_ID_HEADER, RequestIDMiddleware
 from app.core.redis import redis_client
-from app.routers import auth, documents, health, jobs, org, public_jobs, users
+from app.routers import (
+    applications,
+    auth,
+    candidates,
+    documents,
+    health,
+    jobs,
+    org,
+    public_jobs,
+    users,
+)
 
 
 @asynccontextmanager
@@ -44,6 +54,8 @@ def create_app() -> FastAPI:
     app.include_router(org.router)
     app.include_router(jobs.router)
     app.include_router(public_jobs.router)
+    app.include_router(applications.router)
+    app.include_router(candidates.router)
     app.include_router(documents.router)
     return app
 

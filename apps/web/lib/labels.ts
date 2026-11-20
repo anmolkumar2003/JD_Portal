@@ -1,4 +1,13 @@
-import type { EmploymentType, JobStatus, Role, TeamRole, WorkMode } from "@/types/api";
+import type {
+  ApplicationStatus,
+  CandidateSource,
+  EmploymentType,
+  JobStatus,
+  Role,
+  StageType,
+  TeamRole,
+  WorkMode,
+} from "@/types/api";
 
 export const ROLE_LABELS: Record<Role, string> = {
   super_admin: "Super Admin",
@@ -66,4 +75,51 @@ export function formatExperience(min: string | null, max: string | null): string
   if (min) return `${n(min)}+ years`;
   if (max) return `Up to ${n(max)} years`;
   return "—";
+}
+
+export const STAGE_TYPE_LABELS: Record<StageType, string> = {
+  applied: "Applied",
+  screening: "Screening",
+  interview: "Interview",
+  offer: "Offer",
+  hired: "Hired",
+  rejected: "Rejected",
+  custom: "Custom",
+};
+
+export const SOURCE_LABELS: Record<CandidateSource, string> = {
+  career_site: "Career site",
+  referral: "Referral",
+  linkedin: "LinkedIn",
+  agency: "Agency",
+  manual: "Manual",
+};
+
+export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
+  active: "Active",
+  rejected: "Rejected",
+  withdrawn: "Withdrawn",
+  hired: "Hired",
+};
+
+export function formatDateTime(value: string | null | undefined): string {
+  if (!value) return "—";
+  return new Date(value).toLocaleString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/** Whole days since the candidate entered the current stage (PIPE-04 lite). */
+export function daysInStage(stageEnteredAt: string, now = Date.now()): number {
+  const entered = new Date(stageEnteredAt).getTime();
+  if (Number.isNaN(entered)) return 0;
+  return Math.max(0, Math.floor((now - entered) / (24 * 60 * 60 * 1000)));
+}
+
+export function candidateDisplayName(first: string, last: string): string {
+  return `${first} ${last}`.trim();
 }

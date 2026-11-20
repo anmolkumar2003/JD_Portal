@@ -1,7 +1,22 @@
+import uuid
+from datetime import datetime
 from decimal import Decimal
 from typing import Annotated, Any
 
-from pydantic import BaseModel, EmailStr, Field, StringConstraints, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
+
+from app.models.enums import ApplicationStatus, CandidateSource, DocumentType, ParseStatus
+from app.schemas.candidate import CandidateSummary
+from app.schemas.job import NamedRef
+from app.schemas.org import PipelineStageOut
 
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
 ShortText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)]
@@ -10,6 +25,9 @@ Phone = Annotated[
     StringConstraints(
         strip_whitespace=True, min_length=6, max_length=40, pattern=r"^\+?[0-9 ()\-.]+$"
     ),
+]
+RejectionReason = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=3, max_length=2000)
 ]
 
 
@@ -70,3 +88,108 @@ class DownloadUrlOut(BaseModel):
     url: str
     expires_in: int
     file_name: str
+
+
+# --- Portal applications (CAND / PIPE) --------------------------------------------------------
+
+
+class ApplicationFilters(BaseModel):
+    job_id: uuid.UUID | None = None
+    stage_id: uuid.UUID | None = None
+    candidate_id: uuid.UUID | None = None
+    q: str | None = None
+    source: CandidateSource | None = None
+    applied_from: datetime | None = None
+    applied_to: datetime | None = None
+
+
+class ApplicationListItem(BaseModel):
+    id: uuid.UUID
+    reference_no: str
+    status: ApplicationStatus
+    applied_at: datetime
+    stage_entered_at: datetime
+    stage: PipelineStageOut
+    job: NamedRef
+    candidate: CandidateSummary
+    overall_score: int | None = None
+    source: CandidateSource
+
+
+class DocumentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    type: DocumentType
+    file_name: str
+    mime_type: str
+    size: int
+    is_primary: bool
+
+
+class ParsedProfileOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    parse_status: ParseStatus
+    data: dict[str, Any] = {}
+    total_experience_years: Decimal | None = None
+    error: str | None = None
+
+
+class MatchResultOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    overall_score: int
+    breakdown: dict[str, Any] = {}
+    matched_skills: list[str] = []
+    missing_required: list[str] = []
+    missing_preferred: list[str] = []
+    extra_skills: list[str] = []
+    explanation: dict[str, Any] = {}
+    engine_version: str
+    computed_at: datetime
+
+
+class ApplicationDetail(BaseModel):
+    id: uuid.UUID
+    reference_no: str
+    status: ApplicationStatus
+    applied_at: datetime
+    stage_entered_at: datetime
+    rejection_reason: str | None = None
+    cover_letter: str | None = None
+    stage: PipelineStageOut
+    job: NamedRef
+    candidate: CandidateSummary
+    documents: list[DocumentOut]
+    parsed_profile: ParsedProfileOut | None = None
+    match_result: MatchResultOut | None = None
+
+
+class StageChangeIn(BaseModel):
+    stage_id: uuid.UUID
+    rejection_reason: RejectionReason | None = None
+
+
+class BoardCard(BaseModel):
+    id: uuid.UUID
+    candidate_id: uuid.UUID
+    first_name: str
+    last_name: str
+    current_title: str | None = None
+    stage_entered_at: datetime
+    overall_score: int | None = None
+    reference_no: str
+
+
+class BoardColumn(BaseModel):
+    stage: PipelineStageOut
+    count: int
+    cards: list[BoardCard]
+
+
+class BoardOut(BaseModel):
+    job_id: uuid.UUID
+    stages: list[BoardColumn]

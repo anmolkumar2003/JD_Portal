@@ -1,7 +1,12 @@
 import type {
   ApiErrorBody,
+  ApplicationDetail,
+  ApplicationListItem,
+  ApplicationListParams,
   ApplyResult,
+  Board,
   Department,
+  DownloadUrl,
   HealthResponse,
   Job,
   JobCreateInput,
@@ -11,11 +16,14 @@ import type {
   Location,
   LoginRequest,
   Page,
+  PipelineStage,
   PublicJob,
   PublicJobFilters,
   PublicJobListItem,
   PublicJobListParams,
   RequirementsInput,
+  StageChangeInput,
+  TimelineEvent,
   TokenResponse,
   User,
 } from "@/types/api";
@@ -171,11 +179,13 @@ export const api = {
   org: {
     departments: () => request<Department[]>("/api/v1/departments"),
     locations: () => request<Location[]>("/api/v1/locations"),
+    pipelineStages: () => request<PipelineStage[]>("/api/v1/pipeline-stages"),
   },
   jobs: {
     list: (params: JobListParams = {}) =>
       request<Page<JobListItem>>(withQuery("/api/v1/jobs", params)),
     get: (id: string) => request<Job>(jobPath(id)),
+    board: (id: string) => request<Board>(jobPath(id, "/board")),
     create: (body: JobCreateInput) => request<Job>("/api/v1/jobs", { method: "POST", body }),
     update: (id: string, body: Partial<JobFieldsInput>) =>
       request<Job>(jobPath(id), { method: "PATCH", body }),
@@ -183,6 +193,25 @@ export const api = {
       request<Job>(jobPath(id, "/requirements"), { method: "PUT", body }),
     publish: (id: string) => request<Job>(jobPath(id, "/publish"), { method: "POST" }),
     close: (id: string) => request<Job>(jobPath(id, "/close"), { method: "POST" }),
+  },
+  applications: {
+    list: (params: ApplicationListParams = {}) =>
+      request<Page<ApplicationListItem>>(withQuery("/api/v1/applications", params)),
+    get: (id: string) =>
+      request<ApplicationDetail>(`/api/v1/applications/${encodeURIComponent(id)}`),
+    changeStage: (id: string, body: StageChangeInput) =>
+      request<ApplicationDetail>(`/api/v1/applications/${encodeURIComponent(id)}/stage`, {
+        method: "PATCH",
+        body,
+      }),
+  },
+  candidates: {
+    timeline: (id: string) =>
+      request<TimelineEvent[]>(`/api/v1/candidates/${encodeURIComponent(id)}/timeline`),
+  },
+  documents: {
+    downloadUrl: (id: string) =>
+      request<DownloadUrl>(`/api/v1/documents/${encodeURIComponent(id)}/download-url`),
   },
   publicJobs: {
     list: (params: PublicJobListParams = {}) =>

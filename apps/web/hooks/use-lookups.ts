@@ -21,3 +21,11 @@ export function useLocations() {
     staleTime: LOOKUP_STALE_MS,
   });
 }
+
+export function usePipelineStages() {
+  return useQuery({
+    queryKey: ["pipeline-stages"],
+    queryFn: api.org.pipelineStages,
+    staleTime: LOOKUP_STALE_MS,
+  });
+}
