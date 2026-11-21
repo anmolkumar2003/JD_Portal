@@ -1,0 +1,14 @@
+---
+description: Frontend rules for apps/web (Next.js 14)
+globs: apps/web/**
+alwaysApply: false
+---
+
+- Use shadcn/ui primitives and the design tokens in @docs/ui.md (indigo primary, Inter).
+- Server state with TanStack Query; no data fetching in useEffect. Typed API client in lib/api.
+- Forms: React Hook Form + Zod schema shared with API types.
+- Every page has loading skeleton, empty state, and error state.
+- Accessibility: labels, focus rings, keyboard support, contrast 4.5:1.
+- Score colors: >=80 green, 60-79 amber, <60 red, always with number + icon.
+- Components are small, reusable, and live in components/{ui,feature}.
+- Support light and dark mode via CSS variables.

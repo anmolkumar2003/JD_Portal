@@ -1,0 +1,237 @@
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Annotated, Any
+from uuid import UUID
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
+
+from app.models.enums import (
+    ApplicationStatus,
+    CandidateSource,
+    DocumentType,
+    ParseStatus,
+    StageType,
+)
+from app.schemas.job import NamedRef
+
+Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+ShortText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)]
+Phone = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True, min_length=6, max_length=40, pattern=r"^\+?[0-9 ()\-.]+$"
+    ),
+]
+
+
+class ApplyForm(BaseModel):
+    """Multipart text fields of the public apply form (APPLY-02/03)."""
+
+    first_name: Name
+    last_name: Name
+    email: EmailStr
+    phone: Phone
+    current_location: ShortText | None = None
+    current_company: ShortText | None = None
+    current_title: ShortText | None = None
+    total_experience_years: Annotated[Decimal, Field(ge=0, le=50, decimal_places=1)] | None = None
+    expected_ctc: Annotated[Decimal, Field(ge=0, max_digits=14, decimal_places=2)] | None = None
+    notice_period_days: Annotated[int, Field(ge=0, le=365)] | None = None
+    linkedin_url: (
+        Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] | None
+    ) = None
+    cover_letter: (
+        Annotated[str, StringConstraints(strip_whitespace=True, max_length=5000)] | None
+    ) = None
+    consent: bool
+    # Honeypot: hidden from people, so any value means a bot filled the form.
+    website: str = ""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _blank_to_none(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            return {
+                k: (None if isinstance(v, str) and not v.strip() and k != "website" else v)
+                for k, v in data.items()
+            }
+        return data
+
+    @field_validator("linkedin_url")
+    @classmethod
+    def _check_url(cls, value: str | None) -> str | None:
+        if value is not None and not value.lower().startswith(("https://", "http://")):
+            raise ValueError("Must be a full URL starting with https://")
+        return value
+
+    @field_validator("consent")
+    @classmethod
+    def _require_consent(cls, value: bool) -> bool:
+        if not value:
+            raise ValueError("Consent is required to apply")
+        return value
+
+
+class ApplyResult(BaseModel):
+    reference_no: str
+    job_title: str
+
+
+class DownloadUrlOut(BaseModel):
+    url: str
+    expires_in: int
+    file_name: str
+
+
+# --- Portal applications (CAND-01..04, CAND-09, PIPE-01/02) ------------------------------------
+
+
+class ApplicationFilters(BaseModel):
+    job_id: UUID | None = None
+    stage_id: UUID | None = None
+    candidate_id: UUID | None = None
+    q: str | None = Field(default=None, max_length=200)
+    source: CandidateSource | None = None
+    applied_from: date | None = None
+    applied_to: date | None = None
+
+
+class StageRef(BaseModel):
+    id: UUID
+    name: str
+    type: StageType
+    order: int
+
+
+class ApplicationListItem(BaseModel):
+    id: UUID
+    reference_no: str
+    status: ApplicationStatus
+    candidate_id: UUID
+    first_name: str
+    last_name: str
+    email: str
+    current_title: str | None
+    current_company: str | None
+    source: CandidateSource
+    job: NamedRef
+    stage: StageRef
+    overall_score: int | None
+    applied_at: datetime
+    stage_entered_at: datetime
+
+
+class DocumentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    type: DocumentType
+    file_name: str
+    mime_type: str
+    size: int
+    is_primary: bool
+
+
+class ParsedProfileOut(BaseModel):
+    parse_status: ParseStatus
+    data: dict[str, Any]
+    total_experience_years: Decimal | None
+    confidence: dict[str, Any]
+    error: str | None
+
+
+class MatchResultOut(BaseModel):
+    overall_score: int
+    breakdown: dict[str, Any]
+    matched_skills: list[str]
+    missing_required: list[str]
+    missing_preferred: list[str]
+    extra_skills: list[str]
+    explanation: dict[str, Any]
+    engine_version: str
+    computed_at: datetime
+
+
+class CandidateSummary(BaseModel):
+    id: UUID
+    first_name: str
+    last_name: str
+    email: str
+    phone: str | None
+    current_location: str | None
+    current_company: str | None
+    current_title: str | None
+    total_experience_years: Decimal | None
+    expected_ctc: Decimal | None
+    notice_period_days: int | None
+    linkedin_url: str | None
+    source: CandidateSource
+    tags: list[str]
+
+
+class ApplicationOut(BaseModel):
+    id: UUID
+    reference_no: str
+    status: ApplicationStatus
+    rejection_reason: str | None
+    cover_letter: str | None
+    applied_at: datetime
+    stage_entered_at: datetime
+    is_shortlisted: bool
+    candidate: CandidateSummary
+    job: NamedRef
+    stage: StageRef
+    documents: list[DocumentOut]
+    parsed_profile: ParsedProfileOut | None
+    match_result: MatchResultOut | None
+
+
+ReasonText = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)
+]
+
+
+class StagePatch(BaseModel):
+    stage_id: UUID
+    reason: ReasonText | None = None
+
+
+class BoardCard(BaseModel):
+    id: UUID
+    candidate_id: UUID
+    first_name: str
+    last_name: str
+    current_title: str | None
+    overall_score: int | None
+    stage_entered_at: datetime
+    applied_at: datetime
+    reference_no: str
+
+
+class BoardColumn(BaseModel):
+    stage: StageRef
+    count: int
+    cards: list[BoardCard]
+
+
+class BoardOut(BaseModel):
+    job_id: UUID
+    job_title: str
+    stages: list[BoardColumn]
+
+
+class TimelineEntry(BaseModel):
+    id: UUID
+    action: str
+    occurred_at: datetime
+    actor_name: str | None
+    application_id: UUID | None
+    meta: dict[str, Any]
