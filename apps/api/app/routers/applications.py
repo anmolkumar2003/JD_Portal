@@ -18,8 +18,15 @@ from app.schemas.application import (
     StagePatch,
     StageRef,
 )
+from app.schemas.candidate_actions import (
+    BulkActionRequest,
+    BulkActionResult,
+    ShortlistOut,
+    ShortlistPatch,
+)
 from app.services import analysis as analysis_service
 from app.services import applications as applications_service
+from app.services import candidate_actions as actions_service
 
 router = APIRouter(prefix="/api/v1/applications", tags=["applications"])
 
@@ -72,6 +79,14 @@ async def list_applications(
     return Page(items=items, total=total, page=params.page, page_size=params.page_size)
 
 
+@router.post("/bulk-action", response_model=BulkActionResult)
+async def bulk_action(
+    body: BulkActionRequest, user: StageEditor, session: Session
+) -> BulkActionResult:
+    """CAND-06: move stage, reject with reason, or tag many applications at once."""
+    return await actions_service.bulk_action(session, user, body)
+
+
 @router.get("/{application_id}", response_model=ApplicationOut)
 async def get_application(
     application_id: uuid.UUID, user: CurrentUser, session: Session
@@ -91,3 +106,16 @@ async def get_analysis(
     application_id: uuid.UUID, user: CurrentUser, session: Session
 ) -> AnalysisOut:
     return await analysis_service.get_analysis(session, user, application_id)
+
+
+@router.post("/{application_id}/shortlist", response_model=ShortlistOut)
+async def shortlist(
+    application_id: uuid.UUID,
+    user: StageEditor,
+    session: Session,
+    body: ShortlistPatch | None = None,
+) -> ShortlistOut:
+    """CAND-05: star/shortlist an application. Omit the body to toggle."""
+    return await actions_service.set_shortlist(
+        session, user, application_id, body.shortlisted if body else None
+    )

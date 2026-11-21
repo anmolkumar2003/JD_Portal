@@ -8,6 +8,7 @@ import { Suspense, useMemo } from "react";
 import { ActivityTimeline } from "@/components/candidates/activity-timeline";
 import { CandidateOverview } from "@/components/candidates/candidate-overview";
 import { CvViewer } from "@/components/candidates/cv-viewer";
+import { MatchAnalysis } from "@/components/candidates/match-analysis";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
@@ -128,11 +129,7 @@ function CandidateProfileContent() {
           <ActivityTimeline candidateId={data.candidate.id} />
         </TabsContent>
         <TabsContent value="match" className="pt-4">
-          <EmptyState
-            icon={FileQuestion}
-            title="Match analysis coming soon"
-            description="AI match scores are advisory and will appear here once scoring is enabled."
-          />
+          <MatchAnalysis applicationId={data.id} />
         </TabsContent>
       </Tabs>
     </div>

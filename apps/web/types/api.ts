@@ -260,6 +260,8 @@ export interface ApplicationListItem {
   job: NamedRef;
   stage: StageRef;
   overall_score: number | null;
+  is_shortlisted: boolean;
+  tags: string[];
   applied_at: string;
   stage_entered_at: string;
 }
@@ -275,6 +277,9 @@ export interface ApplicationListParams {
   source?: CandidateSource;
   applied_from?: string;
   applied_to?: string;
+  score_min?: number;
+  score_max?: number;
+  skill?: string;
 }
 
 export interface DocumentOut {
@@ -287,11 +292,31 @@ export interface DocumentOut {
 }
 
 export interface ParsedProfileOut {
+  id?: string | null;
+  document_id?: string | null;
   parse_status: ParseStatus;
   data: Record<string, unknown>;
+  corrected_data?: Record<string, unknown> | null;
   total_experience_years: string | null;
   confidence: Record<string, unknown>;
   error: string | null;
+  parser_version?: string | null;
+}
+
+export interface AtsCheckItem {
+  id: string;
+  label: string;
+  passed: boolean;
+  weight: number;
+  detail: string;
+  suggestion: string;
+}
+
+export interface AtsCheckOut {
+  score: number;
+  checks: AtsCheckItem[];
+  engine_version: string;
+  band?: string | null;
 }
 
 export interface MatchResultOut {
@@ -304,6 +329,15 @@ export interface MatchResultOut {
   explanation: Record<string, unknown>;
   engine_version: string;
   computed_at: string;
+}
+
+export interface AnalysisOut {
+  application_id: string;
+  document_id: string | null;
+  parsed_profile: ParsedProfileOut | null;
+  ats_check: AtsCheckOut | null;
+  match_result: MatchResultOut | null;
+  disclaimer: string;
 }
 
 export interface CandidateSummary {
@@ -382,4 +416,70 @@ export interface DownloadUrl {
   url: string;
   expires_in: number;
   file_name: string;
+}
+
+// --- Notes, tags, shortlist, bulk actions (CAND-05, CAND-06) ------------------------------------
+
+export interface UserRef {
+  id: string;
+  full_name: string;
+  role: Role;
+}
+
+export interface NoteOut {
+  id: string;
+  candidate_id: string;
+  application_id: string | null;
+  author: UserRef | null;
+  body: string;
+  mentions: UserRef[];
+  created_at: string;
+}
+
+export interface NoteCreateInput {
+  body: string;
+  mentions: string[];
+  application_id?: string | null;
+}
+
+export interface CandidateTagsOut {
+  id: string;
+  tags: string[];
+}
+
+export interface ShortlistOut {
+  application_id: string;
+  is_shortlisted: boolean;
+}
+
+export type BulkActionType = "move_stage" | "reject" | "tag";
+
+export interface BulkPayload {
+  stage_id?: string;
+  reason?: string;
+  add_tags?: string[];
+  remove_tags?: string[];
+}
+
+export interface BulkActionInput {
+  action: BulkActionType;
+  ids: string[];
+  payload: BulkPayload;
+}
+
+export interface BulkFailure {
+  id: string;
+  code: string;
+  message: string;
+}
+
+export interface BulkActionResult {
+  action: BulkActionType;
+  succeeded: string[];
+  failed: BulkFailure[];
+}
+
+export interface ParsedProfilePatchInput {
+  data: Record<string, unknown>;
+  total_experience_years?: number | null;
 }

@@ -1,10 +1,14 @@
 import type {
   ApiErrorBody,
+  AnalysisOut,
   ApplicationDetail,
   ApplicationListItem,
   ApplicationListParams,
   ApplyResult,
+  BulkActionInput,
+  BulkActionResult,
   BoardOut,
+  CandidateTagsOut,
   Department,
   DownloadUrl,
   HealthResponse,
@@ -15,17 +19,23 @@ import type {
   JobListParams,
   Location,
   LoginRequest,
+  NoteCreateInput,
+  NoteOut,
   Page,
+  ParsedProfileOut,
+  ParsedProfilePatchInput,
   PublicJob,
   PublicJobFilters,
   PublicJobListItem,
   PublicJobListParams,
   RequirementsInput,
+  ShortlistOut,
   StagePatchInput,
   StageRef,
   TimelineEntry,
   TokenResponse,
   User,
+  UserRef,
 } from "@/types/api";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
@@ -197,20 +207,79 @@ export const api = {
     list: (params: ApplicationListParams = {}) =>
       request<Page<ApplicationListItem>>(withQuery("/api/v1/applications", params)),
     get: (id: string) => request<ApplicationDetail>(`/api/v1/applications/${encodeURIComponent(id)}`),
+    analysis: (id: string) =>
+      request<AnalysisOut>(`/api/v1/applications/${encodeURIComponent(id)}/analysis`),
     stages: () => request<StageRef[]>("/api/v1/applications/stages"),
     moveStage: (id: string, body: StagePatchInput) =>
       request<ApplicationDetail>(`/api/v1/applications/${encodeURIComponent(id)}/stage`, {
         method: "PATCH",
         body,
       }),
+    shortlist: (id: string, shortlisted?: boolean) =>
+      request<ShortlistOut>(`/api/v1/applications/${encodeURIComponent(id)}/shortlist`, {
+        method: "POST",
+        body: shortlisted === undefined ? undefined : { shortlisted },
+      }),
+    bulkAction: (body: BulkActionInput) =>
+      request<BulkActionResult>("/api/v1/applications/bulk-action", { method: "POST", body }),
   },
   candidates: {
     timeline: (id: string) =>
       request<TimelineEntry[]>(`/api/v1/candidates/${encodeURIComponent(id)}/timeline`),
+    notes: (id: string) =>
+      request<NoteOut[]>(`/api/v1/candidates/${encodeURIComponent(id)}/notes`),
+    createNote: (id: string, body: NoteCreateInput) =>
+      request<NoteOut>(`/api/v1/candidates/${encodeURIComponent(id)}/notes`, {
+        method: "POST",
+        body,
+      }),
+    setTags: (id: string, tags: string[]) =>
+      request<CandidateTagsOut>(`/api/v1/candidates/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: { tags },
+      }),
+  },
+  users: {
+    lookup: () => request<UserRef[]>("/api/v1/users/lookup"),
   },
   documents: {
     downloadUrl: (id: string) =>
       request<DownloadUrl>(`/api/v1/documents/${encodeURIComponent(id)}/download-url`),
+    reprocess: (id: string) =>
+      request<{ document_id: string; status: string }>(
+        `/api/v1/documents/${encodeURIComponent(id)}/reprocess`,
+        { method: "POST" },
+      ),
+  },
+  parsedProfiles: {
+    patch: (id: string, body: ParsedProfilePatchInput) =>
+      request<ParsedProfileOut>(`/api/v1/parsed-profiles/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body,
+      }),
+  },
+  analytics: {
+    overview: () => request<Record<string, number | object>>("/api/v1/analytics/overview"),
+    funnel: () => request<{ stage: string; type: string; count: number }[]>("/api/v1/analytics/funnel"),
+    sources: () => request<{ source: string; count: number }[]>("/api/v1/analytics/sources"),
+    overTime: (days = 30) =>
+      request<{ date: string; count: number }[]>(
+        withQuery("/api/v1/analytics/applications-over-time", { days }),
+      ),
+  },
+  search: (q: string) =>
+    request<{
+      candidates: { id: string; label: string; email: string; type: string }[];
+      jobs: { id: string; label: string; slug: string; type: string }[];
+    }>(withQuery("/api/v1/search", { q })),
+  notifications: {
+    list: (unreadOnly = false) =>
+      request<
+        { id: string; type: string; payload: Record<string, unknown>; read_at: string | null; created_at: string }[]
+      >(withQuery("/api/v1/notifications", { unread_only: unreadOnly })),
+    markRead: (id: string) =>
+      request(`/api/v1/notifications/${encodeURIComponent(id)}/read`, { method: "PATCH" }),
+    markAllRead: () => request<{ updated: number }>("/api/v1/notifications/read-all", { method: "POST" }),
   },
   publicJobs: {
     list: (params: PublicJobListParams = {}) =>

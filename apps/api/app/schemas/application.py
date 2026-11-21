@@ -128,6 +128,8 @@ class ApplicationListItem(BaseModel):
     job: NamedRef
     stage: StageRef
     overall_score: int | None
+    is_shortlisted: bool = False
+    tags: list[str] = Field(default_factory=list)
     applied_at: datetime
     stage_entered_at: datetime
 

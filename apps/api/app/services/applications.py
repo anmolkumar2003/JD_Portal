@@ -292,6 +292,8 @@ def _list_item(
         job=NamedRef(id=job.id, name=job.title),
         stage=_stage_ref(stage),
         overall_score=score,
+        is_shortlisted=application.is_shortlisted,
+        tags=list(candidate.tags or []),
         applied_at=application.applied_at,
         stage_entered_at=application.stage_entered_at,
     )
@@ -547,12 +549,15 @@ async def get_board(session: AsyncSession, user: User, job_id: uuid.UUID) -> Boa
     )
 
 
-async def move_stage(
-    session: AsyncSession, user: User, application_id: uuid.UUID, body: StagePatch
-) -> ApplicationOut:
-    application, candidate, _job, current_stage = await _get_scoped_application(
-        session, user, application_id
-    )
+async def apply_stage_change(  # noqa: PLR0913
+    session: AsyncSession,
+    user: User,
+    application: Application,
+    candidate: Candidate,
+    current_stage: PipelineStage,
+    body: StagePatch,
+) -> bool:
+    """Validate and apply a stage move without committing. Returns False if nothing changed."""
     new_stage = await session.scalar(
         select(PipelineStage).where(
             PipelineStage.id == body.stage_id, PipelineStage.org_id == user.org_id
@@ -569,7 +574,7 @@ async def move_stage(
         )
 
     if application.stage_id == new_stage.id:
-        return await get_application(session, user, application_id)
+        return False
 
     now = datetime.now(UTC)
     previous_stage_id = application.stage_id
@@ -583,10 +588,9 @@ async def move_stage(
     elif new_stage.type == StageType.HIRED:
         application.status = ApplicationStatus.HIRED
         application.rejection_reason = None
-    else:
-        if application.status == ApplicationStatus.REJECTED:
-            application.status = ApplicationStatus.ACTIVE
-            application.rejection_reason = None
+    elif application.status == ApplicationStatus.REJECTED:
+        application.status = ApplicationStatus.ACTIVE
+        application.rejection_reason = None
 
     meta: dict[str, Any] = {
         "from_stage_id": str(previous_stage_id),
@@ -608,7 +612,26 @@ async def move_stage(
             occurred_at=now,
         )
     )
-    await session.commit()
+    return True
+
+
+async def move_stage(
+    session: AsyncSession, user: User, application_id: uuid.UUID, body: StagePatch
+) -> ApplicationOut:
+    application, candidate, _job, current_stage = await _get_scoped_application(
+        session, user, application_id
+    )
+    if await apply_stage_change(session, user, application, candidate, current_stage, body):
+        await session.commit()
+        # PIPE-03: stage-triggered email (best-effort; never fails the stage move)
+        try:
+            from app.services.emails import maybe_send_stage_email
+
+            new_stage = await session.get(PipelineStage, application.stage_id)
+            if new_stage is not None:
+                await maybe_send_stage_email(session, user, application, new_stage)
+        except Exception:  # noqa: BLE001
+            logger.exception("stage_email_failed application_id=%s", application_id)
     return await get_application(session, user, application_id)
 
 
@@ -616,11 +639,7 @@ async def candidate_timeline(
     session: AsyncSession, user: User, candidate_id: uuid.UUID
 ) -> list[TimelineEntry]:
     candidate = await session.get(Candidate, candidate_id)
-    if (
-        candidate is None
-        or candidate.deleted_at is not None
-        or candidate.org_id != user.org_id
-    ):
+    if candidate is None or candidate.deleted_at is not None or candidate.org_id != user.org_id:
         raise _candidate_not_found()
 
     # Candidate is visible only if the user can access at least one of their applications.
@@ -665,4 +684,3 @@ async def list_pipeline_stages(session: AsyncSession, user: User) -> list[StageR
         .order_by(PipelineStage.order)
     )
     return [_stage_ref(stage) for stage in stages]
-

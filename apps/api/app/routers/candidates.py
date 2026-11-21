@@ -11,8 +11,15 @@ from app.core.errors import AppError
 from app.models import User
 from app.models.enums import CandidateSource, UserRole
 from app.schemas.application import ManualCandidateCreate, ManualCandidateResult, TimelineEntry
+from app.schemas.candidate_actions import (
+    CandidatePatch,
+    CandidateTagsOut,
+    NoteCreate,
+    NoteOut,
+)
 from app.services import analysis as analysis_service
 from app.services import applications as applications_service
+from app.services import candidate_actions as actions_service
 
 router = APIRouter(prefix="/api/v1/candidates", tags=["candidates"])
 
@@ -28,6 +35,27 @@ async def candidate_timeline(
     candidate_id: uuid.UUID, user: CurrentUser, session: Session
 ) -> list[TimelineEntry]:
     return await applications_service.candidate_timeline(session, user, candidate_id)
+
+
+@router.get("/{candidate_id}/notes", response_model=list[NoteOut])
+async def list_notes(candidate_id: uuid.UUID, user: CurrentUser, session: Session) -> list[NoteOut]:
+    return await actions_service.list_notes(session, user, candidate_id)
+
+
+@router.post("/{candidate_id}/notes", response_model=NoteOut, status_code=status.HTTP_201_CREATED)
+async def create_note(
+    candidate_id: uuid.UUID, body: NoteCreate, user: CurrentUser, session: Session
+) -> NoteOut:
+    """CAND-05: add a note; `mentions` is a list of user ids."""
+    return await actions_service.create_note(session, user, candidate_id, body)
+
+
+@router.patch("/{candidate_id}", response_model=CandidateTagsOut)
+async def patch_candidate(
+    candidate_id: uuid.UUID, body: CandidatePatch, user: CandidateEditor, session: Session
+) -> CandidateTagsOut:
+    """CAND-05: replace the candidate's tags."""
+    return await actions_service.set_candidate_tags(session, user, candidate_id, body.tags)
 
 
 @router.post("", response_model=ManualCandidateResult, status_code=status.HTTP_201_CREATED)

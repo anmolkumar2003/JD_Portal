@@ -18,7 +18,16 @@ import type { ApplicationListParams, CandidateSource } from "@/types/api";
 
 const PAGE_SIZE = 20;
 const DEFAULT_SORT = "-applied_at";
-const FILTER_KEYS = ["q", "job_id", "stage_id", "source"] as const;
+const FILTER_KEYS = [
+  "q",
+  "job_id",
+  "stage_id",
+  "source",
+  "score_min",
+  "score_max",
+  "skill",
+  "sort",
+] as const;
 
 function CandidatesPageContent() {
   const router = useRouter();
@@ -30,9 +39,13 @@ function CandidatesPageContent() {
     job_id: searchParams.get("job_id") ?? "",
     stage_id: searchParams.get("stage_id") ?? "",
     source: searchParams.get("source") ?? "",
+    score_min: searchParams.get("score_min") ?? "",
+    score_max: searchParams.get("score_max") ?? "",
+    skill: searchParams.get("skill") ?? "",
+    sort: searchParams.get("sort") ?? DEFAULT_SORT,
   };
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
-  const sort = searchParams.get("sort") ?? DEFAULT_SORT;
+  const sort = filters.sort || DEFAULT_SORT;
   const drawerId = searchParams.get("application");
 
   const params: ApplicationListParams = useMemo(
@@ -44,8 +57,21 @@ function CandidatesPageContent() {
       job_id: filters.job_id || undefined,
       stage_id: filters.stage_id || undefined,
       source: (filters.source || undefined) as CandidateSource | undefined,
+      score_min: filters.score_min ? Number(filters.score_min) : undefined,
+      score_max: filters.score_max ? Number(filters.score_max) : undefined,
+      skill: filters.skill || undefined,
     }),
-    [page, sort, filters.q, filters.job_id, filters.stage_id, filters.source],
+    [
+      page,
+      sort,
+      filters.q,
+      filters.job_id,
+      filters.stage_id,
+      filters.source,
+      filters.score_min,
+      filters.score_max,
+      filters.skill,
+    ],
   );
 
   const query = useApplications(params);
