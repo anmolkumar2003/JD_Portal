@@ -34,18 +34,28 @@ def _public_client() -> Any:
     return _client(settings.s3_public_endpoint_url or settings.s3_endpoint_url)
 
 
-async def put_object(key: str, data: bytes, content_type: str) -> None:
-    await to_thread.run_sync(
-        lambda: _internal_client().put_object(
-            Bucket=get_settings().s3_bucket, Key=key, Body=data, ContentType=content_type
-        )
+def put_object_sync(key: str, data: bytes, content_type: str) -> None:
+    _internal_client().put_object(
+        Bucket=get_settings().s3_bucket, Key=key, Body=data, ContentType=content_type
     )
+
+
+def get_object_sync(key: str) -> bytes:
+    response = _internal_client().get_object(Bucket=get_settings().s3_bucket, Key=key)
+    body: bytes = response["Body"].read()
+    return body
+
+
+def delete_object_sync(key: str) -> None:
+    _internal_client().delete_object(Bucket=get_settings().s3_bucket, Key=key)
+
+
+async def put_object(key: str, data: bytes, content_type: str) -> None:
+    await to_thread.run_sync(lambda: put_object_sync(key, data, content_type))
 
 
 async def delete_object(key: str) -> None:
-    await to_thread.run_sync(
-        lambda: _internal_client().delete_object(Bucket=get_settings().s3_bucket, Key=key)
-    )
+    await to_thread.run_sync(lambda: delete_object_sync(key))
 
 
 def presigned_download_url(key: str, file_name: str, expires_in: int) -> str:

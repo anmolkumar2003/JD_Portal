@@ -1,0 +1,6 @@
+{
+  "email": "priya.sharma@example.com",
+  "phone_contains": "98111",
+  "skills": ["Python", "FastAPI", "PostgreSQL", "Redis", "Kafka", "Docker", "Kubernetes", "AWS", "Django"],
+  "min_experience_years": 6
+}

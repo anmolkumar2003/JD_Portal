@@ -1,0 +1,23 @@
+Rahul Mehta
+rahul.mehta@example.com
++91 99000 11223
+Mumbai, India
+
+Experience
+Frontend Engineer
+ShopEasy
+Jan 2020 – Present
+React, TypeScript, Next.js, Tailwind CSS. Improved Core Web Vitals.
+
+UI Developer
+PixelWorks
+Aug 2017 – Dec 2019
+JavaScript, HTML, CSS, Vue.js.
+
+Education
+Bachelor of Engineering
+Mumbai University
+2013 – 2017
+
+Skills
+JavaScript, TypeScript, React, Next.js, Vue.js, Tailwind CSS, HTML, CSS, Jest

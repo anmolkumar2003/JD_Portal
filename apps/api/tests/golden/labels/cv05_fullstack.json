@@ -1,0 +1,6 @@
+{
+  "email": "sara.ali@example.com",
+  "phone_contains": "7700",
+  "skills": ["TypeScript", "JavaScript", "Node.js", "React", "GraphQL", "PostgreSQL", "MongoDB"],
+  "min_experience_years": 6
+}

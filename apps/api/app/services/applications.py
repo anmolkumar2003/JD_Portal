@@ -50,7 +50,7 @@ from app.schemas.application import (
 from app.schemas.job import NamedRef
 from app.services.cv_validation import validate_cv
 from app.services.jobs import public_job_conditions
-from app.workers.tasks import send_email
+from app.workers.tasks import process_document, send_email
 
 logger = logging.getLogger(__name__)
 
@@ -228,6 +228,10 @@ async def apply(  # noqa: PLR0913 - one call carries the whole multipart submiss
         send_email.delay(candidate.email, subject, body)
     except Exception:  # the application is saved; a broker outage must not fail the request
         logger.exception("failed to queue confirmation email for %s", reference_no)
+    try:
+        process_document.delay(str(document_id))
+    except Exception:
+        logger.exception("failed to queue process_document for document_id=%s", document_id)
     return ApplyResult(reference_no=reference_no, job_title=job.title)
 
 
@@ -317,6 +321,22 @@ async def list_applications(
         stmt = stmt.where(Application.applied_at >= _day_bounds(filters.applied_from, end=False))
     if filters.applied_to is not None:
         stmt = stmt.where(Application.applied_at <= _day_bounds(filters.applied_to, end=True))
+    if filters.score_min is not None:
+        stmt = stmt.where(score.is_not(None), score >= filters.score_min)
+    if filters.score_max is not None:
+        stmt = stmt.where(score.is_not(None), score <= filters.score_max)
+    if filters.skill and filters.skill.strip():
+        skill_q = filters.skill.strip()
+        skill_filter = (
+            select(ParsedProfile.id)
+            .where(
+                ParsedProfile.candidate_id == Candidate.id,
+                cast(ParsedProfile.data, String).icontains(skill_q, autoescape=True),
+            )
+            .correlate(Candidate)
+            .exists()
+        )
+        stmt = stmt.where(skill_filter)
     if filters.q and filters.q.strip():
         q = filters.q.strip()
         skill_match = (
@@ -441,11 +461,15 @@ async def get_application(
         documents=[DocumentOut.model_validate(doc) for doc in documents],
         parsed_profile=(
             ParsedProfileOut(
+                id=profile.id,
+                document_id=profile.document_id,
                 parse_status=profile.parse_status,
                 data=profile.data or {},
+                corrected_data=profile.corrected_data,
                 total_experience_years=profile.total_experience_years,
                 confidence=profile.confidence or {},
                 error=profile.error,
+                parser_version=profile.parser_version,
             )
             if profile is not None
             else None

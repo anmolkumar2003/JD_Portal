@@ -9,7 +9,7 @@ from app.core.deps import CurrentUser, require_roles
 from app.core.pagination import Page, PageParams, page_params
 from app.models import User
 from app.models.enums import JobStatus, UserRole
-from app.schemas.application import BoardOut
+from app.schemas.application import BoardOut, RescoreOut
 from app.schemas.job import (
     JobCreate,
     JobFilters,
@@ -19,6 +19,7 @@ from app.schemas.job import (
     RequirementsIn,
     TeamIn,
 )
+from app.services import analysis as analysis_service
 from app.services import applications as applications_service
 from app.services import jobs as jobs_service
 
@@ -97,3 +98,8 @@ async def replace_team(
     job_id: uuid.UUID, body: TeamIn, user: JobEditor, session: Session
 ) -> JobOut:
     return await jobs_service.replace_team(session, user, job_id, body)
+
+
+@router.post("/{job_id}/rescore", response_model=RescoreOut)
+async def rescore_job(job_id: uuid.UUID, user: JobEditor, session: Session) -> RescoreOut:
+    return await analysis_service.enqueue_job_rescore(session, user, job_id)

@@ -16,18 +16,19 @@ Legend: `[x]` done · `[~]` partial · `[ ]` pending · `[-]` skipped
 
 ## Phase 1: CV engine (CV-01..CV-08, Part 8)
 
-- [ ] CV-01 Upload/store CV; inline viewer (viewer exists; processing wired)
-- [ ] CV-02 Text extraction + OCR fallback
-- [ ] CV-03 Structured parsing
-- [ ] CV-04 ATS-friendliness score A1–A12
-- [ ] CV-05 JD match score
-- [ ] CV-06 Explanation payload
-- [ ] CV-07 Async parse status + retry
-- [ ] CV-08 Recruiter corrections + re-score
-- [ ] CV-10 Re-score all on job change (endpoint)
-- [ ] CAND-10 Manual candidate create with CV
-- [ ] Celery `process_document`
-- [ ] Golden set + precision/recall script
+- [x] CV-01 Upload/store CV; processing hooked from apply/manual upload
+- [x] CV-02 Text extraction + OCR fallback (`extract.py`)
+- [x] CV-03 Structured parsing (`parser.py`, `skills.py`, 500+ taxonomy)
+- [x] CV-04 ATS-friendliness score A1–A12 (`ats_check.py`)
+- [x] CV-05 JD match score (`matcher.py`)
+- [x] CV-06 Explanation payload (`explain.py`)
+- [x] CV-07 Async parse status + retry (`process_document` Celery task)
+- [x] CV-08 Recruiter corrections + re-score (`PATCH /parsed-profiles/{id}`)
+- [x] CV-10 Re-score all on job change (`POST /jobs/{id}/rescore`)
+- [x] CAND-10 Manual candidate create with CV (`POST /candidates`)
+- [x] Celery `process_document`
+- [x] Golden set (5 CVs) + precision/recall script
+- [x] Endpoints: `GET /applications/{id}/analysis`, `POST /documents/{id}/reprocess`
 
 ## Phase 2: Match Analysis UI
 

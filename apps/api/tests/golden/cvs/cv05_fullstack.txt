@@ -1,0 +1,25 @@
+Sara Ali
+sara.ali@example.com | +44 7700 900123
+London, UK
+
+Experience
+Full Stack Engineer
+Northwind Labs
+Sep 2018 – Present
+TypeScript, Node.js, React, PostgreSQL, GraphQL.
+
+Junior Developer
+BrightApps
+Jun 2016 – Aug 2018
+JavaScript, Express, MongoDB.
+
+Education
+BSc Computer Science
+University of London
+2013 – 2016
+
+Skills
+TypeScript, JavaScript, Node.js, React, GraphQL, PostgreSQL, MongoDB, Express, Docker
+
+Certifications
+Meta Front-End Developer Certificate

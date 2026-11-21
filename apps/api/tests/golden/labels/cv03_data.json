@@ -1,0 +1,6 @@
+{
+  "email": "ananya.iyer@example.com",
+  "phone_contains": "91234",
+  "skills": ["Python", "SQL", "pandas", "scikit-learn", "PyTorch", "TensorFlow", "Tableau"],
+  "min_experience_years": 6
+}

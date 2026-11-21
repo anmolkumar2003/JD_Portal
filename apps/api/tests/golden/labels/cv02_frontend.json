@@ -1,0 +1,6 @@
+{
+  "email": "rahul.mehta@example.com",
+  "phone_contains": "99000",
+  "skills": ["JavaScript", "TypeScript", "React", "Next.js", "Vue.js", "Tailwind CSS"],
+  "min_experience_years": 5
+}

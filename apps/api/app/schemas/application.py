@@ -102,6 +102,9 @@ class ApplicationFilters(BaseModel):
     source: CandidateSource | None = None
     applied_from: date | None = None
     applied_to: date | None = None
+    score_min: Annotated[int, Field(ge=0, le=100)] | None = None
+    score_max: Annotated[int, Field(ge=0, le=100)] | None = None
+    skill: str | None = Field(default=None, max_length=100)
 
 
 class StageRef(BaseModel):
@@ -141,11 +144,22 @@ class DocumentOut(BaseModel):
 
 
 class ParsedProfileOut(BaseModel):
+    id: UUID | None = None
+    document_id: UUID | None = None
     parse_status: ParseStatus
     data: dict[str, Any]
+    corrected_data: dict[str, Any] | None = None
     total_experience_years: Decimal | None
     confidence: dict[str, Any]
     error: str | None
+    parser_version: str | None = None
+
+
+class AtsCheckOut(BaseModel):
+    score: int
+    checks: list[dict[str, Any]]
+    engine_version: str
+    band: str | None = None
 
 
 class MatchResultOut(BaseModel):
@@ -158,6 +172,61 @@ class MatchResultOut(BaseModel):
     explanation: dict[str, Any]
     engine_version: str
     computed_at: datetime
+
+
+class AnalysisOut(BaseModel):
+    """GET /applications/{id}/analysis — parsed profile, ATS check, match (CV-04..07)."""
+
+    application_id: UUID
+    document_id: UUID | None
+    parsed_profile: ParsedProfileOut | None
+    ats_check: AtsCheckOut | None
+    match_result: MatchResultOut | None
+    disclaimer: str = "Score is advisory; a recruiter makes the decision."
+
+
+class ParsedProfilePatch(BaseModel):
+    """Recruiter corrections (CV-08). Partial overlay stored in corrected_data."""
+
+    data: dict[str, Any]
+    total_experience_years: Annotated[Decimal, Field(ge=0, le=50, decimal_places=1)] | None = None
+
+
+class ManualCandidateCreate(BaseModel):
+    """CAND-10: HR creates a candidate (optionally linked to a job) with CV upload."""
+
+    first_name: Name
+    last_name: Name
+    email: EmailStr
+    phone: Phone | None = None
+    current_location: ShortText | None = None
+    current_company: ShortText | None = None
+    current_title: ShortText | None = None
+    total_experience_years: Annotated[Decimal, Field(ge=0, le=50, decimal_places=1)] | None = None
+    notice_period_days: Annotated[int, Field(ge=0, le=365)] | None = None
+    linkedin_url: (
+        Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] | None
+    ) = None
+    job_id: UUID | None = None
+    source: CandidateSource = CandidateSource.MANUAL
+    tags: list[str] = Field(default_factory=list)
+
+
+class ManualCandidateResult(BaseModel):
+    candidate_id: UUID
+    application_id: UUID | None = None
+    document_id: UUID | None = None
+    reference_no: str | None = None
+
+
+class ReprocessOut(BaseModel):
+    document_id: UUID
+    status: str = "queued"
+
+
+class RescoreOut(BaseModel):
+    job_id: UUID
+    status: str = "queued"
 
 
 class CandidateSummary(BaseModel):
