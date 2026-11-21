@@ -108,7 +108,15 @@ async def test_repeat_applicant_reuses_candidate_and_duplicate_is_rejected(
         candidates = await session.scalar(
             select(func.count()).select_from(Candidate).where(Candidate.email == "asha@example.com")
         )
-        applications = await session.scalar(select(func.count()).select_from(Application))
+        candidate = await session.scalar(
+            select(Candidate).where(Candidate.email == "asha@example.com")
+        )
+        assert candidate is not None
+        applications = await session.scalar(
+            select(func.count())
+            .select_from(Application)
+            .where(Application.candidate_id == candidate.id)
+        )
     assert candidates == 1
     assert applications == 2
     assert len(stored_objects) == 2

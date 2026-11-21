@@ -23,15 +23,21 @@ logger = logging.getLogger(__name__)
 PARSER_VERSION = "rule-1.0"
 
 EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
-PHONE_RE = re.compile(r"(?:\+?\d{1,3}[\s\-.]?)?(?:\(?\d{2,4}\)?[\s\-.]?)?\d{3,4}[\s\-.]?\d{3,4}")
+# Broad candidate; digit-count validated in _extract_phone (10–15 digits).
+PHONE_RE = re.compile(r"(?:\+\d{1,3}[\s\-.]*)?(?:\(?\d{1,5}\)?[\s\-.]*){1,5}\d{2,}")
 URL_RE = re.compile(r"https?://[^\s)>\]]+|www\.[^\s)>\]]+|linkedin\.com/[^\s)>\]]+", re.I)
 DATE_TOKEN = (
     r"(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|"
     r"Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|"
     r"\d{1,2})[/\-\s.]*(?:\d{2,4})|Present|Current|Now"  # noqa: S105
 )
+# Include en/em dashes, ASCII hyphen, middle dot (common in PDF extract), and "to".
 DATE_RANGE_RE = re.compile(
-    rf"(?P<start>{DATE_TOKEN})\s*[–\-|to]+\s*(?P<end>{DATE_TOKEN})",
+    rf"(?P<start>{DATE_TOKEN})\s*[–—\-·•|to]+\s*(?P<end>{DATE_TOKEN})",
+    re.IGNORECASE,
+)
+YEARS_MENTION_RE = re.compile(
+    r"(\d+(?:\.\d+)?)\s*\+?\s*(?:years?|yrs?)(?:\s+of)?(?:\s+experience|\s+building|\s+in)?",
     re.IGNORECASE,
 )
 MONTH_MAP = {
@@ -126,6 +132,34 @@ def merge_experience_years(ranges: list[tuple[date, date]]) -> float:
         days = (end - start).days + monthrange(end.year, end.month)[1] // 4
         total_days += max(days, 0)
     return round(total_days / 365.25, 1)
+
+
+def _extract_phone(text: str) -> str | None:
+    """Return the best phone-like match with 10–15 digits (keeps original formatting)."""
+    best: str | None = None
+    best_len = 0
+    for match in PHONE_RE.finditer(text):
+        raw = match.group(0).strip(" -.")
+        digits = re.sub(r"\D", "", raw)
+        if 10 <= len(digits) <= 15 and len(digits) > best_len:
+            best = raw
+            best_len = len(digits)
+    return best
+
+
+def _clean_name(value: str | None) -> str | None:
+    if not value:
+        return None
+    # Take first line only; reject emails / phones leaking into the name span.
+    line = value.splitlines()[0].strip()
+    if not line or "@" in line or EMAIL_RE.search(line) or _extract_phone(line):
+        return None
+    parts = line.split()
+    if not (1 <= len(parts) <= 4):
+        return None
+    if not all(p[0].isalpha() for p in parts if p):
+        return None
+    return line[:120]
 
 
 def _heading_key(line: str) -> str | None:
@@ -263,7 +297,7 @@ class RuleBasedParser(CVParser):
     def parse(self, text: str, *, file_meta: ExtractResult | None = None) -> ParsedCV:
         sections = segment_sections(text)
         email_m = EMAIL_RE.search(text)
-        phone_m = PHONE_RE.search(text)
+        phone = _extract_phone(text)
         links = list(dict.fromkeys(URL_RE.findall(text)))[:20]
 
         nlp = _load_nlp()
@@ -271,7 +305,7 @@ class RuleBasedParser(CVParser):
         orgs: list[str] = []
         locs: list[str] = []
         if nlp is not None:
-            full_name = _first_person_name(nlp, sections.get("_preamble", text[:500]))
+            full_name = _clean_name(_first_person_name(nlp, sections.get("_preamble", text[:500])))
             orgs, locs = _orgs_and_locations(nlp, text)
 
         skills_text = sections.get("skills", "") or text
@@ -298,11 +332,27 @@ class RuleBasedParser(CVParser):
                 if start and end:
                     ranges.append((start, end))
         years = merge_experience_years(ranges) if ranges else None
+        mention_blob = "\n".join(
+            filter(None, [sections.get("summary"), sections.get("_preamble"), text[:800]])
+        )
+        mention = YEARS_MENTION_RE.search(mention_blob)
+        if mention:
+            mentioned = float(mention.group(1))
+            # Prefer the larger of timeline merge vs explicit "N years" claim.
+            years = mentioned if years is None else max(years, mentioned)
+
+        if not full_name:
+            # First non-empty preamble line that looks like a person name (2–4 tokens).
+            for line in (sections.get("_preamble") or text).splitlines():
+                cleaned = _clean_name(line)
+                if cleaned:
+                    full_name = cleaned
+                    break
 
         found_sections = [k for k in SECTION_ALIASES if sections.get(k)]
         confidence: dict[str, float] = {
             "email": 0.95 if email_m else 0.0,
-            "phone": 0.85 if phone_m else 0.0,
+            "phone": 0.85 if phone else 0.0,
             "name": 0.7 if full_name else 0.2,
             "skills": min(1.0, len(skills) / 10),
             "experience": min(1.0, len(experience) / 3),
@@ -311,7 +361,7 @@ class RuleBasedParser(CVParser):
         return ParsedCV(
             full_name=full_name,
             email=email_m.group(0) if email_m else None,
-            phone=phone_m.group(0).strip() if phone_m else None,
+            phone=phone,
             location=locs[0] if locs else None,
             links=links,
             summary=(sections.get("summary") or "")[:1500] or None,

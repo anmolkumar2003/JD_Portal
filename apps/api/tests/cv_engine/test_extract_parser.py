@@ -60,6 +60,35 @@ def test_rule_based_parser_extracts_core_fields() -> None:
     assert parsed.total_experience_years >= 4
 
 
+def test_phone_keeps_trailing_digit_and_middle_dot_dates() -> None:
+    text = """
+Priya Sharma
+priya.sharma@example.com | +91 98111 22334
+
+Summary
+Senior backend engineer with 7 years building platforms.
+
+Experience
+Senior Software Engineer
+PayFlow India
+Mar 2021 · Present
+Built Python FastAPI services.
+"""
+    parsed = RuleBasedParser().parse(text)
+    assert parsed.phone == "+91 98111 22334"
+    assert parsed.full_name == "Priya Sharma"
+    assert parsed.total_experience_years is not None
+    assert parsed.total_experience_years >= 7
+
+
+def test_name_does_not_include_email_line() -> None:
+    text = "Sara Ali\nsara.ali@example.com | +44 7700 900123\nLondon, UK\n\nSkills\nReact, TypeScript\n"
+    parsed = RuleBasedParser().parse(text)
+    assert parsed.full_name == "Sara Ali"
+    assert parsed.phone == "+44 7700 900123"
+    assert "@" not in (parsed.full_name or "")
+
+
 def test_extract_pdf_from_generated_sample() -> None:
     from pathlib import Path
 

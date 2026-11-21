@@ -1,7 +1,7 @@
 """phase 3-7 tables: notes, email, notifications, interviews, offers, audit
 
 Revision ID: 20261121_0004
-Revises: 20261120_0003
+Revises: 0003
 Create Date: 2026-11-21
 """
 
@@ -14,26 +14,33 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision: str = "20261121_0004"
-down_revision: str | None = "20261120_0003"
+down_revision: str | None = "0003"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    interview_type = sa.Enum(
-        "phone", "technical", "managerial", "hr", name="interview_type"
+    # create_type=False: create enums once below, then reuse in create_table
+    # (avoids DuplicateObjectError with asyncpg when Enum.create + create_table both run).
+    interview_type = postgresql.ENUM(
+        "phone", "technical", "managerial", "hr", name="interview_type", create_type=False
     )
-    interview_mode = sa.Enum("video", "onsite", name="interview_mode")
-    interview_status = sa.Enum(
-        "scheduled", "completed", "cancelled", "rescheduled", name="interview_status"
+    interview_mode = postgresql.ENUM("video", "onsite", name="interview_mode", create_type=False)
+    interview_status = postgresql.ENUM(
+        "scheduled",
+        "completed",
+        "cancelled",
+        "rescheduled",
+        name="interview_status",
+        create_type=False,
     )
-    recommendation = sa.Enum(
-        "strong_no", "no", "mixed", "yes", "strong_yes", name="recommendation"
+    recommendation = postgresql.ENUM(
+        "strong_no", "no", "mixed", "yes", "strong_yes", name="recommendation", create_type=False
     )
-    requisition_status = sa.Enum(
-        "draft", "pending", "approved", "rejected", name="requisition_status"
+    requisition_status = postgresql.ENUM(
+        "draft", "pending", "approved", "rejected", name="requisition_status", create_type=False
     )
-    offer_status = sa.Enum(
+    offer_status = postgresql.ENUM(
         "draft",
         "pending_approval",
         "approved",
@@ -42,13 +49,18 @@ def upgrade() -> None:
         "declined",
         "withdrawn",
         name="offer_status",
+        create_type=False,
     )
-    interview_type.create(op.get_bind(), checkfirst=True)
-    interview_mode.create(op.get_bind(), checkfirst=True)
-    interview_status.create(op.get_bind(), checkfirst=True)
-    recommendation.create(op.get_bind(), checkfirst=True)
-    requisition_status.create(op.get_bind(), checkfirst=True)
-    offer_status.create(op.get_bind(), checkfirst=True)
+    bind = op.get_bind()
+    for enum in (
+        interview_type,
+        interview_mode,
+        interview_status,
+        recommendation,
+        requisition_status,
+        offer_status,
+    ):
+        enum.create(bind, checkfirst=True)
 
     op.create_table(
         "notes",

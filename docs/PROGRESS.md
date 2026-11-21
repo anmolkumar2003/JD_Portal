@@ -36,10 +36,10 @@ Legend: `[x]` done · `[~]` partial · `[ ]` pending · `[-]` skipped
 ## Phase 8: Quality and demo readiness
 
 - [x] Split docs (`requirements`, `data-model`, `cv-engine`, `api`, `ui`)
-- [ ] Seed 30 demo candidates + Playwright e2e + a11y polish
-- [ ] Full stack verification
+- [x] Seed 30 demo candidates (`make seed`), Playwright e2e (`apps/web` `npm run test:e2e`), load script (`apps/api/scripts/load_test_apply_and_list.py`)
+- [~] Accessibility axe polish (eslint jsx-a11y only; no dedicated axe pass yet)
+- [x] Full stack verification (`make up` / migrate / seed); golden/real CV eval + parser fixes
 
-## Blocker
+## Done
 
-**Docker daemon is not running** (`Cannot connect to the Docker daemon`).  
-Need Docker Desktop started to: `make up`, `make migrate`, `make seed`, run DB pytest, and demo the live app.
+Docker stack healthy; migration `20261121_0004` applied; CV eval on `tests/golden/real/` clean after parser fixes.

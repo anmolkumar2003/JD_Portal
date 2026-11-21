@@ -9,6 +9,32 @@ agent rules live in [`.cursor/rules/`](.cursor/rules).
 | `apps/api`  | FastAPI, SQLAlchemy 2 (async), Alembic, Pydantic v2, Celery, Redis               |
 | `docs/`     | Spec, split docs, ADRs                                                           |
 
+## Architecture (high level)
+
+```
+┌─────────────┐     HTTPS/JWT      ┌──────────────┐     SQLAlchemy      ┌────────────┐
+│  apps/web   │ ◄────────────────► │   apps/api   │ ◄─────────────────► │ PostgreSQL │
+│  Next.js 14 │   TanStack Query   │   FastAPI    │                     │  pgvector  │
+└─────────────┘                    └──────┬───────┘                     └────────────┘
+                                          │
+                    ┌─────────────────────┼─────────────────────┐
+                    ▼                     ▼                     ▼
+              ┌──────────┐         ┌──────────┐        ┌─────────────┐
+              │  Redis   │         │  Celery  │        │ MinIO (S3)  │
+              │ sessions │         │ CV parse │        │ CV storage  │
+              └──────────┘         │  email   │        └─────────────┘
+                                 └──────────┘
+```
+
+- **Web**: App Router route groups — `(public)` careers/login, `(portal)` jobs/candidates/dashboard.
+  Server state via TanStack Query; shared types in `types/api.ts`.
+- **API**: Router → service → model layering; RBAC and record-level job access on every portal route.
+  Public careers apply is multipart to `POST /api/v1/public/jobs/{slug}/apply`.
+- **CV engine**: Pure Python package under `apps/api/app/cv_engine/` (no FastAPI imports). Parsing,
+  ATS check and JD match run in Celery (`process_document`); scores are advisory only.
+- **Split docs**: [`docs/api.md`](docs/api.md), [`docs/ui.md`](docs/ui.md), [`docs/data-model.md`](docs/data-model.md),
+  [`docs/cv-engine.md`](docs/cv-engine.md), [`docs/requirements.md`](docs/requirements.md).
+
 ## Prerequisites
 
 - Docker Desktop with Docker Compose v2
@@ -20,7 +46,7 @@ agent rules live in [`.cursor/rules/`](.cursor/rules).
 cp .env.example .env          # then change the passwords in .env
 docker compose up --build     # or: make up  (detached)
 make migrate                  # in a second terminal, once the stack is up
-make seed                     # demo org, one user per role, pipeline stages, 3 jobs
+make seed                     # demo org, users, stages, jobs, ~30 candidates with scores
 ```
 
 Then open http://localhost:3000/login and sign in with a demo account below.
@@ -60,7 +86,10 @@ lockout.
 
 The seed also creates the default pipeline stages (Applied, Screening, Interview, Offer, Hired,
 Rejected), two departments (Engineering, People Operations), two locations (Bengaluru HQ,
-Remote (India)) and three jobs with weighted required and preferred skills.
+Remote (India)), three jobs with weighted required and preferred skills, and **30 demo candidates**
+(`demo01@candidates.demo` … `demo30@candidates.demo`) with applications on the open engineering jobs,
+parsed CV profiles, match scores, and a spread across pipeline stages. Re-running `make seed` is
+idempotent for these rows.
 
 ## Auth overview
 
@@ -163,7 +192,7 @@ To verify:
 | `make test`    | pytest for the API, type-check for the web app           |
 | `make lint`    | Ruff + mypy (API), ESLint + Prettier (web)               |
 | `make format`  | Auto-fix formatting in both apps                         |
-| `make seed`    | Seed demo org, users, stages and jobs (safe to re-run)   |
+| `make seed`    | Seed demo org, users, stages, jobs and 30 candidates     |
 
 `make test` and `make lint` run in one-off containers. Database-backed API tests need Postgres up
 (`make up`) and are skipped otherwise; they use a separate `<db>_test` database.
@@ -200,3 +229,50 @@ pre-commit run --all-files
 - **api**: ruff, ruff format check, mypy (strict), pytest with coverage, and an Alembic
   upgrade/downgrade round-trip against a pgvector Postgres service.
 - **web**: ESLint, Prettier check, `tsc --noEmit`, `next build`.
+
+## Playwright end-to-end (Phase 8)
+
+With the stack up (`make up`, `make migrate`, `make seed`):
+
+```bash
+make test-e2e
+```
+
+Or locally (Node 20+ on the host):
+
+```bash
+cd apps/web
+npm ci
+npx playwright install chromium   # first time only
+npm run test:e2e
+```
+
+`make test-e2e` runs the official Playwright Docker image against
+`http://host.docker.internal:3000` (ensure `CORS_ORIGINS` includes that origin — the default
+`.env.example` lists it). Sign-in uses `recruiter@acme.example.com` / `Demo@2026!`. Coverage:
+careers apply, recruiter candidate list scores, Kanban stage moves, and rejection with reason.
+Interview scorecard and offer approval tests **skip** until portal pages exist (APIs are ready).
+
+CV parse eval against `apps/api/tests/golden/real/`:
+
+```bash
+docker compose exec api python scripts/eval_real_cvs.py
+```
+
+## Load testing (local)
+
+A small async probe for list + apply throughput:
+
+```bash
+cd apps/api
+python scripts/load_test_apply_and_list.py --list-requests 40 --apply-requests 5
+```
+
+Defaults: recruiter login, `GET /applications`, `POST /public/jobs/senior-backend-engineer/apply`
+with minimal PDF bytes.
+
+## Phase 8 demo readiness
+
+After seed, you can demo: careers apply, recruiter Kanban on **Senior Backend Engineer** (scored
+candidates), candidate profile **Match Analysis**, stage move / reject with reason, and dashboard
+KPIs. Run Playwright and the load script above before a stakeholder walkthrough.
