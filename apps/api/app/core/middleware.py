@@ -52,3 +52,26 @@ class RequestIDMiddleware:
                 },
             )
             request_id_ctx.reset(token)
+
+
+class SecurityHeadersMiddleware:
+    """Basic OWASP-oriented response headers for the API."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def send_with_headers(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                headers.append("X-Content-Type-Options", "nosniff")
+                headers.append("X-Frame-Options", "DENY")
+                headers.append("Referrer-Policy", "strict-origin-when-cross-origin")
+                headers.append("X-XSS-Protection", "0")
+            await send(message)
+
+        await self.app(scope, receive, send_with_headers)

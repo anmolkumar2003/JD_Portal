@@ -8,9 +8,10 @@ from app.core.config import get_settings
 from app.core.db import engine
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
-from app.core.middleware import REQUEST_ID_HEADER, RequestIDMiddleware
+from app.core.middleware import REQUEST_ID_HEADER, RequestIDMiddleware, SecurityHeadersMiddleware
 from app.core.redis import redis_client
 from app.routers import (
+    admin,
     analytics,
     applications,
     auth,
@@ -18,10 +19,13 @@ from app.routers import (
     comms,
     documents,
     health,
+    interviews,
     jobs,
+    offers,
     org,
     parsed_profiles,
     public_jobs,
+    requisitions,
     users,
 )
 
@@ -47,6 +51,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
         expose_headers=[REQUEST_ID_HEADER],
     )
+    app.add_middleware(SecurityHeadersMiddleware)
     # Added last so it is outermost and also covers CORS preflight responses.
     app.add_middleware(RequestIDMiddleware)
 
@@ -63,6 +68,10 @@ def create_app() -> FastAPI:
     app.include_router(parsed_profiles.router)
     app.include_router(comms.router)
     app.include_router(analytics.router)
+    app.include_router(interviews.router)
+    app.include_router(offers.router)
+    app.include_router(requisitions.router)
+    app.include_router(admin.router)
     return app
 
 
