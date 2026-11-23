@@ -1,9 +1,10 @@
 "use client";
 
-import { Plus, SearchX } from "lucide-react";
+import { Download, Loader2, Plus, SearchX } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { CandidateDrawer } from "@/components/candidates/candidate-drawer";
 import {
@@ -18,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useApplications } from "@/hooks/use-applications";
 import { useAuth } from "@/hooks/use-auth";
+import { api, ApiError, triggerBrowserDownload } from "@/lib/api";
 import {
   CANDIDATE_FILTER_KEYS,
   candidateFiltersFromSearchParams,
@@ -25,7 +27,7 @@ import {
   EMPTY_CANDIDATE_FILTERS,
   toApplicationListParams,
 } from "@/lib/candidate-filters";
-import { canManageJobs } from "@/lib/permissions";
+import { canManageJobs, isAdmin } from "@/lib/permissions";
 
 const PAGE_SIZE = 20;
 
@@ -46,6 +48,33 @@ function CandidatesPageContent() {
 
   const query = useApplications(params);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [excelBusy, setExcelBusy] = useState(false);
+  const canExport = isAdmin(user?.role);
+
+  const onExportExcel = useCallback(async () => {
+    setExcelBusy(true);
+    try {
+      const exportParams = toApplicationListParams(filters, 1, 20);
+      const rest = { ...exportParams };
+      delete rest.page;
+      delete rest.page_size;
+      const selected = [...selectedIds];
+      const { blob, filename } = await api.exports.excel({
+        ...rest,
+        ...(selected.length > 0 ? { application_ids: selected } : {}),
+      });
+      triggerBrowserDownload(blob, filename || "candidates-export.xlsx");
+      toast.success(
+        selected.length > 0
+          ? `Exported ${selected.length} selected row(s)`
+          : "Excel export downloaded",
+      );
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Excel export failed");
+    } finally {
+      setExcelBusy(false);
+    }
+  }, [filters, selectedIds]);
 
   const replaceParams = useCallback(
     (mutate: (next: URLSearchParams) => void) => {
@@ -86,14 +115,31 @@ function CandidatesPageContent() {
           <Breadcrumbs items={[{ label: "Candidates" }]} />
           <h1 className="text-2xl font-semibold tracking-tight">Candidates</h1>
         </div>
-        {canManageJobs(user?.role) && (
-          <Button asChild>
-            <Link href="/candidates/new">
-              <Plus className="mr-2 h-4 w-4" aria-hidden />
-              Add candidate
-            </Link>
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {canExport && (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={excelBusy}
+              onClick={() => void onExportExcel()}
+            >
+              {excelBusy ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <Download className="mr-2 h-4 w-4" aria-hidden />
+              )}
+              Export Excel
+            </Button>
+          )}
+          {canManageJobs(user?.role) && (
+            <Button asChild>
+              <Link href="/candidates/new">
+                <Plus className="mr-2 h-4 w-4" aria-hidden />
+                Add candidate
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       <CandidateFilters value={filters} onChange={onFiltersChange} />

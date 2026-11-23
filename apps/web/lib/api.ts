@@ -126,25 +126,45 @@ async function send(path: string, { body, headers, ...init }: SendOptions): Prom
   }
 }
 
-async function requestBlob(path: string, options: RequestOptions = {}): Promise<Blob> {
-  const { skipAuthRetry = false, headers, ...sendOptions } = options;
-  let response = await send(path, {
-    ...sendOptions,
-    headers: { Accept: "text/csv", ...headers },
-  });
+export interface DownloadResult {
+  blob: Blob;
+  filename: string | null;
+}
+
+function filenameFromDisposition(header: string | null): string | null {
+  if (!header) return null;
+  const utf = /filename\*=UTF-8''([^;]+)/i.exec(header);
+  if (utf?.[1]) {
+    try {
+      return decodeURIComponent(utf[1].trim());
+    } catch {
+      return utf[1].trim();
+    }
+  }
+  const plain = /filename="?([^";]+)"?/i.exec(header);
+  return plain?.[1]?.trim() ?? null;
+}
+
+async function requestDownload(
+  path: string,
+  options: RequestOptions & { accept?: string } = {},
+): Promise<DownloadResult> {
+  const { skipAuthRetry = false, headers, accept = "*/*", ...sendOptions } = options;
+  const acceptHeaders = { Accept: accept, ...headers };
+  let response = await send(path, { ...sendOptions, headers: acceptHeaders });
 
   if (response.status === 401 && !skipAuthRetry && accessToken) {
     const session = await refreshSession();
     if (session) {
-      response = await send(path, {
-        ...sendOptions,
-        headers: { Accept: "text/csv", ...headers },
-      });
+      response = await send(path, { ...sendOptions, headers: acceptHeaders });
     }
   }
 
   if (response.ok) {
-    return response.blob();
+    return {
+      blob: await response.blob(),
+      filename: filenameFromDisposition(response.headers.get("Content-Disposition")),
+    };
   }
   const requestId = response.headers.get("X-Request-ID") ?? undefined;
   const data: unknown = await response.json().catch(() => null);
@@ -158,6 +178,24 @@ async function requestBlob(path: string, options: RequestOptions = {}): Promise<
     );
   }
   throw new ApiError(response.status, "http_error", response.statusText, data, requestId);
+}
+
+async function requestBlob(path: string, options: RequestOptions = {}): Promise<Blob> {
+  const { blob } = await requestDownload(path, { ...options, accept: "text/csv" });
+  return blob;
+}
+
+/** Trigger a browser download from a blob (revokes the object URL after click). */
+export function triggerBrowserDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.rel = "noopener";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -455,6 +493,23 @@ export const api = {
         withQuery("/api/v1/analytics/applications-over-time", { days }),
       ),
     exportCsv: () => requestBlob("/api/v1/analytics/export"),
+  },
+  exports: {
+    pdfSummaries: (body: {
+      application_ids: string[];
+      include_salary?: boolean;
+      include_contact?: boolean;
+      include_hr_notes?: boolean;
+    }) =>
+      requestDownload("/api/v1/exports/pdf-summaries", {
+        method: "POST",
+        body,
+        accept: "application/pdf, application/zip",
+      }),
+    excel: (params: ApplicationListParams & { application_ids?: string[] } = {}) =>
+      requestDownload(withQuery("/api/v1/exports/excel", params), {
+        accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      }),
   },
   search: (q: string) => request<SearchResult>(withQuery("/api/v1/search", { q })),
   savedFilters: {

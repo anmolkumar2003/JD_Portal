@@ -1,15 +1,18 @@
 "use client";
 
-import { Loader2, X } from "lucide-react";
+import { FileDown, Loader2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { PdfExportDialog } from "@/components/candidates/pdf-export-dialog";
 import { RejectDialog } from "@/components/candidates/reject-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useBulkAction, usePipelineStages } from "@/hooks/use-applications";
+import { useAuth } from "@/hooks/use-auth";
 import { ApiError } from "@/lib/api";
+import { isAdmin } from "@/lib/permissions";
 import type { ApplicationListItem } from "@/types/api";
 
 interface BulkActionsBarProps {
@@ -19,11 +22,14 @@ interface BulkActionsBarProps {
 }
 
 export function BulkActionsBar({ selectedIds, rows, onClear }: BulkActionsBarProps) {
+  const { user } = useAuth();
+  const canExport = isAdmin(user?.role);
   const bulk = useBulkAction();
   const stages = usePipelineStages();
   const [stageId, setStageId] = useState("");
   const [tag, setTag] = useState("");
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [pdfOpen, setPdfOpen] = useState(false);
 
   const selectedRows = useMemo(
     () => rows.filter((r) => selectedIds.includes(r.id)),
@@ -146,6 +152,17 @@ export function BulkActionsBar({ selectedIds, rows, onClear }: BulkActionsBarPro
             Tag
           </Button>
         </div>
+        {canExport && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setPdfOpen(true)}
+          >
+            <FileDown className="mr-1 h-4 w-4" aria-hidden />
+            Download PDF summary
+          </Button>
+        )}
         <Button
           type="button"
           size="sm"
@@ -163,6 +180,12 @@ export function BulkActionsBar({ selectedIds, rows, onClear }: BulkActionsBarPro
         candidateName={label}
         busy={bulk.isPending}
         onConfirm={onReject}
+      />
+      <PdfExportDialog
+        open={pdfOpen}
+        onOpenChange={setPdfOpen}
+        applicationIds={selectedIds}
+        title="Download PDF summaries"
       />
     </>
   );

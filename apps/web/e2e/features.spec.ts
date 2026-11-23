@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { expect, test, type Page } from "@playwright/test";
 
-import { loginAsRecruiter, open } from "./helpers/auth";
+import { loginAsHrAdmin, loginAsRecruiter, open } from "./helpers/auth";
 
 const FIXTURES = path.resolve(__dirname, "fixtures");
 const SAMPLE_CV = path.join(FIXTURES, "cv01_backend.pdf");
@@ -208,5 +208,41 @@ test.describe("Feature coverage", () => {
     await expect(page.getByText(/E2E technical|Playwright Bot/i).first()).toBeVisible({
       timeout: 20_000,
     });
+  });
+});
+
+test.describe("HR exports", () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsHrAdmin(page);
+  });
+
+  test("Excel export downloads a workbook", async ({ page }) => {
+    await open(page, "/candidates");
+    const [download] = await Promise.all([
+      page.waitForEvent("download", { timeout: 30_000 }),
+      page.getByRole("button", { name: "Export Excel" }).click(),
+    ]);
+    expect(download.suggestedFilename()).toMatch(/\.xlsx$/i);
+  });
+
+  test("PDF summary from bulk toolbar", async ({ page }) => {
+    await open(page, `/candidates?q=${encodeURIComponent(SEEDED_DEMO_EMAIL)}`);
+    await expect(page.getByText(SEEDED_DEMO_EMAIL).first()).toBeVisible({ timeout: 20_000 });
+    await page
+      .getByRole("row")
+      .filter({ hasText: SEEDED_DEMO_EMAIL })
+      .getByRole("checkbox")
+      .check();
+    await page
+      .getByRole("toolbar", { name: /Bulk actions/i })
+      .getByRole("button", { name: "Download PDF summary" })
+      .click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByText(/Include contact details/i)).toBeVisible();
+    const [download] = await Promise.all([
+      page.waitForEvent("download", { timeout: 30_000 }),
+      page.getByRole("dialog").getByRole("button", { name: /^Download$/i }).click(),
+    ]);
+    expect(download.suggestedFilename()).toMatch(/\.(pdf|zip)$/i);
   });
 });

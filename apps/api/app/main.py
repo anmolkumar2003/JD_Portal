@@ -25,6 +25,7 @@ from app.routers import (
     candidates,
     comms,
     documents,
+    exports,
     health,
     interviews,
     jobs,
@@ -58,7 +59,7 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
-        expose_headers=[REQUEST_ID_HEADER],
+        expose_headers=[REQUEST_ID_HEADER, "Content-Disposition"],
     )
     app.add_middleware(RateLimitMiddleware)
     app.add_middleware(SecurityHeadersMiddleware)
@@ -81,6 +82,7 @@ def create_app() -> FastAPI:
     app.include_router(ratings.router)
     app.include_router(saved_filters.router)
     app.include_router(analytics.router)
+    app.include_router(exports.router)
     app.include_router(admin.router)
     app.include_router(admin.audit_router)
     # Optional modules: always mounted, but answer 404 while their flag is off.

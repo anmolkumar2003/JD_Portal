@@ -34,6 +34,7 @@ dependencies = [
   "scikit-learn>=1.5,<2.0",
   "psycopg[binary]>=3.2,<4.0",
   "reportlab>=4.2,<5.0",
+  "openpyxl>=3.1,<4.0",
 ]
 
 [project.optional-dependencies]
@@ -82,6 +83,10 @@ ignore = ["PLR2004"]
 "app/services/requisitions.py" = ["E501", "PLR0913"]
 "app/services/compliance.py" = ["E501", "PLR0913"]
 "app/routers/applications.py" = ["PLR0913", "PLR0917"]
+"app/services/exports.py" = ["PLR0913", "PLR0915", "PLR0917", "E501"]
+"app/services/pdf_summary.py" = ["BLE001", "E501", "PLR0912", "PLR0915"]
+"app/services/excel_export.py" = ["E501", "SIM102"]
+"app/services/exports_common.py" = ["E501", "PLR1714"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
@@ -101,6 +106,7 @@ module = [
   "pdfplumber.*",
   "pypdfium2.*",
   "reportlab.*",
+  "openpyxl.*",
   "docx.*",
   "pytesseract.*",
   "spacy.*",

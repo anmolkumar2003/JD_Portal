@@ -1,10 +1,11 @@
 "use client";
 
-import { ChevronDown, Loader2, Mail, Star } from "lucide-react";
+import { ChevronDown, FileDown, Loader2, Mail, Star } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { CandidateTagsEditor } from "@/components/candidates/candidate-tags-editor";
 import { FinalScorePanel } from "@/components/candidates/final-score-panel";
+import { PdfExportDialog } from "@/components/candidates/pdf-export-dialog";
 import { RejectDialog } from "@/components/candidates/reject-dialog";
 import { ScoreMetric } from "@/components/candidates/score-metric";
 import { StageBadge } from "@/components/stage-badge";
@@ -24,7 +25,7 @@ import {
 } from "@/hooks/use-applications";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { canMoveStages } from "@/lib/permissions";
+import { canMoveStages, isAdmin } from "@/lib/permissions";
 import type { ApplicationDetail } from "@/types/api";
 
 interface CandidateProfileHeaderProps {
@@ -35,11 +36,13 @@ interface CandidateProfileHeaderProps {
 export function CandidateProfileHeader({ application, onEmail }: CandidateProfileHeaderProps) {
   const { user } = useAuth();
   const canEdit = canMoveStages(user?.role);
+  const canExport = isAdmin(user?.role);
   const stages = usePipelineStages();
   const moveStage = useMoveStage();
   const shortlist = useShortlist();
   const finalScore = useApplicationFinalScore(application.id);
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [pdfOpen, setPdfOpen] = useState(false);
 
   const name = `${application.candidate.first_name} ${application.candidate.last_name}`;
 
@@ -157,6 +160,12 @@ export function CandidateProfileHeader({ application, onEmail }: CandidateProfil
                 )}
               </>
             )}
+            {canExport && (
+              <Button type="button" variant="outline" size="sm" onClick={() => setPdfOpen(true)}>
+                <FileDown className="mr-1 h-4 w-4" aria-hidden />
+                Download PDF summary
+              </Button>
+            )}
             {moveStage.isPending && (
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden />
             )}
@@ -181,6 +190,11 @@ export function CandidateProfileHeader({ application, onEmail }: CandidateProfil
         candidateName={name}
         busy={moveStage.isPending}
         onConfirm={onReject}
+      />
+      <PdfExportDialog
+        open={pdfOpen}
+        onOpenChange={setPdfOpen}
+        applicationIds={[application.id]}
       />
     </div>
   );

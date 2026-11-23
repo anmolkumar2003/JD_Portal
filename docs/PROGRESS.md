@@ -69,6 +69,14 @@ Legend: `[x]` done · `[~]` partial · `[ ]` pending · `[-]` skipped
 - [x] Production compose with Caddy, secrets script, SMTP, hardening (HSTS/CSP/secure cookies),
       nightly backups + restore, ClamAV, retention job (default off), `DEPLOY.md`, `USER-GUIDE.md`
 
+### Phase 7: candidate PDF summary and Excel export
+
+- [x] PDF summary (ReportLab, BSD-3-Clause): profile + bulk ZIP; options dialog for salary /
+      contact / HR notes; org branding; advisory scores; HR-only; audited; not stored
+- [x] Excel export (openpyxl, MIT): current filters or selection, max 5,000 rows, formula
+      injection guard, meta sheet; HR-only; audited; not stored
+- [x] pytest + Playwright coverage; `USER-GUIDE.md` and `LICENSES.md` updated
+
 ### FINAL
 
 - [x] Re-audit written to `docs/AUDIT.md` (2026-11-23)

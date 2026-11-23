@@ -82,7 +82,13 @@ Open a candidate to see tabs:
 
 Use **Move to** or **Reject** with an optional reason. **Email** opens the composer with templates.
 
+**HR administrators** (`hr_admin`, `super_admin`) can **Download PDF summary** from the profile header (or from the bulk toolbar for several candidates at once — one PDF each, as a ZIP). A short dialog chooses whether to include contact details (on by default), salary details (off), and HR notes (off). The PDF is one to two A4 pages with organization branding, scores, interview ratings, and a note that scores are advisory. Files are generated on the fly and not stored on the server; the export is written to the audit log without personal data.
+
 ![Candidate profile](screenshots/candidate-profile.png)
+
+### Export Excel
+
+On **Candidates**, administrators use **Export Excel** to download the current search and filters (or only the checked rows), up to 5,000 applications. Beyond that limit the portal asks you to narrow the filters. The workbook has a frozen header row, filters, and a second sheet with the generated date and which filters were used. Formula-looking values are escaped so spreadsheets do not execute them.
 
 ### Compare
 
@@ -108,6 +114,7 @@ Match and interview scores are **advisory**. Adjust weights under **Settings →
 ## Privacy and data handling
 
 - Super admins can export or anonymize a candidate record for compliance requests (when those APIs are enabled).
+- PDF summaries and Excel list exports are limited to `hr_admin` and `super_admin`, audited (who exported, how many rows — no emails or notes in the audit payload), and streamed for download only (not kept on the server).
 - Uploaded CVs may be virus-scanned in production; infected files are rejected at upload.
 - Rejected-candidate retention (automatic anonymization after N days) is configured by your technical team and is off by default.
 

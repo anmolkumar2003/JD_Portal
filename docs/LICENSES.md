@@ -40,6 +40,10 @@ would matter if that ever changed.
 | spaCy and the `en_core_web_sm` model       | MIT                      |
 | scikit-learn                               | BSD-3-Clause             |
 | ReportLab (open-source toolkit)            | BSD-3-Clause             |
+| openpyxl                                   | MIT                      |
+
+ReportLab generates candidate PDF summaries locally (BSD-3-Clause; no paid ReportLab Plus).
+openpyxl builds Excel exports (MIT). Neither stores files on the server after download.
 
 Development only: pytest, ruff, mypy (MIT), httpx (BSD-3-Clause).
 
