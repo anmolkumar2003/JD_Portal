@@ -43,15 +43,12 @@ test.describe("final screenshots — kanban + dark mode", () => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
 
       await open(page, "/jobs");
-      const jobLink = page.getByRole("link", { name: /Senior Android Developer/i });
-      if (await jobLink.isVisible({ timeout: 15_000 }).catch(() => false)) {
-        await jobLink.click();
-        await page.getByRole("tab", { name: /Pipeline/i }).click();
-        await page.waitForLoadState("networkidle").catch(() => undefined);
-        await capture(page, `${vp.name}-kanban.png`);
-      } else {
-        issues.push(`missing job link at ${vp.name}`);
-      }
+      const jobLink = page.getByRole("link", { name: /Senior Android Developer/i }).first();
+      await expect(jobLink).toBeVisible({ timeout: 20_000 });
+      await jobLink.click();
+      await page.getByRole("tab", { name: /Pipeline/i }).click();
+      await page.waitForLoadState("networkidle").catch(() => undefined);
+      await capture(page, `${vp.name}-kanban.png`);
 
       await setDark(page);
       await open(page, "/dashboard");
@@ -62,12 +59,11 @@ test.describe("final screenshots — kanban + dark mode", () => {
       await page.waitForLoadState("networkidle").catch(() => undefined);
       await capture(page, `${vp.name}-candidates-dark.png`);
 
-      if (await jobLink.isVisible().catch(() => false)) {
-        await open(page, "/jobs");
-        await page.getByRole("link", { name: /Senior Android Developer/i }).click();
-        await page.getByRole("tab", { name: /Pipeline/i }).click();
-        await capture(page, `${vp.name}-kanban-dark.png`);
-      }
+      await open(page, "/jobs");
+      await page.getByRole("link", { name: /Senior Android Developer/i }).first().click();
+      await page.getByRole("tab", { name: /Pipeline/i }).click();
+      await page.waitForLoadState("networkidle").catch(() => undefined);
+      await capture(page, `${vp.name}-kanban-dark.png`);
     }
 
     const files = fs

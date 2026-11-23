@@ -1,0 +1,562 @@
+[
+  {
+    "viewport": "390x844",
+    "page": "login",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Open navigation:40x40|Switch to dark mode:40x40|Notifications:40x40|Export CSV:117x36|INPUT:308x40"
+    ]
+  },
+  {
+    "viewport": "390x844",
+    "page": "forgot-password",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=INPUT:308x40|Send reset link:308x40|Back to sign in:91x17"
+    ]
+  },
+  {
+    "viewport": "390x844",
+    "page": "dashboard",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Open navigation:40x40|Switch to dark mode:40x40|Notifications:40x40|Export CSV:117x36|INPUT:308x40"
+    ]
+  },
+  {
+    "viewport": "390x844",
+    "page": "candidates",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Open navigation:40x40|Switch to dark mode:40x40|Notifications:40x40|Add candidate:151x40|INPUT:358x40"
+    ]
+  },
+  {
+    "viewport": "390x844",
+    "page": "candidates-new",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Open navigation:40x40|Switch to dark mode:40x40|Notifications:40x40|Candidates:69x20|browse:44x20"
+    ]
+  },
+  {
+    "viewport": "390x844",
+    "page": "jobs",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Open navigation:40x40|Switch to dark mode:40x40|Notifications:40x40|Create job:119x40|INPUT:358x40"
+    ]
+  },
+  {
+    "viewport": "390x844",
+    "page": "jobs-new",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Open navigation:40x40|Switch to dark mode:40x40|Notifications:40x40|Jobs:28x20|INPUT:308x40"
+    ]
+  },
+  {
+    "viewport": "390x844",
+    "page": "settings-users",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Open navigation:40x40|Switch to dark mode:40x40|Notifications:40x40"
+    ]
+  },
+  {
+    "viewport": "390x844",
+    "page": "settings-departments",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Open navigation:40x40|Switch to dark mode:40x40|Notifications:40x40"
+    ]
+  },
+  {
+    "viewport": "390x844",
+    "page": "settings-organization",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Open navigation:40x40|Switch to dark mode:40x40|Notifications:40x40"
+    ]
+  },
+  {
+    "viewport": "390x844",
+    "page": "settings-scoring",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Open navigation:40x40|Switch to dark mode:40x40|Notifications:40x40"
+    ]
+  },
+  {
+    "viewport": "390x844",
+    "page": "settings-account",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Open navigation:40x40|Switch to dark mode:40x40|Notifications:40x40|INPUT:308x40|Show password:44x40"
+    ]
+  },
+  {
+    "viewport": "390x844",
+    "page": "careers-404",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=HPHR Portal Careers:165x32|Open roles:66x20"
+    ]
+  },
+  {
+    "viewport": "390x844",
+    "page": "candidate-detail",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Open navigation:40x40|Switch to dark mode:40x40|Notifications:40x40|Candidates:69x20|browse:44x20"
+    ]
+  },
+  {
+    "viewport": "844x390",
+    "page": "login",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "844x390",
+    "page": "forgot-password",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=INPUT:334x40|Send reset link:334x40|Back to sign in:91x17"
+    ]
+  },
+  {
+    "viewport": "844x390",
+    "page": "dashboard",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "844x390",
+    "page": "candidates",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "844x390",
+    "page": "candidates-new",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "844x390",
+    "page": "jobs",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "844x390",
+    "page": "jobs-new",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "844x390",
+    "page": "settings-users",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "844x390",
+    "page": "settings-departments",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "844x390",
+    "page": "settings-organization",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "844x390",
+    "page": "settings-scoring",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "844x390",
+    "page": "settings-account",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "844x390",
+    "page": "careers-404",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=HPHR Portal Careers:165x32|Open roles:66x20"
+    ]
+  },
+  {
+    "viewport": "844x390",
+    "page": "candidate-detail",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "820x1180",
+    "page": "login",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "820x1180",
+    "page": "forgot-password",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=INPUT:334x40|Send reset link:334x40|Back to sign in:91x17"
+    ]
+  },
+  {
+    "viewport": "820x1180",
+    "page": "dashboard",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "820x1180",
+    "page": "candidates",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "820x1180",
+    "page": "candidates-new",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "820x1180",
+    "page": "jobs",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "820x1180",
+    "page": "jobs-new",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "820x1180",
+    "page": "settings-users",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "820x1180",
+    "page": "settings-departments",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "820x1180",
+    "page": "settings-organization",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "820x1180",
+    "page": "settings-scoring",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "820x1180",
+    "page": "settings-account",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "820x1180",
+    "page": "careers-404",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=HPHR Portal Careers:165x32|Open roles:66x20"
+    ]
+  },
+  {
+    "viewport": "820x1180",
+    "page": "candidate-detail",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1280x800",
+    "page": "login",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1280x800",
+    "page": "forgot-password",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=INPUT:334x40|Send reset link:334x40|Back to sign in:91x17"
+    ]
+  },
+  {
+    "viewport": "1280x800",
+    "page": "dashboard",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1280x800",
+    "page": "candidates",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1280x800",
+    "page": "candidates-new",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1280x800",
+    "page": "jobs",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1280x800",
+    "page": "jobs-new",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1280x800",
+    "page": "settings-users",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1280x800",
+    "page": "settings-departments",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1280x800",
+    "page": "settings-organization",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1280x800",
+    "page": "settings-scoring",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1280x800",
+    "page": "settings-account",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1280x800",
+    "page": "careers-404",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=HPHR Portal Careers:165x32|Open roles:66x20"
+    ]
+  },
+  {
+    "viewport": "1280x800",
+    "page": "candidate-detail",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1920x1080",
+    "page": "login",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1920x1080",
+    "page": "forgot-password",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=INPUT:334x40|Send reset link:334x40|Back to sign in:91x17"
+    ]
+  },
+  {
+    "viewport": "1920x1080",
+    "page": "dashboard",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1920x1080",
+    "page": "candidates",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1920x1080",
+    "page": "candidates-new",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1920x1080",
+    "page": "jobs",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1920x1080",
+    "page": "jobs-new",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1920x1080",
+    "page": "settings-users",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1920x1080",
+    "page": "settings-departments",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1920x1080",
+    "page": "settings-organization",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1920x1080",
+    "page": "settings-scoring",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1920x1080",
+    "page": "settings-account",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  },
+  {
+    "viewport": "1920x1080",
+    "page": "careers-404",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=HPHR Portal Careers:165x32|Open roles:66x20"
+    ]
+  },
+  {
+    "viewport": "1920x1080",
+    "page": "candidate-detail",
+    "overflowX": 0,
+    "issues": [
+      "small_targets=Dashboard:223x40|Jobs:223x40|Candidates:223x40|Settings:223x40|Collapse sidebar:223x40"
+    ]
+  }
+]
