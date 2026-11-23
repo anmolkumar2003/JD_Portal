@@ -5,8 +5,8 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { DEMO_PASSWORD, loginAsRecruiter, open } from "./helpers/auth";
 
-// Under `make test-e2e-screenshots`, docs/ is mounted at /work/docs inside the Playwright container.
-const OUTPUT_DIR = path.resolve(__dirname, "../../docs/final-screenshots");
+// Under `make test-e2e-screenshots`, repo docs/ is mounted at /work/docs (cwd = apps/web).
+const OUTPUT_DIR = path.resolve(__dirname, "../docs/final-screenshots");
 
 const VIEWPORTS: { name: string; width: number; height: number }[] = [
   { name: "390x844", width: 390, height: 844 },

@@ -5,7 +5,8 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { DEMO_PASSWORD, loginAsRecruiter, open } from "./helpers/auth";
 
-const OUTPUT_DIR = path.resolve(__dirname, "../../docs/screenshots");
+// Run via `make test-e2e-screenshots` (docs/ mounted at /work/docs in the container).
+const OUTPUT_DIR = path.resolve(__dirname, "../docs/screenshots");
 
 const VIEWPORTS: { name: string; width: number; height: number }[] = [
   { name: "390x844", width: 390, height: 844 },
@@ -33,7 +34,9 @@ test.describe("responsive screenshots", () => {
   });
 
   test("portal pages at standard viewports", async ({ page }) => {
-    test.skip(!DEMO_PASSWORD, "E2E_PASSWORD not set — run via `make test-e2e` for seeded stack");
+    test.skip(!DEMO_PASSWORD, "E2E_PASSWORD not set — run via `make test-e2e-screenshots`");
+    // Separate job: 5 viewports x several full-page captures need far more than the suite default.
+    test.setTimeout(180_000);
 
     await loginAsRecruiter(page);
 
