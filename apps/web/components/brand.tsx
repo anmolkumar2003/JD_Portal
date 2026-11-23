@@ -20,20 +20,30 @@ interface BrandProps {
 /** Organization logo (or initials) and name, from Settings > Organization. */
 export function Brand({ name, logoUrl, showName = true, className }: BrandProps) {
   return (
-    <span className={cn("flex min-w-0 items-center gap-2 font-semibold", className)}>
+    <span
+      className={cn("flex min-w-0 items-center gap-2.5 font-semibold", className)}
+      title={name}
+    >
       {logoUrl ? (
-        // A data URL from the API; next/image cannot optimise those.
+        // Data URL from the API; next/image cannot optimise those.
+        // Keep natural aspect ratio — mark is wider than tall (circle + dash).
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={logoUrl} alt="" className="h-8 w-8 shrink-0 rounded-md object-contain" />
+        <img
+          src={logoUrl}
+          alt=""
+          className="h-9 w-9 shrink-0 object-contain"
+        />
       ) : (
         <span
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-sm text-primary-foreground"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary text-sm text-primary-foreground"
           aria-hidden
         >
           {initials(name)}
         </span>
       )}
-      {showName && <span className="truncate">{name}</span>}
+      {showName && (
+        <span className="min-w-0 text-sm leading-snug [overflow-wrap:anywhere]">{name}</span>
+      )}
     </span>
   );
 }

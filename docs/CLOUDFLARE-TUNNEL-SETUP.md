@@ -2,6 +2,8 @@
 
 Expose the local production stack at a random `https://*.trycloudflare.com` URL **without** buying a domain or opening router ports.
 
+> For Terminal-independent tunnel + Docker restart behavior, see [HOSTING-RELIABILITY.md](./HOSTING-RELIABILITY.md).
+
 ## Limitations (read first)
 
 | Topic | Detail |

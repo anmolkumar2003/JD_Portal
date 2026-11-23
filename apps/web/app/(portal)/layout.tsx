@@ -18,7 +18,7 @@ const SIDEBAR_KEY = "hr-portal:sidebar-collapsed";
 function PortalSkeleton() {
   return (
     <div className="flex h-screen" aria-busy="true" aria-label="Loading">
-      <Skeleton className="h-full w-60 rounded-none" />
+      <Skeleton className="h-full w-72 rounded-none" />
       <div className="flex-1 space-y-4 p-8">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-64" />

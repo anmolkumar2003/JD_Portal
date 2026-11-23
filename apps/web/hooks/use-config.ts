@@ -8,7 +8,7 @@ import type { FeatureFlag, PublicConfig } from "@/types/api";
 export const CONFIG_KEY = ["config"] as const;
 
 const FALLBACK: PublicConfig = {
-  org_name: "HR Portal",
+  org_name: "CA PLUS Tech Pvt. Ltd.",
   logo_data_url: null,
   features: {
     public_careers: false,

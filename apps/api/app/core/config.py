@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     cors_origins: str = "http://localhost:3000"
     # Fallback display name until an admin sets one in Settings > Organization.
-    org_name: str = "HR Portal"
+    org_name: str = "CA PLUS Tech Pvt. Ltd."
     # Browser-facing base URL of the web app, used in emailed links (password reset).
     web_base_url: str = "http://localhost:3000"
 

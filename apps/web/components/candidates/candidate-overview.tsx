@@ -127,10 +127,10 @@ export function CandidateOverview({ application, onEmail }: CandidateOverviewPro
                   <a
                     href={candidate.linkedin_url}
                     target="_blank"
-                    rel="noreferrer"
-                    className="text-primary hover:underline"
+                    rel="noopener noreferrer"
+                    className="break-all text-primary hover:underline"
                   >
-                    Profile
+                    {candidate.linkedin_url}
                   </a>
                 ) : (
                   "—"

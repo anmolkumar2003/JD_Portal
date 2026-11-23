@@ -9,8 +9,8 @@ import "./globals.css";
 export async function generateMetadata(): Promise<Metadata> {
   const { org_name } = await serverApi.config();
   return {
-    title: { template: `%s · ${org_name}`, default: `${org_name} · Recruitment` },
-    description: `${org_name} internal recruitment portal`,
+    title: { template: `%s · ${org_name}`, default: `${org_name} · HR Portal` },
+    description: `${org_name} internal HR hiring portal`,
     robots: { index: false, follow: false },
   };
 }

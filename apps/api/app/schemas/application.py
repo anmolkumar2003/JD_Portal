@@ -68,12 +68,16 @@ class ApplyForm(BaseModel):
             }
         return data
 
-    @field_validator("linkedin_url")
+    @field_validator("linkedin_url", mode="before")
     @classmethod
-    def _check_url(cls, value: str | None) -> str | None:
-        if value is not None and not value.lower().startswith(("https://", "http://")):
-            raise ValueError("Must be a full URL starting with https://")
-        return value
+    def _check_url(cls, value: object) -> str | None:
+        from app.schemas.linkedin import normalize_linkedin_url
+
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("LinkedIn URL must be a string")
+        return normalize_linkedin_url(value)
 
     @field_validator("consent")
     @classmethod
@@ -246,6 +250,31 @@ class ManualCandidateCreate(BaseModel):
     current_ctc: SalaryIn | None = None
     expected_ctc: SalaryIn | None = None
     offered_ctc: SalaryIn | None = None
+
+    @field_validator("linkedin_url", mode="before")
+    @classmethod
+    def _linkedin(cls, value: object) -> str | None:
+        from app.schemas.linkedin import normalize_linkedin_url
+
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("LinkedIn URL must be a string")
+        return normalize_linkedin_url(value)
+
+    @field_validator("portfolio_url", mode="before")
+    @classmethod
+    def _portfolio(cls, value: object) -> str | None:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("Portfolio URL must be a string")
+        text = value.strip()
+        if not text:
+            return None
+        if not text.lower().startswith(("https://", "http://")):
+            raise ValueError("Must be a full URL starting with https://")
+        return text[:500]
 
 
 class ManualCandidateResult(BaseModel):

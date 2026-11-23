@@ -75,7 +75,10 @@ function LoginForm() {
     <Card className="w-full max-w-sm">
       <CardHeader>
         <CardTitle>Sign in</CardTitle>
-        <CardDescription>Use the work account your administrator created for you.</CardDescription>
+        <CardDescription>
+          HR Portal for authorized HR and admin users. Use the work account your administrator
+          created for you.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={onSubmit} noValidate>

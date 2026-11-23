@@ -23,7 +23,7 @@ async function serverGet<T>(path: string): Promise<T | null> {
 }
 
 const FALLBACK_CONFIG: PublicConfig = {
-  org_name: "HR Portal",
+  org_name: "CA PLUS Tech Pvt. Ltd.",
   logo_data_url: null,
   features: {
     public_careers: false,

@@ -97,6 +97,66 @@ async def test_notes_with_mentions_and_activity_log(
 
 
 @pytest.mark.usefixtures("db", "sent_emails", "stored_objects")
+async def test_linkedin_url_patch_persists(
+    client: AsyncClient, db: async_sessionmaker[AsyncSession]
+) -> None:
+    """Create via authenticated API (works even when public careers is off)."""
+    token = await login(client, "recruiter")
+    created = await client.post(
+        "/api/v1/candidates",
+        headers=_auth(token),
+        data={
+            "first_name": "Asha",
+            "last_name": "Kumar",
+            "email": "linkedin-save@example.com",
+            "phone": "+91 90000 11111",
+            "source": "manual",
+        },
+    )
+    assert created.status_code == 201, created.text
+    candidate_id = created.json()["candidate_id"]
+
+    patched = await client.patch(
+        f"/api/v1/candidates/{candidate_id}",
+        headers=_auth(token),
+        json={"linkedin_url": "  https://linkedin.com/in/asha-kumar  "},
+    )
+    assert patched.status_code == 200, patched.text
+    assert patched.json()["linkedin_url"] == "https://www.linkedin.com/in/asha-kumar/"
+
+    again = await client.get(f"/api/v1/candidates/{candidate_id}", headers=_auth(token))
+    # Detail may be application-scoped; re-read via another patch round-trip echo
+    assert again.status_code in (200, 404, 405)
+    echo = await client.patch(
+        f"/api/v1/candidates/{candidate_id}",
+        headers=_auth(token),
+        json={"current_title": "Engineer"},
+    )
+    assert echo.status_code == 200, echo.text
+    assert echo.json()["linkedin_url"] == "https://www.linkedin.com/in/asha-kumar/"
+
+    cleared = await client.patch(
+        f"/api/v1/candidates/{candidate_id}",
+        headers=_auth(token),
+        json={"linkedin_url": None},
+    )
+    assert cleared.status_code == 200, cleared.text
+    assert cleared.json()["linkedin_url"] is None
+
+    rejected = await client.patch(
+        f"/api/v1/candidates/{candidate_id}",
+        headers=_auth(token),
+        json={"linkedin_url": "https://www.linkedin.com/company/acme"},
+    )
+    assert rejected.status_code == 422
+
+    async with db() as session:
+        row = await session.get(Candidate, uuid.UUID(candidate_id))
+        assert row is not None
+        assert row.linkedin_url is None
+
+
+@pytest.mark.usefixtures("db", "sent_emails", "stored_objects")
 async def test_tags_patch_and_shortlist(
     client: AsyncClient, db: async_sessionmaker[AsyncSession]
 ) -> None:

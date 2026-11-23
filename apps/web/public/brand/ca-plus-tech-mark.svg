@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="CA PLUS Tech">
+  <!--
+    Vector recreation of the CA PLUS Tech mark from the supplied screenshot.
+    Brand blue sampled from source (~#05608B). Design preserved: solid circle,
+    white double-story lowercase a (negative space), short horizontal dash
+    protruding right at the a crossbar height. Not a redesign.
+  -->
+  <circle cx="56" cy="64" r="44" fill="#05608B"/>
+  <!-- Double-story a as white cutout -->
+  <path
+    fill="#FFFFFF"
+    fill-rule="evenodd"
+    d="
+      M56 34
+      c-16.8 0-28 11.2-28 28.2
+      c0 17.6 11.6 29.8 29.8 29.8
+      c7.2 0 13.6-1.6 18.8-4.4
+      v-10.6
+      c-4.4 2.8-9.6 4.4-15.4 4.4
+      c-11.2 0-18.2-6.8-18.6-17.4
+      H76.2
+      c0.2-1.8 0.4-3.4 0.4-5.2
+      C76.6 44.2 68.4 34 56 34
+      z
+      M55.6 44.2
+      c8.4 0 13.6 4.8 14.2 12.2
+      H41.2
+      c1.2-7 6.4-12.2 14.4-12.2
+      z
+    "
+  />
+  <!-- Protruding dash -->
+  <rect x="98" y="59" width="20" height="9" rx="2" fill="#05608B"/>
+</svg>

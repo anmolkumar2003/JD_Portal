@@ -26,6 +26,7 @@ import { useUpdateCandidate, useUploadCandidateDocument } from "@/hooks/use-cand
 import { useDepartments } from "@/hooks/use-lookups";
 import { ApiError } from "@/lib/api";
 import { CANDIDATE_SOURCE_LABELS } from "@/lib/labels";
+import { normalizeLinkedInUrl } from "@/lib/linkedin";
 import { formSalaryToIn, salaryOutToForm } from "@/lib/salary";
 import type { ApplicationDetail, CandidatePatchInput } from "@/types/api";
 
@@ -73,7 +74,15 @@ function toPatch(values: CandidateEditFormValues): CandidatePatchInput {
       ? Number(values.total_experience_years)
       : null,
     notice_period_days: values.notice_period_days.trim() ? Number(values.notice_period_days) : null,
-    linkedin_url: trim(values.linkedin_url),
+    linkedin_url: (() => {
+      const raw = values.linkedin_url.trim();
+      if (!raw) return null;
+      try {
+        return normalizeLinkedInUrl(raw);
+      } catch {
+        return raw;
+      }
+    })(),
     portfolio_url: trim(values.portfolio_url),
     department_id: values.department_id || null,
     source: values.source,

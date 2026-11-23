@@ -6,10 +6,11 @@ from decimal import Decimal
 from typing import Annotated, Self
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, StringConstraints, model_validator
+from pydantic import BaseModel, EmailStr, Field, StringConstraints, field_validator, model_validator
 
 from app.models.enums import CandidateSource, UserRole
 from app.schemas.application import ReasonText
+from app.schemas.linkedin import normalize_linkedin_url
 from app.schemas.salary import SalaryIn, SalaryOut
 
 Tag = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=50)]
@@ -72,6 +73,29 @@ class CandidatePatch(BaseModel):
     current_ctc: SalaryIn | None = None
     expected_ctc: SalaryIn | None = None
     offered_ctc: SalaryIn | None = None
+
+    @field_validator("linkedin_url", mode="before")
+    @classmethod
+    def _linkedin(cls, value: object) -> str | None:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("LinkedIn URL must be a string")
+        return normalize_linkedin_url(value)
+
+    @field_validator("portfolio_url", mode="before")
+    @classmethod
+    def _portfolio(cls, value: object) -> str | None:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("Portfolio URL must be a string")
+        text = value.strip()
+        if not text:
+            return None
+        if not text.lower().startswith(("https://", "http://")):
+            raise ValueError("Must be a full URL starting with https://")
+        return text[:500]
 
 
 class CandidateOut(BaseModel):

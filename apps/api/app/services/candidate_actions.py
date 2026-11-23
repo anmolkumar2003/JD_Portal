@@ -256,8 +256,6 @@ async def update_candidate(
         "current_title",
         "total_experience_years",
         "notice_period_days",
-        "linkedin_url",
-        "portfolio_url",
         "department_id",
         "source",
     )
@@ -266,6 +264,15 @@ async def update_candidate(
         if value is not None and getattr(candidate, field) != value:
             changes[field] = str(value)
             setattr(candidate, field, value)
+
+    # Explicit null clears LinkedIn / portfolio; omitted fields are left unchanged.
+    for url_field in ("linkedin_url", "portfolio_url"):
+        if url_field not in body.model_fields_set:
+            continue
+        value = getattr(body, url_field)
+        if getattr(candidate, url_field) != value:
+            changes[url_field] = value
+            setattr(candidate, url_field, value)
 
     if body.email is not None:
         email = body.email.lower()

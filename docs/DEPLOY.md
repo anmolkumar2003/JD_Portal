@@ -150,3 +150,8 @@ Rebuild after upgrades:
 docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml exec api alembic upgrade head
 ```
+
+## Also see
+
+- [HOSTING-RELIABILITY.md](./HOSTING-RELIABILITY.md) — LaunchAgent tunnel, Docker restart, sleep vs shutdown
+- [CLOUDFLARE-TUNNEL-SETUP.md](./CLOUDFLARE-TUNNEL-SETUP.md)

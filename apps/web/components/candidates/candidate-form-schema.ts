@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { defaultSalaryForm } from "@/components/candidates/salary-fields";
+import { LINKEDIN_URL_MESSAGE, linkedInUrlSchemaRefine, normalizeLinkedInUrl } from "@/lib/linkedin";
 import type { CandidateSource, SalaryUnit } from "@/types/api";
 
 const salaryUnit = z.enum(["pa", "pm"] as const);
@@ -52,10 +53,7 @@ export const candidateFormSchema = z.object({
     .string()
     .trim()
     .max(500)
-    .refine(
-      (v) => v === "" || /^https?:\/\/\S+$/i.test(v),
-      "Enter a full URL starting with https://",
-    ),
+    .refine((v) => linkedInUrlSchemaRefine(v), LINKEDIN_URL_MESSAGE),
   portfolio_url: z
     .string()
     .trim()
@@ -148,7 +146,14 @@ export function buildCreateFormData(values: CandidateFormValues, cv: File | null
   if (values.notice_period_days.trim()) {
     fd.append("notice_period_days", values.notice_period_days.trim());
   }
-  if (values.linkedin_url.trim()) fd.append("linkedin_url", values.linkedin_url.trim());
+  if (values.linkedin_url.trim()) {
+    try {
+      const normalized = normalizeLinkedInUrl(values.linkedin_url);
+      if (normalized) fd.append("linkedin_url", normalized);
+    } catch {
+      fd.append("linkedin_url", values.linkedin_url.trim());
+    }
+  }
   if (values.portfolio_url.trim()) fd.append("portfolio_url", values.portfolio_url.trim());
   if (values.department_id) fd.append("department_id", values.department_id);
   if (values.job_id) fd.append("job_id", values.job_id);

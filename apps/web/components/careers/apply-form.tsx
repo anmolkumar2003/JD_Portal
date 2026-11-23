@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, api } from "@/lib/api";
+import { LINKEDIN_URL_MESSAGE, linkedInUrlSchemaRefine, normalizeLinkedInUrl } from "@/lib/linkedin";
 import { cn } from "@/lib/utils";
 
 const optionalNumber = (pattern: RegExp, message: string, max?: number) =>
@@ -39,10 +40,7 @@ const applySchema = z.object({
     .string()
     .trim()
     .max(500)
-    .refine(
-      (v) => v === "" || /^https?:\/\/\S+$/i.test(v),
-      "Enter a full URL starting with https://",
-    ),
+    .refine((v) => linkedInUrlSchemaRefine(v), LINKEDIN_URL_MESSAGE),
   current_company: z.string().trim().max(200),
   current_title: z.string().trim().max(200),
   total_experience_years: optionalNumber(/^\d+(\.\d)?$/, "Enter years, e.g. 4 or 4.5 (max 50)", 50),
@@ -110,7 +108,13 @@ function toFormData(values: ApplyValues): FormData {
   const data = new FormData();
   for (const [key, value] of Object.entries(values)) {
     if (key === "cv" || key === "consent") continue;
-    if (typeof value === "string" && (value.trim() !== "" || key === "website")) {
+    if (typeof value !== "string") continue;
+    if (key === "linkedin_url") {
+      const normalized = value.trim() ? normalizeLinkedInUrl(value) : null;
+      if (normalized) data.append(key, normalized);
+      continue;
+    }
+    if (value.trim() !== "" || key === "website") {
       data.append(key, value.trim());
     }
   }

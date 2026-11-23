@@ -20,12 +20,17 @@ export function AppSidebar({ collapsed, onToggle, className }: AppSidebarProps) 
     <aside
       className={cn(
         "flex h-screen shrink-0 flex-col border-r bg-card transition-[width] duration-200",
-        collapsed ? "w-16" : "w-60",
+        collapsed ? "w-16" : "w-72",
         className,
       )}
     >
-      <div className="flex h-14 items-center gap-2 border-b px-4">
-        <Brand name={org_name} logoUrl={logo_data_url} showName={!collapsed} />
+      <div
+        className={cn(
+          "flex items-center border-b px-3",
+          collapsed ? "h-14 justify-center" : "min-h-14 py-2.5",
+        )}
+      >
+        <Brand name={org_name} logoUrl={logo_data_url} showName={!collapsed} className="w-full" />
       </div>
 
       <SidebarNav collapsed={collapsed} className="flex-1" />
