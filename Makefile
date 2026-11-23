@@ -1,4 +1,5 @@
 COMPOSE ?= docker compose
+COMPOSE_PROD ?= docker compose -f docker-compose.prod.yml
 API_RUN := $(COMPOSE) run --rm --no-deps api
 WEB_RUN := $(COMPOSE) run --rm --no-deps web
 E2E := docker compose -f docker-compose.e2e.yml
@@ -7,7 +8,8 @@ S3_BUCKET ?= cvs
 
 .DEFAULT_GOAL := help
 .PHONY: help env up down logs migrate test test-api test-web test-e2e lint lint-api lint-web \
-	format init-admin seed-demo cleanup-demo reference-data backup
+	format init-admin seed-demo cleanup-demo reference-data backup backup-nightly restore \
+	prod-up prod-down prod-logs prod-migrate
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -45,6 +47,24 @@ backup: ## Dump the database and copy the CV bucket into $(BACKUP_DIR)/<timestam
 	$(COMPOSE) run --rm --no-deps -v "$(CURDIR)/$$dir:/backup" minio-init \
 		mirror --quiet local/$(S3_BUCKET) /backup/cvs >/dev/null; \
 	echo "Backup written to $$dir"
+
+backup-nightly: ## Production backup (pg_dump + MinIO) into backups/nightly/
+	@chmod +x scripts/backup.sh && ./scripts/backup.sh
+
+restore: ## Restore from backups/nightly/<stamp> — make restore STAMP=20261123-020000
+	@chmod +x scripts/restore.sh && ./scripts/restore.sh $(STAMP)
+
+prod-up: ## Start production stack (requires .env from .env.production.example)
+	$(COMPOSE_PROD) up -d --build
+
+prod-down: ## Stop production stack
+	$(COMPOSE_PROD) down
+
+prod-logs: ## Follow production logs (s=<service>)
+	$(COMPOSE_PROD) logs -f --tail=200 $(s)
+
+prod-migrate: ## Apply migrations on the production stack
+	$(COMPOSE_PROD) exec api alembic upgrade head
 
 test: test-api test-web ## Run all tests
 

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import smtplib
 import uuid
@@ -5,8 +6,9 @@ from email.message import EmailMessage
 from email.utils import formataddr
 
 from app.core.config import get_settings
-from app.core.db import sync_session
+from app.core.db import SessionLocal, sync_session
 from app.services.cv_processing import process_document_sync, rescore_job_sync
+from app.services.retention import run_retention_rejected
 from app.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
@@ -69,3 +71,12 @@ def rescore_job(self: object, job_id: str) -> dict[str, int | str]:
     with sync_session() as session:
         count = rescore_job_sync(session, job_uuid)
     return {"job_id": job_id, "rescored": count}
+
+
+@celery_app.task(name="run_retention_rejected")
+def run_retention_rejected_task() -> dict[str, int | bool | str]:
+    async def _run() -> dict[str, int | bool | str]:
+        async with SessionLocal() as session:
+            return await run_retention_rejected(session)
+
+    return asyncio.run(_run())

@@ -100,6 +100,7 @@ async def upload_candidate_document(
         storage_key=storage_key,
         checksum=hashlib.sha256(file_bytes).hexdigest(),
         is_primary=doc_type == DocumentType.CV,
+        virus_scan_status=validated.virus_scan_status,
     )
     session.add(document)
     if doc_type == DocumentType.CV:

@@ -119,6 +119,9 @@ class SecurityHeadersMiddleware:
             await self.app(scope, receive, send)
             return
 
+        settings = get_settings()
+        hardened = settings.cookie_secure or settings.app_env == "production"
+
         async def send_with_headers(message: Message) -> None:
             if message["type"] == "http.response.start":
                 headers = MutableHeaders(scope=message)
@@ -126,6 +129,15 @@ class SecurityHeadersMiddleware:
                 headers.append("X-Frame-Options", "DENY")
                 headers.append("Referrer-Policy", "strict-origin-when-cross-origin")
                 headers.append("X-XSS-Protection", "0")
+                if hardened:
+                    headers.append(
+                        "Strict-Transport-Security",
+                        "max-age=31536000; includeSubDomains; preload",
+                    )
+                    headers.append(
+                        "Content-Security-Policy",
+                        "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
+                    )
             await send(message)
 
         await self.app(scope, receive, send_with_headers)

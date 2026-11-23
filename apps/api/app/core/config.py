@@ -49,6 +49,13 @@ class Settings(BaseSettings):
     # Set true behind HTTPS so the refresh cookie is never sent over plain HTTP.
     cookie_secure: bool = False
 
+    # Optional ClamAV (clamd TCP). Unset in development to skip virus scanning.
+    clamav_host: str | None = None
+    clamav_port: int = 3310
+
+    # Anonymize rejected candidates after N days; 0 disables the scheduled job.
+    retention_rejected_days: int = 0
+
     s3_endpoint_url: str
     s3_public_endpoint_url: str | None = None
     s3_access_key_id: SecretStr

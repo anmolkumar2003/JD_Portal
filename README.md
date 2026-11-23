@@ -84,6 +84,8 @@ endpoints answer 404. Audit logging itself is always on.
 | `make init-admin`     | Create or reset an account interactively                                 |
 | `make reference-data` | Add any missing stages, email templates and departments                  |
 | `make backup`         | Database dump and CV bucket copy into `backups/manual/<timestamp>`       |
+| `make backup-nightly` | Production backup into `backups/nightly/` (uses `docker-compose.prod.yml`) |
+| `make prod-up`        | Start the Caddy production stack — see [`docs/DEPLOY.md`](docs/DEPLOY.md) |
 | `make seed-demo`      | Fake demo data; refuses unless `APP_ENV=development`, never automatic    |
 | `make cleanup-demo`   | Delete all candidates, jobs and demo users, and empty the CV bucket      |
 | `make lint`           | Ruff, ruff format, mypy (API); ESLint, Prettier, tsc (web)               |

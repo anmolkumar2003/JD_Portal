@@ -1,6 +1,7 @@
 from typing import Any
 
 from celery import Celery
+from celery.schedules import crontab
 from celery.signals import setup_logging
 
 from app.core.config import get_settings
@@ -27,6 +28,14 @@ celery_app.conf.update(
     result_expires=3600,
     broker_connection_retry_on_startup=True,
 )
+
+if settings.retention_rejected_days > 0:
+    celery_app.conf.beat_schedule = {
+        "retention-rejected-daily": {
+            "task": "run_retention_rejected",
+            "schedule": crontab(hour=3, minute=15),
+        },
+    }
 
 
 @setup_logging.connect

@@ -205,6 +205,7 @@ async def apply(
                 storage_key=storage_key,
                 checksum=hashlib.sha256(cv_bytes).hexdigest(),
                 is_primary=True,
+                virus_scan_status=validated.virus_scan_status,
             ),
             ParsedProfile(document_id=document_id, candidate_id=candidate.id),
             ActivityLog(
