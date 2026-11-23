@@ -51,10 +51,21 @@ async def _app_error(_: Request, exc: Exception) -> JSONResponse:
     return _envelope(exc.status_code, exc.code, exc.message, exc.details)
 
 
-async def _http_error(_: Request, exc: Exception) -> JSONResponse:
+async def _http_error(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, StarletteHTTPException)  # noqa: S101
-    code = _DEFAULT_CODES.get(exc.status_code, "http_error")
-    return _envelope(exc.status_code, code, str(exc.detail), headers=exc.headers)
+    status_code = exc.status_code
+    detail = str(exc.detail)
+    # Disabled optional modules must never leak 405 for unsupported methods —
+    # answer 404 as if the module does not exist.
+    if status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
+        # Late import avoids circular import with app.core.features.
+        from app.core.features import path_belongs_to_disabled_module  # noqa: PLC0415
+
+        if path_belongs_to_disabled_module(request.url.path):
+            status_code = status.HTTP_404_NOT_FOUND
+            detail = "Not found"
+    code = _DEFAULT_CODES.get(status_code, "http_error")
+    return _envelope(status_code, code, detail, headers=exc.headers)
 
 
 async def _validation_error(_: Request, exc: Exception) -> JSONResponse:

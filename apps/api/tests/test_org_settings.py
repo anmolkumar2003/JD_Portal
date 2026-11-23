@@ -106,10 +106,19 @@ async def test_reference_departments_and_admin_management(client: AsyncClient) -
     ("method", "path"),
     [
         ("GET", "/api/v1/public/jobs"),
+        ("POST", "/api/v1/public/jobs"),
+        ("GET", "/api/v1/interviews"),
         ("GET", "/api/v1/interviews/mine"),
+        ("POST", "/api/v1/interviews"),
+        ("PUT", "/api/v1/interviews/abc"),
+        ("DELETE", "/api/v1/interviews/abc"),
+        ("GET", "/api/v1/offers"),
         ("POST", "/api/v1/offers"),
+        ("PATCH", "/api/v1/offers/abc"),
         ("GET", "/api/v1/requisitions"),
+        ("POST", "/api/v1/requisitions"),
         ("GET", "/api/v1/audit-logs"),
+        ("POST", "/api/v1/audit-logs"),
     ],
 )
 async def test_disabled_modules_answer_404(
@@ -122,7 +131,7 @@ async def test_disabled_modules_answer_404(
 
     response = await client.request(method, path, headers=_auth(token), json={})
 
-    assert response.status_code == 404
+    assert response.status_code == 404, response.text
 
 
 def test_flags_default_to_off() -> None:

@@ -11,6 +11,7 @@ from app.core.features import feature_required
 from app.core.logging import configure_logging
 from app.core.middleware import (
     REQUEST_ID_HEADER,
+    DisabledFeatureMiddleware,
     RateLimitMiddleware,
     RequestIDMiddleware,
     SecurityHeadersMiddleware,
@@ -61,6 +62,8 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(RateLimitMiddleware)
     app.add_middleware(SecurityHeadersMiddleware)
+    # Before routing so disabled modules never surface as 405 Method Not Allowed.
+    app.add_middleware(DisabledFeatureMiddleware)
     # Added last so it is outermost and also covers CORS preflight responses.
     app.add_middleware(RequestIDMiddleware)
 

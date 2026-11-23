@@ -10,6 +10,7 @@ from starlette.requests import HTTPConnection
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.core.config import get_settings
+from app.core.features import path_belongs_to_disabled_module
 from app.core.net import client_ip
 from app.core.rate_limit import resolve
 from app.core.redis import redis_client
@@ -101,6 +102,33 @@ class RateLimitMiddleware:
                         (b"content-type", b"application/json"),
                         (b"retry-after", b"60"),
                     ],
+                }
+            )
+            await send({"type": "http.response.body", "body": body})
+            return
+        await self.app(scope, receive, send)
+
+
+class DisabledFeatureMiddleware:
+    """Return 404 for every method on disabled optional-module paths (never 405)."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        path = scope.get("path") or ""
+        if path_belongs_to_disabled_module(path):
+            body = json.dumps(
+                {"error": {"code": "not_found", "message": "Not found", "details": None}}
+            ).encode()
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 404,
+                    "headers": [(b"content-type", b"application/json")],
                 }
             )
             await send({"type": "http.response.body", "body": body})
