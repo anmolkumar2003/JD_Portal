@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
+import { CommandPalette } from "@/components/command-palette";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { TopBar } from "@/components/layout/top-bar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,6 +63,7 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden">
+      <CommandPalette />
       <AppSidebar collapsed={collapsed} onToggle={toggleSidebar} />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />

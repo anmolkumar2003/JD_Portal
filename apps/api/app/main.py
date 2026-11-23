@@ -33,6 +33,7 @@ from app.routers import (
     public_jobs,
     ratings,
     requisitions,
+    saved_filters,
     users,
 )
 
@@ -75,6 +76,7 @@ def create_app() -> FastAPI:
     app.include_router(parsed_profiles.router)
     app.include_router(comms.router)
     app.include_router(ratings.router)
+    app.include_router(saved_filters.router)
     app.include_router(analytics.router)
     app.include_router(admin.router)
     app.include_router(admin.audit_router)

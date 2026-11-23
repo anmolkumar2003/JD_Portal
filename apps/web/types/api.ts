@@ -410,6 +410,7 @@ export interface ApplicationListParams {
   job_id?: string;
   stage_id?: string;
   candidate_id?: string;
+  department_id?: string;
   q?: string;
   source?: CandidateSource;
   applied_from?: string;
@@ -417,6 +418,33 @@ export interface ApplicationListParams {
   score_min?: number;
   score_max?: number;
   skill?: string;
+  tag?: string;
+  is_shortlisted?: boolean;
+}
+
+export interface SavedFilterOut {
+  id: string;
+  name: string;
+  filters: Record<string, unknown>;
+}
+
+export interface SavedFilterIn {
+  name: string;
+  filters: Record<string, unknown>;
+}
+
+export interface SearchHit {
+  id: string;
+  label: string;
+  href: string;
+  email?: string;
+  slug?: string;
+  type?: string;
+}
+
+export interface SearchResult {
+  candidates: SearchHit[];
+  jobs: SearchHit[];
 }
 
 export interface DocumentOut {

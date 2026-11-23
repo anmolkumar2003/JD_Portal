@@ -53,9 +53,10 @@ Legend: `[x]` done · `[~]` partial · `[ ]` pending · `[-]` skipped
       email composer, bulk toolbar, notification bell, simple interview ratings (always on),
       final-score panel + Settings scoring weights (default 50/50), Move-to + reject on profile
 
-### Phase 4: search and filters
+### Phase 4: search and filters — committed `phase 4: search and filters`
 
-- [ ] Full-text and trigram search, filter popover, saved filters, jobs filters, Cmd+K
+- [x] Trigram + ILIKE search, filter popover with chips/Clear all/URL state (incl. tag,
+      shortlisted, department, dates), named saved filter sets, jobs filter chips, Cmd+K palette
 
 ### Phase 5: dashboard, polish, responsive
 

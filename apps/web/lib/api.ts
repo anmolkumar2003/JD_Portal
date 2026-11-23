@@ -59,6 +59,9 @@ import type {
   InterviewRatingIn,
   FinalScoreOut,
   ScoringWeights,
+  SavedFilterIn,
+  SavedFilterOut,
+  SearchResult,
 } from "@/types/api";
 
 // Empty means same origin: next.config.mjs (dev) or Caddy (production) forwards /api/v1 to the API.
@@ -401,11 +404,19 @@ export const api = {
         withQuery("/api/v1/analytics/applications-over-time", { days }),
       ),
   },
-  search: (q: string) =>
-    request<{
-      candidates: { id: string; label: string; email: string; type: string }[];
-      jobs: { id: string; label: string; slug: string; type: string }[];
-    }>(withQuery("/api/v1/search", { q })),
+  search: (q: string) => request<SearchResult>(withQuery("/api/v1/search", { q })),
+  savedFilters: {
+    list: () => request<SavedFilterOut[]>("/api/v1/saved-filters"),
+    create: (body: SavedFilterIn) =>
+      request<SavedFilterOut>("/api/v1/saved-filters", { method: "POST", body }),
+    update: (id: string, body: SavedFilterIn) =>
+      request<SavedFilterOut>(`/api/v1/saved-filters/${encodeURIComponent(id)}`, {
+        method: "PUT",
+        body,
+      }),
+    delete: (id: string) =>
+      request<null>(`/api/v1/saved-filters/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  },
   notifications: {
     list: (unreadOnly = false) =>
       request<NotificationOut[]>(withQuery("/api/v1/notifications", { unread_only: unreadOnly })),

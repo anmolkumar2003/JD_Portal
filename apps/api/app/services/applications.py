@@ -351,8 +351,14 @@ async def list_applications(
             .exists()
         )
         stmt = stmt.where(skill_filter)
+    if filters.tag and filters.tag.strip():
+        tag = filters.tag.strip()
+        stmt = stmt.where(Candidate.tags.contains([tag]))
+    if filters.is_shortlisted is not None:
+        stmt = stmt.where(Application.is_shortlisted.is_(filters.is_shortlisted))
     if filters.q and filters.q.strip():
         q = filters.q.strip()
+        # Trigram similarity (pg_trgm indexes on first/last name) plus email / skill ILIKE.
         skill_match = (
             select(ParsedProfile.id)
             .where(
@@ -362,11 +368,18 @@ async def list_applications(
             .correlate(Candidate)
             .exists()
         )
+        similarity = func.greatest(
+            func.similarity(Candidate.first_name, q),
+            func.similarity(Candidate.last_name, q),
+            func.similarity(func.concat(Candidate.first_name, " ", Candidate.last_name), q),
+        )
         stmt = stmt.where(
             or_(
+                similarity > 0.25,
                 Candidate.first_name.icontains(q, autoescape=True),
                 Candidate.last_name.icontains(q, autoescape=True),
                 Candidate.email.icontains(q, autoescape=True),
+                Candidate.phone.icontains(q, autoescape=True),
                 skill_match,
             )
         )

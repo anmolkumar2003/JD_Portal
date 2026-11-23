@@ -17,6 +17,7 @@ from app.models.job import Job, JobRequirement, JobTeam
 from app.models.org_setup import Department, Location, PipelineStage
 from app.models.organization import Organization
 from app.models.ratings import InterviewRating
+from app.models.saved_filters import SavedFilter
 from app.models.user import User
 
 __all__ = [
@@ -46,6 +47,7 @@ __all__ = [
     "ParsedProfile",
     "PipelineStage",
     "Requisition",
+    "SavedFilter",
     "Scorecard",
     "ScorecardTemplate",
     "User",

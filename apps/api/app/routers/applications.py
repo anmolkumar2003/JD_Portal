@@ -49,6 +49,8 @@ def application_filters(
     score_min: Annotated[int | None, Query(ge=0, le=100)] = None,
     score_max: Annotated[int | None, Query(ge=0, le=100)] = None,
     skill: Annotated[str | None, Query(max_length=100)] = None,
+    tag: Annotated[str | None, Query(max_length=50)] = None,
+    is_shortlisted: bool | None = None,
 ) -> ApplicationFilters:
     return ApplicationFilters(
         job_id=job_id,
@@ -62,6 +64,8 @@ def application_filters(
         score_min=score_min,
         score_max=score_max,
         skill=skill,
+        tag=tag,
+        is_shortlisted=is_shortlisted,
     )
 
 

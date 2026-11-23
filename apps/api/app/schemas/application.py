@@ -109,6 +109,8 @@ class ApplicationFilters(BaseModel):
     score_min: Annotated[int, Field(ge=0, le=100)] | None = None
     score_max: Annotated[int, Field(ge=0, le=100)] | None = None
     skill: str | None = Field(default=None, max_length=100)
+    tag: str | None = Field(default=None, max_length=50)
+    is_shortlisted: bool | None = None
 
 
 class StageRef(BaseModel):

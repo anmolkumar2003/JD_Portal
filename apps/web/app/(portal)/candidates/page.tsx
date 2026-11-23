@@ -18,21 +18,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useApplications } from "@/hooks/use-applications";
 import { useAuth } from "@/hooks/use-auth";
+import {
+  CANDIDATE_FILTER_KEYS,
+  candidateFiltersFromSearchParams,
+  DEFAULT_CANDIDATE_SORT,
+  EMPTY_CANDIDATE_FILTERS,
+  toApplicationListParams,
+} from "@/lib/candidate-filters";
 import { canManageJobs } from "@/lib/permissions";
-import type { ApplicationListParams, CandidateSource } from "@/types/api";
 
 const PAGE_SIZE = 20;
-const DEFAULT_SORT = "-applied_at";
-const FILTER_KEYS = [
-  "q",
-  "job_id",
-  "stage_id",
-  "source",
-  "score_min",
-  "score_max",
-  "skill",
-  "sort",
-] as const;
 
 function CandidatesPageContent() {
   const { user } = useAuth();
@@ -40,45 +35,14 @@ function CandidatesPageContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const filters: CandidateFilterValues = {
-    q: searchParams.get("q") ?? "",
-    job_id: searchParams.get("job_id") ?? "",
-    stage_id: searchParams.get("stage_id") ?? "",
-    source: searchParams.get("source") ?? "",
-    score_min: searchParams.get("score_min") ?? "",
-    score_max: searchParams.get("score_max") ?? "",
-    skill: searchParams.get("skill") ?? "",
-    sort: searchParams.get("sort") ?? DEFAULT_SORT,
-  };
+  const filters: CandidateFilterValues = candidateFiltersFromSearchParams((key) =>
+    searchParams.get(key),
+  );
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
-  const sort = filters.sort || DEFAULT_SORT;
+  const sort = filters.sort || DEFAULT_CANDIDATE_SORT;
   const drawerId = searchParams.get("application");
 
-  const params: ApplicationListParams = useMemo(
-    () => ({
-      page,
-      page_size: PAGE_SIZE,
-      sort,
-      q: filters.q || undefined,
-      job_id: filters.job_id || undefined,
-      stage_id: filters.stage_id || undefined,
-      source: (filters.source || undefined) as CandidateSource | undefined,
-      score_min: filters.score_min ? Number(filters.score_min) : undefined,
-      score_max: filters.score_max ? Number(filters.score_max) : undefined,
-      skill: filters.skill || undefined,
-    }),
-    [
-      page,
-      sort,
-      filters.q,
-      filters.job_id,
-      filters.stage_id,
-      filters.source,
-      filters.score_min,
-      filters.score_max,
-      filters.skill,
-    ],
-  );
+  const params = useMemo(() => toApplicationListParams(filters, page, PAGE_SIZE), [filters, page]);
 
   const query = useApplications(params);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
@@ -96,7 +60,7 @@ function CandidatesPageContent() {
   const onFiltersChange = useCallback(
     (changes: Partial<CandidateFilterValues>) => {
       replaceParams((next) => {
-        for (const key of FILTER_KEYS) {
+        for (const key of CANDIDATE_FILTER_KEYS) {
           if (key in changes) {
             const value = changes[key];
             if (value) next.set(key, value);
@@ -109,7 +73,11 @@ function CandidatesPageContent() {
     [replaceParams],
   );
 
-  const hasActiveFilters = FILTER_KEYS.some((key) => Boolean(filters[key]));
+  const hasActiveFilters = CANDIDATE_FILTER_KEYS.some((key) => {
+    const value = filters[key];
+    if (key === "sort") return Boolean(value && value !== DEFAULT_CANDIDATE_SORT);
+    return Boolean(value);
+  });
 
   return (
     <div className="space-y-6">
@@ -135,6 +103,11 @@ function CandidatesPageContent() {
           icon={SearchX}
           title="No matching candidates"
           description="Try clearing filters or broadening your search."
+          action={
+            <Button variant="outline" onClick={() => onFiltersChange(EMPTY_CANDIDATE_FILTERS)}>
+              Clear all filters
+            </Button>
+          }
         />
       ) : (
         <CandidatesTable
