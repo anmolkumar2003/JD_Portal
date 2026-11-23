@@ -19,7 +19,9 @@ async def _first_application(client: AsyncClient, token: str) -> str:
     assert listed.status_code == 200
     items = listed.json()["items"]
     assert items
-    return items[0]["id"]
+    app_id = items[0]["id"]
+    assert isinstance(app_id, str)
+    return app_id
 
 
 async def test_rating_crud_and_final_score(client: AsyncClient) -> None:
