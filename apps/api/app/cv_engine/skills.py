@@ -12,7 +12,25 @@ DATA_FILE = Path(__file__).parent / "data" / "skills.json"
 
 # Aliases that are ordinary words or single letters. They only count when they stand alone as an
 # item in a list ("Python, Go, C") with the exact capitalization of the taxonomy entry.
-AMBIGUOUS_ALIASES = frozenset({"c", "r", "go", "pr", "ip", "tf", "py", "ts", "ui"})
+AMBIGUOUS_ALIASES = frozenset(
+    {
+        "c",
+        "r",
+        "go",
+        "pr",
+        "ip",
+        "tf",
+        "py",
+        "ts",
+        "ui",
+        "ga",
+        "wp",
+        "room",
+        "compose",
+        "combine",
+        "provider",
+    }
+)
 
 _TOKEN_EDGE = ".,;:!?\"'`*"
 _SEPARATORS = re.compile(r"[,;:|\u2022\u00b7\u25aa\u25cf\u25e6\u2023()\[\]{}<>]")

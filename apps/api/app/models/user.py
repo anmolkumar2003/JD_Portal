@@ -19,6 +19,10 @@ class User(BaseModel):
     full_name: Mapped[str] = mapped_column(String(200))
     role: Mapped[UserRole] = mapped_column(pg_enum(UserRole, "user_role"), index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    # Set for new users and admin resets; the API blocks everything but a password change.
+    must_change_password: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false"
+    )
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     mfa_secret: Mapped[str | None] = mapped_column(String(255))
     # Lockout state for AUTH-03.

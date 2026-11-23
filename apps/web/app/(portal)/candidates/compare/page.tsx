@@ -101,14 +101,11 @@ export default function ComparePage() {
   return (
     <div className="space-y-6">
       <div>
-        <Breadcrumbs
-          items={[
-            { label: "Candidates", href: "/candidates" },
-            { label: "Compare" },
-          ]}
-        />
+        <Breadcrumbs items={[{ label: "Candidates", href: "/candidates" }, { label: "Compare" }]} />
         <h1 className="text-2xl font-semibold tracking-tight">Compare candidates</h1>
-        <p className="text-sm text-muted-foreground">Side-by-side view for 2–4 applications (CAND-07).</p>
+        <p className="text-sm text-muted-foreground">
+          Side-by-side view for 2–4 applications (CAND-07).
+        </p>
       </div>
       <Suspense fallback={<Skeleton className="h-64 w-full" />}>
         <CompareContent />

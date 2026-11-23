@@ -43,7 +43,8 @@ services:
       retries: 10
 
   redis:
-    image: redis:7-alpine
+    # Valkey: BSD-licensed, protocol-compatible Redis fork (see docs/LICENSES.md).
+    image: valkey/valkey:8-alpine
     command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "${REDIS_PORT:-6379}:6379"
@@ -128,9 +129,10 @@ services:
   web:
     build:
       context: ./apps/web
+      target: dev
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001}
-      # Server-side rendering (careers pages) calls the API over the compose network.
+      # Empty = same origin; the Next.js server proxies /api/v1 to INTERNAL_API_URL.
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
       INTERNAL_API_URL: http://api:8000
       WATCHPACK_POLLING: "true"
     ports:

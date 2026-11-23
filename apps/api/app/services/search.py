@@ -11,7 +11,9 @@ from app.core.deps import scope_jobs_query
 from app.models import Candidate, Job, User
 
 
-async def global_search(session: AsyncSession, user: User, q: str) -> dict[str, list[dict[str, Any]]]:
+async def global_search(
+    session: AsyncSession, user: User, q: str
+) -> dict[str, list[dict[str, Any]]]:
     query = q.strip()
     if len(query) < 2:
         return {"candidates": [], "jobs": []}

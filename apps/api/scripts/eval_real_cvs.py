@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 import uuid
@@ -19,8 +20,9 @@ import httpx
 
 API = "http://localhost:8000/api/v1"
 REAL_DIR = Path(__file__).resolve().parents[1] / "tests" / "golden" / "real"
-LOGIN_EMAIL = "recruiter@acme.example.com"
-LOGIN_PASSWORD = "Demo@2026!"
+# Demo seed account (make seed-demo); the password comes from the environment.
+LOGIN_EMAIL = os.environ.get("DEMO_LOGIN_EMAIL", "recruiter@demo.example.com")
+LOGIN_PASSWORD = os.environ.get("DEMO_PASSWORD", "")
 
 # Form hints from golden labels / source text (apply still sends multipart identity).
 CV_META: dict[str, dict[str, str]] = {
@@ -56,7 +58,7 @@ CV_META: dict[str, dict[str, str]] = {
     },
 }
 
-OPEN_SLUGS = ("senior-backend-engineer", "frontend-engineer")
+OPEN_SLUGS = ("senior-android-developer", "shopify-developer")
 
 
 def _login(client: httpx.Client) -> str:
@@ -249,7 +251,7 @@ def _score_against_jobs_via_engine(
             )
             result = score_match(req, candidate)
             scores[job["slug"]] = int(result.overall_score)
-        except Exception as exc:  # noqa: BLE001 - eval harness
+        except Exception as exc:
             scores[job["slug"]] = None
             scores[f"{job['slug']}_error"] = str(exc)  # type: ignore[assignment]
     return scores
@@ -304,7 +306,7 @@ def _load_job_specs() -> list[dict[str, Any]]:
     finally:
         try:
             asyncio.run(engine.dispose())
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
 
 
@@ -390,7 +392,7 @@ def evaluate(*, run_id: str) -> list[dict[str, Any]]:
                     slug = job["slug"]
                     if slug not in row["applications"] or row["applications"][slug] is None:
                         row["applications"][slug] = engine_scores.get(slug)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 row["problems"].append(f"engine match failed: {exc}")
 
             results.append(row)
@@ -476,7 +478,9 @@ def collect_problems(rows: list[dict[str, Any]]) -> list[str]:
             continue
         name = (r.get("name") or "").strip()
         if exp["name"].lower() not in name.lower() and name.lower() not in exp["name"].lower():
-            problems.append(f"{r.get('file')}: wrong/missing name got={name!r} want={exp['name']!r}")
+            problems.append(
+                f"{r.get('file')}: wrong/missing name got={name!r} want={exp['name']!r}"
+            )
         email = (r.get("email") or "").lower()
         if exp["email_part"] not in email:
             problems.append(f"{r.get('file')}: missing/wrong email got={email!r}")
@@ -503,20 +507,21 @@ def collect_problems(rows: list[dict[str, Any]]) -> list[str]:
             problems.append(f"{r.get('file')}: suspiciously low ATS score={r.get('ats_score')}")
         checks = r.get("ats_checks") or []
         for c in checks:
-            if isinstance(c, dict) and c.get("passed") is False and c.get("id") in {
-                "contact_email",
-                "contact_phone",
-                "sections",
-            }:
+            if (
+                isinstance(c, dict)
+                and c.get("passed") is False
+                and c.get("id")
+                in {
+                    "contact_email",
+                    "contact_phone",
+                    "sections",
+                }
+            ):
                 # flag if we have the field but check failed
                 if c.get("id") == "contact_email" and email:
-                    problems.append(
-                        f"{r.get('file')}: ATS email check failed despite parsed email"
-                    )
+                    problems.append(f"{r.get('file')}: ATS email check failed despite parsed email")
                 if c.get("id") == "contact_phone" and phone:
-                    problems.append(
-                        f"{r.get('file')}: ATS phone check failed despite parsed phone"
-                    )
+                    problems.append(f"{r.get('file')}: ATS phone check failed despite parsed phone")
     return problems
 
 

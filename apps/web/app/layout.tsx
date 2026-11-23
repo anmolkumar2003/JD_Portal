@@ -1,13 +1,19 @@
 import type { Metadata } from "next";
 import type { CSSProperties, ReactNode } from "react";
 
+import { serverApi } from "@/lib/server-api";
+
 import { Providers } from "./providers";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "HR Portal",
-  description: "HR Recruitment Portal (ATS)",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { org_name } = await serverApi.config();
+  return {
+    title: { template: `%s · ${org_name}`, default: `${org_name} · Recruitment` },
+    description: `${org_name} internal recruitment portal`,
+    robots: { index: false, follow: false },
+  };
+}
 
 const fontVars = {
   "--font-inter":

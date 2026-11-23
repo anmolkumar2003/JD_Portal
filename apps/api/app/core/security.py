@@ -1,4 +1,6 @@
 import hashlib
+import secrets
+import string
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
@@ -13,9 +15,67 @@ TokenType = Literal["access", "refresh", "reset"]
 
 _hasher = PasswordHasher()
 
+MIN_PASSWORD_LENGTH = 12
+_SYMBOLS = "!@#$%^&*()-_=+[]{};:,.?/"
+_COMMON_PASSWORDS = frozenset(
+    {
+        "password",
+        "password1",
+        "password123",
+        "passw0rd",
+        "qwerty",
+        "qwertyuiop",
+        "letmein",
+        "welcome",
+        "admin",
+        "changeme",
+        "iloveyou",
+        "123456789012",
+    }
+)
+
 
 class InvalidTokenError(Exception):
     pass
+
+
+def password_problems(password: str, *, email: str | None = None) -> list[str]:
+    """Return the reasons a password is too weak; empty means it is acceptable."""
+    problems: list[str] = []
+    if len(password) < MIN_PASSWORD_LENGTH:
+        problems.append(f"Use at least {MIN_PASSWORD_LENGTH} characters.")
+    classes = sum(
+        (
+            any(c.islower() for c in password),
+            any(c.isupper() for c in password),
+            any(c.isdigit() for c in password),
+            any(not c.isalnum() for c in password),
+        )
+    )
+    if classes < 3:
+        problems.append("Mix at least three of: lowercase, uppercase, numbers and symbols.")
+    lowered = password.lower()
+    if lowered in _COMMON_PASSWORDS or any(lowered.startswith(p) for p in _COMMON_PASSWORDS):
+        problems.append("Avoid common passwords.")
+    local_part = (email or "").split("@", 1)[0].lower()
+    if len(local_part) >= 4 and local_part in lowered:
+        problems.append("Do not include your email name in the password.")
+    return problems
+
+
+def generate_password(length: int = 18) -> str:
+    """Random password that always satisfies password_problems()."""
+    alphabet = string.ascii_letters + string.digits + _SYMBOLS
+    while True:
+        candidate = "".join(secrets.choice(alphabet) for _ in range(length))
+        if (
+            any(c.islower() for c in candidate)
+            and any(c.isupper() for c in candidate)
+            and any(c.isdigit() for c in candidate)
+            and any(c in _SYMBOLS for c in candidate)
+            and not password_problems(candidate)
+        ):
+            return candidate
 
 
 def hash_password(password: str) -> str:
@@ -49,11 +109,13 @@ def create_access_token(user_id: uuid.UUID, org_id: uuid.UUID, role: str) -> str
     return _encode(claims, "access", timedelta(minutes=minutes))
 
 
-def create_refresh_token(user_id: uuid.UUID) -> tuple[str, str]:
-    """Return (token, jti). The jti identifies the token for logout revocation."""
+def create_refresh_token(user_id: uuid.UUID, password_hash: str) -> tuple[str, str]:
+    """Return (token, jti). The jti identifies the token for logout revocation; the password
+    fingerprint signs the session out everywhere once the password changes."""
     jti = uuid.uuid4().hex
     days = get_settings().refresh_token_expire_days
-    return _encode({"sub": str(user_id), "jti": jti}, "refresh", timedelta(days=days)), jti
+    claims = {"sub": str(user_id), "jti": jti, "pwd": password_fingerprint(password_hash)}
+    return _encode(claims, "refresh", timedelta(days=days)), jti
 
 
 def create_reset_token(user_id: uuid.UUID, password_hash: str) -> str:

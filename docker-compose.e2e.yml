@@ -1,0 +1,149 @@
+# Isolated end-to-end stack: its own project, network, volumes and database, nothing published
+# on the host. `make test-e2e` builds it, seeds demo data, runs Playwright and removes it.
+# It never touches the development stack or .env.
+name: hr-portal-e2e
+
+x-e2e-env: &e2e-env
+  APP_ENV: development
+  LOG_LEVEL: WARNING
+  DATABASE_URL: postgresql+asyncpg://e2e:e2e@postgres:5432/hrportal_e2e
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/1
+  CELERY_RESULT_BACKEND: redis://redis:6379/2
+  JWT_SECRET: e2e-only-throwaway-signing-key
+  S3_ENDPOINT_URL: http://minio:9000
+  S3_PUBLIC_ENDPOINT_URL: http://minio:9000
+  S3_ACCESS_KEY_ID: e2e-minio
+  S3_SECRET_ACCESS_KEY: e2e-minio-secret
+  S3_BUCKET: cvs-e2e
+  SMTP_HOST: mailpit
+  SMTP_PORT: "1025"
+  CORS_ORIGINS: http://web:3000
+  WEB_BASE_URL: http://web:3000
+  ORG_NAME: E2E Test Org
+  TRUST_PROXY_HEADERS: "false"
+  API_RATE_LIMIT_PER_MINUTE: "0"
+  ENABLE_PUBLIC_CAREERS: ${E2E_ENABLE_PUBLIC_CAREERS:-false}
+
+x-api: &api
+  image: hr-portal-api:latest
+  build:
+    context: ./apps/api
+  environment: *e2e-env
+  volumes:
+    - ./apps/api:/app:ro
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    minio-init:
+      condition: service_completed_successfully
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: e2e
+      POSTGRES_PASSWORD: e2e
+      POSTGRES_DB: hrportal_e2e
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U e2e -d hrportal_e2e"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: valkey/valkey:8-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    image: cgr.dev/chainguard/minio:latest
+    command: ["server", "/data"]
+    environment:
+      MINIO_ROOT_USER: e2e-minio
+      MINIO_ROOT_PASSWORD: e2e-minio-secret
+    tmpfs:
+      - /data
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000 &&
+          printf 'GET /minio/health/live HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          read -r status <&3 && [[ $$status == *" 200 "* ]]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  minio-init:
+    image: cgr.dev/chainguard/minio-client:latest
+    environment:
+      MC_HOST_local: http://e2e-minio:e2e-minio-secret@minio:9000
+    command: ["mb", "--ignore-existing", "local/cvs-e2e"]
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: "no"
+
+  mailpit:
+    image: axllent/mailpit:latest
+
+  api:
+    <<: *api
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  worker:
+    <<: *api
+    command: ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=WARNING", "--concurrency=2"]
+
+  web:
+    image: hr-portal-web:e2e
+    build:
+      context: ./apps/web
+      target: prod
+      args:
+        INTERNAL_API_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/login"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.49.1-jammy
+    profiles: ["runner"]
+    working_dir: /work
+    environment:
+      CI: "1"
+      PLAYWRIGHT_BASE_URL: http://web:3000
+      E2E_PASSWORD: ${E2E_PASSWORD:-}
+      E2E_SCREENSHOTS: ${E2E_SCREENSHOTS:-}
+      E2E_ENABLE_PUBLIC_CAREERS: ${E2E_ENABLE_PUBLIC_CAREERS:-false}
+    volumes:
+      - ./apps/web:/work
+      # Linux node_modules live in a volume so the host's node_modules are left alone.
+      - e2e_node_modules:/work/node_modules
+    command: ["bash", "-c", "npm ci --no-audit --no-fund --loglevel=error && npx playwright test"]
+    depends_on:
+      web:
+        condition: service_healthy
+
+volumes:
+  e2e_node_modules:

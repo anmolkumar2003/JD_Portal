@@ -12,8 +12,8 @@ from app.models.enums import ParseStatus, StageType
 from tests.conftest import login
 
 PDF = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"
-BACKEND = "senior-backend-engineer"
-FRONTEND = "frontend-engineer"
+ANDROID = "senior-android-developer"
+SHOPIFY = "shopify-developer"
 
 
 def _docx() -> bytes:
@@ -43,7 +43,7 @@ def _form(email: str = "asha@example.com", **overrides: str) -> dict[str, str]:
 
 async def _apply(
     client: AsyncClient,
-    slug: str = BACKEND,
+    slug: str = ANDROID,
     *,
     data: dict[str, str] | None = None,
     file: tuple[str, bytes, str] = ("Asha CV.pdf", PDF, "application/pdf"),
@@ -95,12 +95,12 @@ async def test_repeat_applicant_reuses_candidate_and_duplicate_is_rejected(
     sent_emails: list[dict[str, Any]],
     stored_objects: dict[str, bytes],
 ) -> None:
-    assert (await _apply(client, BACKEND)).status_code == 201
+    assert (await _apply(client, ANDROID)).status_code == 201
     docx = ("cv.docx", _docx(), "application/octet-stream")
-    second = await _apply(client, FRONTEND, data=_form("ASHA@example.com"), file=docx)
+    second = await _apply(client, SHOPIFY, data=_form("ASHA@example.com"), file=docx)
     assert second.status_code == 201, second.text
 
-    duplicate = await _apply(client, BACKEND)
+    duplicate = await _apply(client, ANDROID)
     assert duplicate.status_code == 409
     assert duplicate.json()["error"]["code"] == "already_applied"
 
@@ -161,7 +161,7 @@ async def test_download_url_is_signed_and_scoped(
     sent_emails: list[dict[str, Any]],
     stored_objects: dict[str, bytes],
 ) -> None:
-    assert (await _apply(client, FRONTEND)).status_code == 201
+    assert (await _apply(client, SHOPIFY)).status_code == 201
     async with db() as session:
         document_id = await session.scalar(select(Document.id))
 
@@ -174,7 +174,7 @@ async def test_download_url_is_signed_and_scoped(
     body = ok.json()
     assert "X-Amz-Signature=" in body["url"] and body["expires_in"] == 300
 
-    # The interviewer is not on the frontend job's team.
+    # The interviewer is not on the Shopify job's team.
     interviewer = await login(client, "interviewer")
     hidden = await client.get(
         f"/api/v1/documents/{document_id}/download-url",

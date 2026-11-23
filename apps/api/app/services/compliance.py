@@ -72,7 +72,9 @@ async def export_candidate(
             "source": candidate.source.value,
         },
         "applications": [{"id": str(a.id), "reference_no": a.reference_no} for a in apps],
-        "documents": [{"id": str(d.id), "file_name": d.file_name, "type": d.type.value} for d in docs],
+        "documents": [
+            {"id": str(d.id), "file_name": d.file_name, "type": d.type.value} for d in docs
+        ],
         "consents": [
             {"purpose": c.purpose, "version": c.version, "granted_at": c.granted_at.isoformat()}
             for c in consents
@@ -106,7 +108,9 @@ async def anonymize_candidate(
     return {"id": str(candidate_id), "status": "anonymized"}
 
 
-async def list_audit_logs(session: AsyncSession, user: User, limit: int = 100) -> list[dict[str, Any]]:
+async def list_audit_logs(
+    session: AsyncSession, user: User, limit: int = 100
+) -> list[dict[str, Any]]:
     rows = await session.scalars(
         select(AuditLog).order_by(AuditLog.occurred_at.desc()).limit(limit)
     )

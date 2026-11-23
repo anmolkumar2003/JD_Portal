@@ -88,7 +88,9 @@
   {
     "name": "Swift",
     "category": "language",
-    "synonyms": []
+    "synonyms": [
+      "swift 5"
+    ]
   },
   {
     "name": "Objective-C",
@@ -433,7 +435,10 @@
   {
     "name": "Flutter",
     "category": "framework",
-    "synonyms": []
+    "synonyms": [
+      "flutter development",
+      "flutter sdk"
+    ]
   },
   {
     "name": "React Native",
@@ -455,25 +460,34 @@
   {
     "name": "SwiftUI",
     "category": "framework",
-    "synonyms": []
+    "synonyms": [
+      "swift ui"
+    ]
   },
   {
     "name": "Jetpack Compose",
     "category": "framework",
-    "synonyms": []
+    "synonyms": [
+      "compose",
+      "jetpack"
+    ]
   },
   {
     "name": "Android SDK",
     "category": "framework",
     "synonyms": [
-      "android"
+      "android",
+      "android development",
+      "android studio"
     ]
   },
   {
     "name": "iOS",
     "category": "framework",
     "synonyms": [
-      "ios development"
+      "ios app development",
+      "ios development",
+      "iphone app development"
     ]
   },
   {
@@ -768,9 +782,7 @@
   {
     "name": "AWS IAM",
     "category": "cloud",
-    "synonyms": [
-      "iam"
-    ]
+    "synonyms": []
   },
   {
     "name": "Azure",
@@ -1184,7 +1196,9 @@
   {
     "name": "Selenium",
     "category": "testing",
-    "synonyms": []
+    "synonyms": [
+      "selenium webdriver"
+    ]
   },
   {
     "name": "Playwright",
@@ -1194,7 +1208,9 @@
   {
     "name": "Cypress",
     "category": "testing",
-    "synonyms": []
+    "synonyms": [
+      "cypress.io"
+    ]
   },
   {
     "name": "Jest",
@@ -1224,7 +1240,9 @@
   {
     "name": "Postman",
     "category": "testing",
-    "synonyms": []
+    "synonyms": [
+      "postman api testing"
+    ]
   },
   {
     "name": "JMeter",
@@ -1245,7 +1263,10 @@
     "name": "QA",
     "category": "testing",
     "synonyms": [
-      "quality assurance"
+      "qa testing",
+      "quality analyst",
+      "quality assurance",
+      "software testing"
     ]
   },
   {
@@ -1435,7 +1456,9 @@
   {
     "name": "Figma",
     "category": "design",
-    "synonyms": []
+    "synonyms": [
+      "figma design"
+    ]
   },
   {
     "name": "Sketch",
@@ -1471,7 +1494,9 @@
     "category": "design",
     "synonyms": [
       "user experience",
-      "ux"
+      "user experience design",
+      "ux",
+      "ux designer"
     ]
   },
   {
@@ -1485,22 +1510,33 @@
   {
     "name": "User Research",
     "category": "design",
-    "synonyms": []
+    "synonyms": [
+      "ux research"
+    ]
   },
   {
     "name": "Usability Testing",
     "category": "design",
-    "synonyms": []
+    "synonyms": [
+      "usability studies",
+      "user testing"
+    ]
   },
   {
     "name": "Wireframing",
     "category": "design",
-    "synonyms": []
+    "synonyms": [
+      "wireframe",
+      "wireframes"
+    ]
   },
   {
     "name": "Prototyping",
     "category": "design",
-    "synonyms": []
+    "synonyms": [
+      "interactive prototyping",
+      "prototypes"
+    ]
   },
   {
     "name": "Design Systems",
@@ -1587,12 +1623,18 @@
   {
     "name": "Agile",
     "category": "product",
-    "synonyms": []
+    "synonyms": [
+      "agile methodology",
+      "agile project management"
+    ]
   },
   {
     "name": "Scrum",
     "category": "product",
-    "synonyms": []
+    "synonyms": [
+      "scrum framework",
+      "scrum master"
+    ]
   },
   {
     "name": "Kanban",
@@ -1602,7 +1644,10 @@
   {
     "name": "Jira",
     "category": "product",
-    "synonyms": []
+    "synonyms": [
+      "atlassian jira",
+      "jira software"
+    ]
   },
   {
     "name": "Confluence",
@@ -1639,14 +1684,17 @@
   {
     "name": "Stakeholder Management",
     "category": "product",
-    "synonyms": []
+    "synonyms": [
+      "stakeholder communication",
+      "stakeholder engagement"
+    ]
   },
   {
     "name": "Go-to-Market",
     "category": "product",
     "synonyms": [
       "go to market",
-      "gtm"
+      "go-to-market strategy"
     ]
   },
   {
@@ -1718,7 +1766,10 @@
     "name": "SEO",
     "category": "marketing",
     "synonyms": [
-      "search engine optimization"
+      "off-page seo",
+      "on-page seo",
+      "search engine optimization",
+      "technical seo"
     ]
   },
   {
@@ -1730,21 +1781,27 @@
     "name": "Google Analytics",
     "category": "marketing",
     "synonyms": [
-      "ga4"
+      "ga",
+      "ga4",
+      "google analytics 4",
+      "universal analytics"
     ]
   },
   {
     "name": "Google Ads",
     "category": "marketing",
     "synonyms": [
-      "adwords"
+      "adwords",
+      "google adwords"
     ]
   },
   {
     "name": "Meta Ads",
     "category": "marketing",
     "synonyms": [
-      "facebook ads"
+      "facebook ads",
+      "facebook advertising",
+      "instagram ads"
     ]
   },
   {
@@ -1755,7 +1812,11 @@
   {
     "name": "Copywriting",
     "category": "marketing",
-    "synonyms": []
+    "synonyms": [
+      "ad copy",
+      "copy writing",
+      "copywriter"
+    ]
   },
   {
     "name": "Email Marketing",
@@ -2313,7 +2374,10 @@
   {
     "name": "Project Management",
     "category": "operations",
-    "synonyms": []
+    "synonyms": [
+      "delivery management",
+      "project planning"
+    ]
   },
   {
     "name": "Program Management",
@@ -2420,7 +2484,9 @@
   {
     "name": "Risk Management",
     "category": "operations",
-    "synonyms": []
+    "synonyms": [
+      "risk mitigation"
+    ]
   },
   {
     "name": "Business Continuity",
@@ -2474,11 +2540,9 @@
     "synonyms": []
   },
   {
-    "name": "GCP",
+    "name": "Good Clinical Practice",
     "category": "healthcare",
-    "synonyms": [
-      "good clinical practice"
-    ]
+    "synonyms": []
   },
   {
     "name": "Pharmacovigilance",
@@ -2592,11 +2656,6 @@
   },
   {
     "name": "Corporate Law",
-    "category": "legal",
-    "synonyms": []
-  },
-  {
-    "name": "Employment Law",
     "category": "legal",
     "synonyms": []
   },
@@ -2910,5 +2969,407 @@
     "name": "Emotional Intelligence",
     "category": "soft",
     "synonyms": []
+  },
+  {
+    "name": "Content Writing",
+    "category": "content_writing",
+    "synonyms": [
+      "blog writing",
+      "content writer",
+      "web content writing"
+    ]
+  },
+  {
+    "name": "SEO Writing",
+    "category": "content_writing",
+    "synonyms": [
+      "seo content",
+      "seo content writing",
+      "seo copywriting",
+      "seo writer"
+    ]
+  },
+  {
+    "name": "Keyword Research",
+    "category": "content_writing",
+    "synonyms": [
+      "keyword analysis",
+      "keyword planning"
+    ]
+  },
+  {
+    "name": "WordPress",
+    "category": "content_writing",
+    "synonyms": [
+      "wordpress cms",
+      "wp"
+    ]
+  },
+  {
+    "name": "Content Strategy",
+    "category": "content_writing",
+    "synonyms": [
+      "content planning",
+      "editorial calendar"
+    ]
+  },
+  {
+    "name": "Proofreading",
+    "category": "content_writing",
+    "synonyms": [
+      "copy editing",
+      "editing and proofreading"
+    ]
+  },
+  {
+    "name": "Google Search Console",
+    "category": "content_writing",
+    "synonyms": [
+      "gsc",
+      "search console"
+    ]
+  },
+  {
+    "name": "Shopify",
+    "category": "shopify",
+    "synonyms": [
+      "shopify developer",
+      "shopify development",
+      "shopify store"
+    ]
+  },
+  {
+    "name": "Shopify Plus",
+    "category": "shopify",
+    "synonyms": []
+  },
+  {
+    "name": "Liquid",
+    "category": "shopify",
+    "synonyms": [
+      "liquid templating",
+      "shopify liquid"
+    ]
+  },
+  {
+    "name": "Shopify Themes",
+    "category": "shopify",
+    "synonyms": [
+      "online store 2.0",
+      "shopify theme development",
+      "theme development"
+    ]
+  },
+  {
+    "name": "Storefront API",
+    "category": "shopify",
+    "synonyms": [
+      "shopify storefront api",
+      "storefront graphql api"
+    ]
+  },
+  {
+    "name": "Shopify Apps",
+    "category": "shopify",
+    "synonyms": [
+      "shopify admin api",
+      "shopify app development"
+    ]
+  },
+  {
+    "name": "Shopify Polaris",
+    "category": "shopify",
+    "synonyms": [
+      "polaris"
+    ]
+  },
+  {
+    "name": "Shopify Checkout Extensibility",
+    "category": "shopify",
+    "synonyms": [
+      "checkout extensions",
+      "checkout ui extensions"
+    ]
+  },
+  {
+    "name": "PPC",
+    "category": "ppc",
+    "synonyms": [
+      "paid search",
+      "pay per click",
+      "pay-per-click",
+      "sem campaigns"
+    ]
+  },
+  {
+    "name": "Google Tag Manager",
+    "category": "ppc",
+    "synonyms": [
+      "gtm",
+      "tag manager"
+    ]
+  },
+  {
+    "name": "ROAS",
+    "category": "ppc",
+    "synonyms": [
+      "return on ad spend"
+    ]
+  },
+  {
+    "name": "Conversion Tracking",
+    "category": "ppc",
+    "synonyms": [
+      "conversion pixels",
+      "conversion tracking setup"
+    ]
+  },
+  {
+    "name": "Microsoft Ads",
+    "category": "ppc",
+    "synonyms": [
+      "bing ads",
+      "microsoft advertising"
+    ]
+  },
+  {
+    "name": "Google Shopping",
+    "category": "ppc",
+    "synonyms": [
+      "google shopping ads",
+      "shopping ads",
+      "shopping campaigns"
+    ]
+  },
+  {
+    "name": "Google Merchant Center",
+    "category": "ppc",
+    "synonyms": [
+      "gmc",
+      "merchant center"
+    ]
+  },
+  {
+    "name": "Remarketing",
+    "category": "ppc",
+    "synonyms": [
+      "remarketing campaigns",
+      "retargeting"
+    ]
+  },
+  {
+    "name": "Performance Max",
+    "category": "ppc",
+    "synonyms": [
+      "performance max campaigns",
+      "pmax"
+    ]
+  },
+  {
+    "name": "LinkedIn Ads",
+    "category": "ppc",
+    "synonyms": [
+      "linkedin advertising",
+      "linkedin campaign manager"
+    ]
+  },
+  {
+    "name": "Retrofit",
+    "category": "android",
+    "synonyms": [
+      "retrofit2"
+    ]
+  },
+  {
+    "name": "Kotlin Coroutines",
+    "category": "android",
+    "synonyms": [
+      "coroutines",
+      "kotlin flow"
+    ]
+  },
+  {
+    "name": "Room",
+    "category": "android",
+    "synonyms": [
+      "android room",
+      "room database"
+    ]
+  },
+  {
+    "name": "Hilt",
+    "category": "android",
+    "synonyms": [
+      "dagger",
+      "dagger hilt",
+      "dagger2"
+    ]
+  },
+  {
+    "name": "MVVM",
+    "category": "android",
+    "synonyms": [
+      "model-view-viewmodel",
+      "mvvm architecture"
+    ]
+  },
+  {
+    "name": "UIKit",
+    "category": "ios",
+    "synonyms": [
+      "ui kit"
+    ]
+  },
+  {
+    "name": "Xcode",
+    "category": "ios",
+    "synonyms": []
+  },
+  {
+    "name": "Core Data",
+    "category": "ios",
+    "synonyms": [
+      "coredata"
+    ]
+  },
+  {
+    "name": "Combine",
+    "category": "ios",
+    "synonyms": [
+      "combine framework"
+    ]
+  },
+  {
+    "name": "App Store Connect",
+    "category": "ios",
+    "synonyms": [
+      "app store submission",
+      "testflight"
+    ]
+  },
+  {
+    "name": "Bloc",
+    "category": "flutter",
+    "synonyms": [
+      "bloc pattern",
+      "cubit",
+      "flutter bloc"
+    ]
+  },
+  {
+    "name": "Riverpod",
+    "category": "flutter",
+    "synonyms": [
+      "flutter riverpod"
+    ]
+  },
+  {
+    "name": "Provider",
+    "category": "flutter",
+    "synonyms": [
+      "flutter provider"
+    ]
+  },
+  {
+    "name": "GetX",
+    "category": "flutter",
+    "synonyms": []
+  },
+  {
+    "name": "Manual Testing",
+    "category": "quality_analyst",
+    "synonyms": [
+      "functional testing",
+      "manual qa"
+    ]
+  },
+  {
+    "name": "API Testing",
+    "category": "quality_analyst",
+    "synonyms": [
+      "rest api testing"
+    ]
+  },
+  {
+    "name": "Appium",
+    "category": "quality_analyst",
+    "synonyms": []
+  },
+  {
+    "name": "Regression Testing",
+    "category": "quality_analyst",
+    "synonyms": []
+  },
+  {
+    "name": "Test Cases",
+    "category": "quality_analyst",
+    "synonyms": [
+      "test case design",
+      "test case writing"
+    ]
+  },
+  {
+    "name": "Bug Tracking",
+    "category": "quality_analyst",
+    "synonyms": [
+      "bug reporting",
+      "defect management",
+      "defect tracking"
+    ]
+  },
+  {
+    "name": "Test Plans",
+    "category": "quality_analyst",
+    "synonyms": [
+      "test plan",
+      "test strategy"
+    ]
+  },
+  {
+    "name": "Mobile Testing",
+    "category": "quality_analyst",
+    "synonyms": [
+      "android testing",
+      "ios testing",
+      "mobile app testing"
+    ]
+  },
+  {
+    "name": "Graphic Design",
+    "category": "ux_design",
+    "synonyms": [
+      "graphic designer",
+      "visual communication"
+    ]
+  },
+  {
+    "name": "Canva",
+    "category": "ux_design",
+    "synonyms": [
+      "canva design"
+    ]
+  },
+  {
+    "name": "Trello",
+    "category": "project_manager",
+    "synonyms": [
+      "trello boards"
+    ]
+  },
+  {
+    "name": "SDLC",
+    "category": "project_manager",
+    "synonyms": [
+      "software development life cycle",
+      "software development lifecycle"
+    ]
+  },
+  {
+    "name": "Client Communication",
+    "category": "project_manager",
+    "synonyms": [
+      "client handling",
+      "client management"
+    ]
   }
 ]

@@ -4,6 +4,8 @@ from typing import Literal
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+FeatureFlag = Literal["public_careers", "interviews", "offers", "requisitions", "audit_ui"]
+
 
 class Settings(BaseSettings):
     """Application settings, read from environment variables (and `.env` if present)."""
@@ -15,6 +17,22 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     log_level: str = "INFO"
     cors_origins: str = "http://localhost:3000"
+    # Fallback display name until an admin sets one in Settings > Organization.
+    org_name: str = "HR Portal"
+    # Browser-facing base URL of the web app, used in emailed links (password reset).
+    web_base_url: str = "http://localhost:3000"
+
+    # Optional modules, all off by default. Off means hidden in the UI and 404 from the API.
+    enable_public_careers: bool = False
+    enable_interviews: bool = False
+    enable_offers: bool = False
+    enable_requisitions: bool = False
+    enable_audit_ui: bool = False
+
+    # General per-client API rate limit (requests per minute); 0 disables it.
+    api_rate_limit_per_minute: int = 300
+    # Trust X-Forwarded-For (only when the API is reachable solely through our reverse proxy).
+    trust_proxy_headers: bool = False
 
     database_url: str
     redis_url: str
@@ -45,6 +63,21 @@ class Settings(BaseSettings):
     smtp_use_tls: bool = False
     smtp_from_email: str = "no-reply@hr-portal.local"
     smtp_from_name: str = "HR Portal"
+
+    def feature_enabled(self, flag: FeatureFlag) -> bool:
+        enabled: bool = getattr(self, f"enable_{flag}")
+        return enabled
+
+    @property
+    def features(self) -> dict[str, bool]:
+        flags: tuple[FeatureFlag, ...] = (
+            "public_careers",
+            "interviews",
+            "offers",
+            "requisitions",
+            "audit_ui",
+        )
+        return {flag: self.feature_enabled(flag) for flag in flags}
 
     @property
     def cors_origin_list(self) -> list[str]:

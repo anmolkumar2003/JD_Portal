@@ -1,7 +1,7 @@
-from app.cv_engine.extract import extract_text
-from app.cv_engine.parser import RuleBasedParser, merge_experience_years, segment_sections
 from datetime import date
 
+from app.cv_engine.extract import extract_text
+from app.cv_engine.parser import RuleBasedParser, merge_experience_years, segment_sections
 
 SAMPLE = """
 Jane Doe
@@ -13,7 +13,7 @@ Backend engineer with fintech experience.
 
 Experience
 Senior Backend Engineer
-Acme Payments
+Globex Payments
 Jan 2020 – Present
 Built Python FastAPI services on PostgreSQL and Redis.
 
@@ -94,7 +94,9 @@ def test_extract_pdf_from_generated_sample() -> None:
 
     pdf = Path(__file__).resolve().parents[1] / "golden" / "cvs" / "cv01_backend.pdf"
     if not pdf.exists():
-        result = extract_text(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n", "pdf")
+        result = extract_text(
+            b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n", "pdf"
+        )
         assert isinstance(result.text, str)
         return
     result = extract_text(pdf.read_bytes(), "application/pdf")

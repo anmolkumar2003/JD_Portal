@@ -1,14 +1,14 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * End-to-end tests against a running stack (`make up`, `make migrate`, `make seed`).
- * Web: http://localhost:3000 · API: http://localhost:8001
+ * Run with `make test-e2e`: it starts an isolated stack (docker-compose.e2e.yml), seeds demo
+ * data with a one-off password (E2E_PASSWORD) and runs these tests against http://web:3000.
  */
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: "list",
   timeout: 60_000,

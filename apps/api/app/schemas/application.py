@@ -98,6 +98,8 @@ class ApplicationFilters(BaseModel):
     job_id: UUID | None = None
     stage_id: UUID | None = None
     candidate_id: UUID | None = None
+    # The candidate's own department, or the job's when HR has not set one.
+    department_id: UUID | None = None
     q: str | None = Field(default=None, max_length=200)
     source: CandidateSource | None = None
     applied_from: date | None = None
@@ -265,9 +267,7 @@ class ApplicationOut(BaseModel):
     match_result: MatchResultOut | None
 
 
-ReasonText = Annotated[
-    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)
-]
+ReasonText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
 
 
 class StagePatch(BaseModel):

@@ -17,7 +17,9 @@ from app.schemas.comms import NoteCreate, NoteOut
 MENTION_RE = re.compile(r"@\[([0-9a-fA-F-]{36})\]")
 
 
-async def _ensure_candidate_access(session: AsyncSession, user: User, candidate_id: uuid.UUID) -> Candidate:
+async def _ensure_candidate_access(
+    session: AsyncSession, user: User, candidate_id: uuid.UUID
+) -> Candidate:
     candidate = await session.get(Candidate, candidate_id)
     if candidate is None or candidate.deleted_at is not None or candidate.org_id != user.org_id:
         raise AppError(status.HTTP_404_NOT_FOUND, "not_found", "Candidate not found")

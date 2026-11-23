@@ -15,7 +15,7 @@ AUTH = "/api/v1/auth"
 async def test_login_returns_access_token_and_refresh_cookie(client: AsyncClient) -> None:
     response = await client.post(
         f"{AUTH}/login",
-        json={"email": "Recruiter@acme.example.com", "password": DEMO_PASSWORD},
+        json={"email": "Recruiter@demo.example.com", "password": DEMO_PASSWORD},
     )
 
     assert response.status_code == 200
@@ -30,7 +30,7 @@ async def test_login_returns_access_token_and_refresh_cookie(client: AsyncClient
 
     me = await client.get(f"{AUTH}/me", headers={"Authorization": f"Bearer {body['access_token']}"})
     assert me.status_code == 200
-    assert me.json()["email"] == "recruiter@acme.example.com"
+    assert me.json()["email"] == "recruiter@demo.example.com"
 
 
 async def test_me_requires_a_token(client: AsyncClient) -> None:
@@ -61,7 +61,7 @@ async def test_refresh_rotates_token_and_logout_revokes_it(client: AsyncClient) 
 
 
 async def test_account_locks_after_five_failed_logins(client: AsyncClient) -> None:
-    creds = {"email": "interviewer@acme.example.com", "password": "wrong-password"}
+    creds = {"email": "interviewer@demo.example.com", "password": "wrong-password"}
 
     statuses = [(await client.post(f"{AUTH}/login", json=creds)).status_code for _ in range(5)]
     assert statuses == [401, 401, 401, 401, 423]
@@ -75,7 +75,7 @@ async def test_account_locks_after_five_failed_logins(client: AsyncClient) -> No
 
 async def test_unknown_email_gets_the_same_error_as_a_wrong_password(client: AsyncClient) -> None:
     response = await client.post(
-        f"{AUTH}/login", json={"email": "nobody@acme.example.com", "password": "x"}
+        f"{AUTH}/login", json={"email": "nobody@demo.example.com", "password": "x"}
     )
 
     assert response.status_code == 401
@@ -88,7 +88,7 @@ async def test_password_reset_round_trip(
     db: async_sessionmaker[AsyncSession],
 ) -> None:
     response = await client.post(
-        f"{AUTH}/forgot-password", json={"email": "manager@acme.example.com"}
+        f"{AUTH}/forgot-password", json={"email": "manager@demo.example.com"}
     )
     assert response.status_code == 202
     assert len(sent_emails) == 1
@@ -112,7 +112,7 @@ async def test_forgot_password_does_not_reveal_unknown_emails(
     client: AsyncClient, sent_emails: list[dict[str, Any]]
 ) -> None:
     response = await client.post(
-        f"{AUTH}/forgot-password", json={"email": "nobody@acme.example.com"}
+        f"{AUTH}/forgot-password", json={"email": "nobody@demo.example.com"}
     )
 
     assert response.status_code == 202

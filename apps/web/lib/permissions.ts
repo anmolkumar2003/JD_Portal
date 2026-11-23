@@ -7,6 +7,13 @@ export function canManageJobs(role: Role | undefined): boolean {
   return role !== undefined && JOB_EDITORS.has(role);
 }
 
+const ADMINS: ReadonlySet<Role> = new Set(["super_admin", "hr_admin"]);
+
+/** Settings > Organization, Users and Departments. */
+export function isAdmin(role: Role | undefined): boolean {
+  return role !== undefined && ADMINS.has(role);
+}
+
 /** Stage moves use the same editor roles as job publish/close. */
 export function canMoveStages(role: Role | undefined): boolean {
   return canManageJobs(role);

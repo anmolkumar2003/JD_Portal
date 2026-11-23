@@ -2,16 +2,17 @@ import path from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-import { loginAsRecruiter } from "./helpers/auth";
+import { CAREERS_ENABLED, loginAs, loginAsRecruiter } from "./helpers/auth";
 
 const SAMPLE_CV = path.resolve(__dirname, "fixtures/cv01_backend.pdf");
 const SEEDED_DEMO_EMAIL = "demo01@candidates.demo";
 
 test.describe("Careers apply", () => {
+  test.skip(!CAREERS_ENABLED, "Public careers site is switched off (ENABLE_PUBLIC_CAREERS)");
   test("candidate applies with a CV", async ({ page }) => {
     const unique = `e2e-${Date.now()}@mail.example.com`;
     await page.goto("/careers");
-    await page.getByRole("link", { name: /Senior Backend Engineer/i }).click();
+    await page.getByRole("link", { name: /Senior Android Developer/i }).click();
     await page.getByRole("link", { name: /Apply for this role/i }).click();
 
     await page.getByLabel("First name").fill("E2E");
@@ -25,7 +26,7 @@ test.describe("Careers apply", () => {
     await page.getByRole("button", { name: /Continue/i }).click();
 
     await page.locator('input[type="file"]').setInputFiles(SAMPLE_CV);
-    await page.getByLabel(/I agree that Acme/i).check();
+    await page.getByLabel(/I agree that/i).check();
     await page.getByRole("button", { name: "Submit application" }).click();
 
     await page.waitForURL(/\/careers\/[^/]+\/applied/);
@@ -46,7 +47,7 @@ test.describe("Recruiter pipeline", () => {
 
   test("moves a seeded candidate to another stage", async ({ page }) => {
     await page.goto("/jobs");
-    await page.getByRole("link", { name: "Senior Backend Engineer" }).click();
+    await page.getByRole("link", { name: "Senior Android Developer" }).click();
     await page.getByRole("tab", { name: /Pipeline/i }).click();
 
     const applied = page.getByRole("region", { name: /Applied,/i });
@@ -62,7 +63,7 @@ test.describe("Recruiter pipeline", () => {
 
   test("rejects with a required reason", async ({ page }) => {
     await page.goto("/jobs");
-    await page.getByRole("link", { name: "Senior Backend Engineer" }).click();
+    await page.getByRole("link", { name: "Senior Android Developer" }).click();
     await page.getByRole("tab", { name: /Pipeline/i }).click();
 
     const applied = page.getByRole("region", { name: /Applied,/i });
@@ -77,17 +78,16 @@ test.describe("Recruiter pipeline", () => {
     await page.getByLabel("Reason").fill("E2E rejection — skills gap for this role");
     await page.getByRole("button", { name: "Reject candidate" }).click();
     await expect(
-      page.getByRole("region", { name: /Rejected,/i }).getByText(name!).first(),
+      page
+        .getByRole("region", { name: /Rejected,/i })
+        .getByText(name!)
+        .first(),
     ).toBeVisible({ timeout: 15_000 });
   });
 });
 
 test("interviewer submits a scorecard (portal UI)", async ({ page }) => {
-  await page.goto("/login");
-  await page.locator("#email").fill("interviewer@acme.example.com");
-  await page.locator("#password").fill("Demo@2026!");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await page.waitForURL("**/dashboard");
+  await loginAs(page, "interviewer");
 
   await page.goto("/interviews");
   const hasPortal = await page

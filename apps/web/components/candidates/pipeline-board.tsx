@@ -212,7 +212,10 @@ export function PipelineBoard({ jobId }: PipelineBoardProps) {
       </div>
 
       {moveStage.isError && (
-        <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+        <p
+          role="alert"
+          className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+        >
           {moveStage.error instanceof ApiError
             ? moveStage.error.message
             : "Stage update failed and was rolled back."}
@@ -220,12 +223,7 @@ export function PipelineBoard({ jobId }: PipelineBoardProps) {
       )}
 
       {view === "table" ? (
-        <PipelineTable
-          board={data}
-          isLoading={false}
-          error={null}
-          onRowClick={setDrawerId}
-        />
+        <PipelineTable board={data} isLoading={false} error={null} onRowClick={setDrawerId} />
       ) : total === 0 ? (
         <EmptyState
           icon={Users}

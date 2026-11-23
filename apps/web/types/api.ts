@@ -17,6 +17,9 @@ export interface HealthResponse {
 
 export type Role = "super_admin" | "hr_admin" | "recruiter" | "hiring_manager" | "interviewer";
 
+/** Roles an admin can give in Settings > Users. */
+export type AssignableRole = "super_admin" | "hr_admin" | "recruiter";
+
 export interface User {
   id: string;
   org_id: string;
@@ -24,7 +27,46 @@ export interface User {
   full_name: string;
   role: Role;
   is_active: boolean;
+  must_change_password: boolean;
   last_login_at: string | null;
+  created_at: string;
+}
+
+export interface UserCreateInput {
+  email: string;
+  full_name: string;
+  role: AssignableRole;
+}
+
+export interface UserPatchInput {
+  email?: string;
+  full_name?: string;
+  role?: AssignableRole;
+  is_active?: boolean;
+}
+
+export interface UserWithTemporaryPassword {
+  user: User;
+  temporary_password: string;
+}
+
+export interface ChangePasswordInput {
+  current_password: string;
+  new_password: string;
+}
+
+export type FeatureFlag = "public_careers" | "interviews" | "offers" | "requisitions" | "audit_ui";
+
+/** Unauthenticated bootstrap: branding and which optional modules are switched on. */
+export interface PublicConfig {
+  org_name: string;
+  logo_data_url: string | null;
+  features: Record<FeatureFlag, boolean>;
+}
+
+export interface OrgSettings {
+  name: string;
+  logo_data_url: string | null;
 }
 
 export interface TokenResponse {
@@ -51,6 +93,7 @@ export interface Page<T> {
 export interface Department {
   id: string;
   name: string;
+  is_active: boolean;
 }
 
 export interface Location {
@@ -58,6 +101,13 @@ export interface Location {
   name: string;
   city: string | null;
   country: string | null;
+  is_active: boolean;
+}
+
+export interface LocationInput {
+  name: string;
+  city?: string | null;
+  country?: string | null;
 }
 
 // --- Jobs (SPEC 3.4) --------------------------------------------------------------------------
@@ -218,22 +268,11 @@ export interface ApiErrorBody {
 // --- Applications / pipeline (CAND / PIPE) ----------------------------------------------------
 
 export type StageType =
-  | "applied"
-  | "screening"
-  | "interview"
-  | "offer"
-  | "hired"
-  | "rejected"
-  | "custom";
+  "applied" | "screening" | "interview" | "offer" | "hired" | "rejected" | "custom";
 
 export type ApplicationStatus = "active" | "rejected" | "withdrawn" | "hired";
 
-export type CandidateSource =
-  | "career_site"
-  | "referral"
-  | "linkedin"
-  | "agency"
-  | "manual";
+export type CandidateSource = "career_site" | "referral" | "linkedin" | "agency" | "manual";
 
 export type DocumentType = "cv" | "cover_letter" | "offer" | "other";
 

@@ -41,7 +41,7 @@ def _render_offer_pdf(
 
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
-    width, height = A4
+    _, height = A4
     y = height - 72
     c.setFont("Helvetica-Bold", 16)
     c.drawString(72, y, "Offer of Employment")
@@ -94,7 +94,9 @@ async def create_offer(
     return {"id": str(offer.id), "status": offer.status.value}
 
 
-async def submit_for_approval(session: AsyncSession, user: User, offer_id: uuid.UUID) -> dict[str, Any]:
+async def submit_for_approval(
+    session: AsyncSession, user: User, offer_id: uuid.UUID
+) -> dict[str, Any]:
     offer = await session.get(Offer, offer_id)
     if offer is None:
         raise AppError(status.HTTP_404_NOT_FOUND, "not_found", "Offer not found")

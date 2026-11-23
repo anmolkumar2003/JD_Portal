@@ -1,12 +1,15 @@
-"""Seed local demo data. Safe to re-run: rows are matched by natural key and reused.
+"""Demo data for local development and automated tests only.
 
-Run with `make seed` (or `python -m app.seed` inside the API container).
-Demo credentials are for local development only and are documented in the README.
+`make seed-demo` runs this and refuses unless APP_ENV=development. It is never run
+automatically. The demo password comes from DEMO_PASSWORD or is generated per run and printed
+once to the terminal; it is not stored anywhere.
 """
 
 import asyncio
 import hashlib
 import logging
+import os
+import sys
 import uuid
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -19,7 +22,7 @@ from app.core import storage
 from app.core.config import get_settings
 from app.core.db import SessionLocal, engine
 from app.core.logging import configure_logging
-from app.core.security import hash_password
+from app.core.security import generate_password, hash_password
 from app.models import (
     Application,
     AtsCheck,
@@ -51,31 +54,26 @@ from app.models.enums import (
     VirusScanStatus,
     WorkMode,
 )
+from app.reference_data import ensure_org, ensure_reference_data
 
-logger = logging.getLogger("app.seed")
+logger = logging.getLogger("app.seed_demo")
 
 M = TypeVar("M", bound=Base)
 
-DEMO_PASSWORD = "Demo@2026!"  # noqa: S105 - local demo only, documented in README
-ORG_NAME = "Acme Corp"
-EMAIL_DOMAIN = "acme.example.com"
+DEMO_EMAIL_DOMAIN = "demo.example.com"
 
 DEMO_USERS: list[tuple[str, str, UserRole]] = [
     ("superadmin", "Sara Super", UserRole.SUPER_ADMIN),
     ("hradmin", "Harish Admin", UserRole.HR_ADMIN),
     ("recruiter", "Riya Recruiter", UserRole.RECRUITER),
+    # Kept so record-level access (AUTH-06) stays covered by tests.
     ("manager", "Manoj Manager", UserRole.HIRING_MANAGER),
     ("interviewer", "Isha Interviewer", UserRole.INTERVIEWER),
 ]
 
-DEFAULT_STAGES: list[tuple[str, StageType]] = [
-    ("Applied", StageType.APPLIED),
-    ("Screening", StageType.SCREENING),
-    ("Interview", StageType.INTERVIEW),
-    ("Offer", StageType.OFFER),
-    ("Hired", StageType.HIRED),
-    ("Rejected", StageType.REJECTED),
-]
+ANDROID_SLUG = "senior-android-developer"
+SHOPIFY_SLUG = "shopify-developer"
+CONTENT_SLUG = "content-writer"
 
 DEMO_CANDIDATE_COUNT = 30
 DEMO_CANDIDATE_DOMAIN = "candidates.demo"
@@ -83,69 +81,16 @@ DEMO_CV_BYTES = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"
 DEMO_ENGINE_VERSION = "seed-1.0"
 
 DEMO_FIRST_NAMES = (
-    "Aarav",
-    "Ananya",
-    "Arjun",
-    "Bhavna",
-    "Chirag",
-    "Deepa",
-    "Esha",
-    "Farhan",
-    "Gauri",
-    "Harsh",
-    "Ira",
-    "Jatin",
-    "Kavya",
-    "Laksh",
-    "Meera",
-    "Nikhil",
-    "Ojas",
-    "Priya",
-    "Rahul",
-    "Saanvi",
-    "Tarun",
-    "Uma",
-    "Varun",
-    "Yash",
-    "Zara",
-    "Aditya",
-    "Divya",
-    "Karthik",
-    "Neha",
-    "Rohan",
-)
+    "Aarav", "Ananya", "Arjun", "Bhavna", "Chirag", "Deepa", "Esha", "Farhan", "Gauri", "Harsh",
+    "Ira", "Jatin", "Kavya", "Laksh", "Meera", "Nikhil", "Ojas", "Priya", "Rahul", "Saanvi",
+    "Tarun", "Uma", "Varun", "Yash", "Zara", "Aditya", "Divya", "Karthik", "Neha", "Rohan",
+)  # fmt: skip
 DEMO_LAST_NAMES = (
-    "Sharma",
-    "Iyer",
-    "Patel",
-    "Menon",
-    "Reddy",
-    "Nair",
-    "Gupta",
-    "Singh",
-    "Kulkarni",
-    "Das",
-    "Bose",
-    "Rao",
-    "Verma",
-    "Pillai",
-    "Chopra",
-    "Joshi",
-    "Malhotra",
-    "Desai",
-    "Kapoor",
-    "Mehta",
-    "Saxena",
-    "Thakur",
-    "Agarwal",
-    "Banerjee",
-    "Chatterjee",
-    "Dubey",
-    "Mishra",
-    "Pandey",
-    "Shetty",
-    "Yadav",
-)
+    "Sharma", "Iyer", "Patel", "Menon", "Reddy", "Nair", "Gupta", "Singh", "Kulkarni", "Das",
+    "Bose", "Rao", "Verma", "Pillai", "Chopra", "Joshi", "Malhotra", "Desai", "Kapoor", "Mehta",
+    "Saxena", "Thakur", "Agarwal", "Banerjee", "Chatterjee", "Dubey", "Mishra", "Pandey",
+    "Shetty", "Yadav",
+)  # fmt: skip
 # Per-candidate pipeline stage spread (must sum to DEMO_CANDIDATE_COUNT).
 DEMO_STAGE_SEQUENCE: list[StageType] = (
     [StageType.APPLIED] * 6
@@ -156,30 +101,35 @@ DEMO_STAGE_SEQUENCE: list[StageType] = (
     + [StageType.REJECTED] * 6
 )
 
-BACKEND_ROLE_TITLES = (
-    "Backend Engineer",
-    "Senior Software Engineer",
-    "Platform Engineer",
-    "API Developer",
-    "Python Developer",
-)
-FRONTEND_ROLE_TITLES = (
-    "Frontend Engineer",
-    "UI Engineer",
-    "React Developer",
-    "Web Developer",
-    "Product Engineer",
-)
+ROLE_TITLES: dict[str, tuple[str, ...]] = {
+    ANDROID_SLUG: ("Android Developer", "Senior Android Engineer", "Mobile Developer"),
+    SHOPIFY_SLUG: ("Shopify Developer", "Frontend Developer", "E-commerce Developer"),
+}
+SKILL_POOLS: dict[str, list[str]] = {
+    ANDROID_SLUG: [
+        "Kotlin",
+        "Jetpack Compose",
+        "Retrofit",
+        "Android SDK",
+        "Kotlin Coroutines",
+        "Hilt",
+        "Firebase",
+        "MVVM",
+    ],
+    SHOPIFY_SLUG: [
+        "Shopify",
+        "Liquid",
+        "JavaScript",
+        "HTML",
+        "CSS",
+        "Storefront API",
+        "GraphQL",
+        "Shopify Themes",
+    ],
+}
 COMPANIES = (
-    "Infosys",
-    "Wipro",
-    "Freshworks",
-    "Razorpay",
-    "Flipkart",
-    "Zoho",
-    "Swiggy",
-    "PhonePe",
-)
+    "Infosys", "Wipro", "Freshworks", "Razorpay", "Flipkart", "Zoho", "Swiggy", "PhonePe",
+)  # fmt: skip
 
 
 def _skills(*items: tuple[str, float]) -> list[dict[str, Any]]:
@@ -194,36 +144,21 @@ def _status_for_stage(stage: StageType) -> ApplicationStatus:
     return ApplicationStatus.ACTIVE
 
 
-def _demo_profile_data(
-    job_slug: str, *, years: Decimal, experience_index: int
-) -> dict[str, Any]:
-    if job_slug == "frontend-engineer":
-        skill_pool = ["React", "TypeScript", "Next.js", "CSS", "Tailwind CSS", "Playwright", "HTML"]
-        title = FRONTEND_ROLE_TITLES[experience_index % len(FRONTEND_ROLE_TITLES)]
-    else:
-        skill_pool = [
-            "Python",
-            "FastAPI",
-            "PostgreSQL",
-            "Docker",
-            "Kubernetes",
-            "AWS",
-            "Celery",
-            "Redis",
-        ]
-        title = BACKEND_ROLE_TITLES[experience_index % len(BACKEND_ROLE_TITLES)]
+def _demo_profile_data(job_slug: str, *, years: Decimal, experience_index: int) -> dict[str, Any]:
+    titles = ROLE_TITLES[job_slug]
+    title = titles[experience_index % len(titles)]
     start_year = 2026 - int(years) - 1
     company = COMPANIES[experience_index % len(COMPANIES)]
     return {
-        "skills": skill_pool[: 5 + (experience_index % 3)],
-        "summary": f"{title} with {years} years building production systems.",
+        "skills": SKILL_POOLS[job_slug][: 5 + (experience_index % 3)],
+        "summary": f"{title} with {years} years building production apps.",
         "experience": [
             {
                 "company": company,
                 "title": title,
                 "start": f"{start_year + 2}-03",
                 "end": None,
-                "highlights": ["Shipped customer-facing features", "Improved reliability and observability"],
+                "highlights": ["Shipped customer-facing features", "Improved app performance"],
             },
             {
                 "company": COMPANIES[(experience_index + 3) % len(COMPANIES)],
@@ -247,28 +182,22 @@ def _demo_profile_data(
 
 
 def _match_breakdown(score: int) -> dict[str, int]:
-    skills = max(40, min(100, score + (score % 7) - 5))
-    experience = max(35, min(100, score - 8))
-    education = max(50, min(100, score + 3))
-    title = max(45, min(100, score - 2))
-    location = max(60, min(100, score + 5))
     return {
-        "skills": skills,
-        "experience": experience,
-        "education": education,
-        "title": title,
-        "location": location,
+        "skills": max(40, min(100, score + (score % 7) - 5)),
+        "experience": max(35, min(100, score - 8)),
+        "education": max(50, min(100, score + 3)),
+        "title": max(45, min(100, score - 2)),
+        "location": max(60, min(100, score + 5)),
     }
 
 
-async def _upsert_match_result(
+async def _upsert_match_result(  # noqa: PLR0913
     session: AsyncSession,
     application_id: uuid.UUID,
     *,
     overall_score: int,
     matched: list[str],
     missing_required: list[str],
-    missing_preferred: list[str],
     extra: list[str],
 ) -> None:
     inputs_hash = hashlib.sha256(
@@ -279,36 +208,26 @@ async def _upsert_match_result(
         select(MatchResult).where(MatchResult.application_id == application_id)
     )
     if row is None:
-        row = MatchResult(
-            application_id=application_id,
-            overall_score=overall_score,
-            breakdown=breakdown,
-            matched_skills=matched,
-            missing_required=missing_required,
-            missing_preferred=missing_preferred,
-            extra_skills=extra,
-            explanation={
-                "summary": "Advisory match based on seeded demo data.",
-                "strengths": ["Solid overlap on core stack", "Relevant recent experience"],
-                "concerns": missing_required or ["Some preferred skills not demonstrated"],
-            },
-            engine_version=DEMO_ENGINE_VERSION,
-            inputs_hash=inputs_hash,
-        )
+        row = MatchResult(application_id=application_id, inputs_hash=inputs_hash)
         session.add(row)
-    else:
-        row.overall_score = overall_score
-        row.breakdown = breakdown
-        row.matched_skills = matched
-        row.missing_required = missing_required
-        row.missing_preferred = missing_preferred
-        row.extra_skills = extra
-        row.engine_version = DEMO_ENGINE_VERSION
-        row.inputs_hash = inputs_hash
+    row.overall_score = overall_score
+    row.breakdown = breakdown
+    row.matched_skills = matched
+    row.missing_required = missing_required
+    row.missing_preferred = []
+    row.extra_skills = extra
+    row.explanation = {
+        "summary": "Advisory match based on demo data.",
+        "strengths": ["Solid overlap on core stack", "Relevant recent experience"],
+        "concerns": missing_required or ["Some preferred skills not demonstrated"],
+        "component_scores": breakdown,
+    }
+    row.engine_version = DEMO_ENGINE_VERSION
+    row.inputs_hash = inputs_hash
     await session.flush()
 
 
-async def _ensure_demo_cv_bundle(
+async def _ensure_demo_cv_bundle(  # noqa: PLR0913
     session: AsyncSession,
     *,
     org_id: uuid.UUID,
@@ -317,6 +236,7 @@ async def _ensure_demo_cv_bundle(
     profile_data: dict[str, Any],
     total_years: Decimal,
     overall_score: int,
+    upload_files: bool,
 ) -> None:
     document = await session.scalar(
         select(Document).where(
@@ -341,15 +261,13 @@ async def _ensure_demo_cv_bundle(
         )
         session.add(document)
         await session.flush()
-        try:
+        # Only new documents get a file, so re-running never piles up storage objects.
+        if upload_files:
             await storage.put_object(storage_key, DEMO_CV_BYTES, "application/pdf")
-        except Exception:
-            logger.warning(
-                "demo CV not uploaded to object storage (MinIO may be down)",
-                extra={"storage_key": storage_key},
-            )
 
-    profile = await session.scalar(select(ParsedProfile).where(ParsedProfile.document_id == document.id))
+    profile = await session.scalar(
+        select(ParsedProfile).where(ParsedProfile.document_id == document.id)
+    )
     if profile is None:
         profile = ParsedProfile(document_id=document.id, candidate_id=candidate.id)
         session.add(profile)
@@ -364,58 +282,52 @@ async def _ensure_demo_cv_bundle(
     ats = await session.scalar(select(AtsCheck).where(AtsCheck.document_id == document.id))
     ats_score = 65 + (overall_score % 30)
     if ats is None:
-        ats = AtsCheck(
-            document_id=document.id,
-            score=ats_score,
-            checks=[
-                {
-                    "id": "fonts",
-                    "label": "Standard fonts",
-                    "passed": True,
-                    "weight": 10,
-                    "detail": "Uses common fonts",
-                    "suggestion": None,
-                },
-                {
-                    "id": "sections",
-                    "label": "Clear sections",
-                    "passed": overall_score >= 60,
-                    "weight": 15,
-                    "detail": "Experience and education sections detected",
-                    "suggestion": None,
-                },
-            ],
-            engine_version=DEMO_ENGINE_VERSION,
-        )
+        ats = AtsCheck(document_id=document.id, score=ats_score, engine_version="", checks=[])
         session.add(ats)
-    else:
-        ats.score = ats_score
-        ats.engine_version = DEMO_ENGINE_VERSION
+    ats.score = ats_score
+    ats.engine_version = DEMO_ENGINE_VERSION
+    ats.checks = [
+        {
+            "id": "A1",
+            "label": "Text is extractable",
+            "passed": True,
+            "weight": 15,
+            "detail": "Text layer found",
+            "suggestion": None,
+        },
+        {
+            "id": "A4",
+            "label": "Standard section headings",
+            "passed": overall_score >= 60,
+            "weight": 15,
+            "detail": "Experience and education sections detected",
+            "suggestion": "Use conventional headings",
+        },
+    ]
 
     skills = profile_data.get("skills", [])
-    matched = skills[:3]
     missing_required: list[str] = []
-    missing_preferred: list[str] = []
-    extra = skills[3:6] if len(skills) > 3 else []
     if overall_score < 70:
-        missing_required = ["Kubernetes"] if "kubernetes" not in {s.lower() for s in skills} else []
+        pool = SKILL_POOLS[ANDROID_SLUG] if "Kotlin" in skills else SKILL_POOLS[SHOPIFY_SLUG]
+        missing_required = [s for s in pool[:4] if s not in skills][:1] or [pool[3]]
     await _upsert_match_result(
         session,
         application.id,
         overall_score=overall_score,
-        matched=matched,
+        matched=skills[:3],
         missing_required=missing_required,
-        missing_preferred=missing_preferred,
-        extra=extra,
+        extra=skills[3:6] if len(skills) > 3 else [],
     )
 
 
-async def _seed_demo_candidates(
+async def _seed_demo_candidates(  # noqa: PLR0913
     session: AsyncSession,
     org: Organization,
     recruiter: User,
     stages: dict[StageType, PipelineStage],
     jobs_by_slug: dict[str, Job],
+    *,
+    upload_files: bool,
 ) -> int:
     now = datetime.now(UTC)
     seeded = 0
@@ -423,14 +335,14 @@ async def _seed_demo_candidates(
         first = DEMO_FIRST_NAMES[index % len(DEMO_FIRST_NAMES)]
         last = DEMO_LAST_NAMES[index % len(DEMO_LAST_NAMES)]
         email = f"demo{index + 1:02d}@{DEMO_CANDIDATE_DOMAIN}"
-        job_slug = "frontend-engineer" if index % 3 == 0 else "senior-backend-engineer"
+        job_slug = SHOPIFY_SLUG if index % 3 == 0 else ANDROID_SLUG
         job = jobs_by_slug.get(job_slug)
         if job is None or job.status is not JobStatus.OPEN:
             continue
         stage_type = DEMO_STAGE_SEQUENCE[index]
         stage = stages[stage_type]
         years = Decimal(str(3 + (index % 12)))
-        title_pool = FRONTEND_ROLE_TITLES if job_slug == "frontend-engineer" else BACKEND_ROLE_TITLES
+        titles = ROLE_TITLES[job_slug]
         company = COMPANIES[index % len(COMPANIES)]
 
         candidate = await _get_or_create(
@@ -442,17 +354,17 @@ async def _seed_demo_candidates(
             phone=f"+91 98{index:03d} 4{index:04d}",
             current_location="Bengaluru" if index % 2 == 0 else "Remote, India",
             current_company=company,
-            current_title=title_pool[index % len(title_pool)],
+            current_title=titles[index % len(titles)],
             total_experience_years=years,
+            current_ctc=Decimal(str(1_200_000 + index * 40_000)),
             expected_ctc=Decimal(str(1_800_000 + index * 45_000)),
             notice_period_days=30 if index % 4 else 60,
             linkedin_url=f"https://linkedin.com/in/{first.lower()}-{last.lower()}-{index + 1}",
+            department_id=job.department_id,
             source=CandidateSource.CAREER_SITE if index % 5 else CandidateSource.REFERRAL,
             consent_given_at=now,
             consent_version="2026-01",
         )
-        candidate.total_experience_years = years
-        candidate.current_title = title_pool[index % len(title_pool)]
         if index % 7 == 0:
             candidate.tags = ["silver-medalist"]
 
@@ -465,13 +377,14 @@ async def _seed_demo_candidates(
         applied_at = now - timedelta(days=days_ago)
         stage_entered_at = applied_at + timedelta(days=index % 12)
         if application is None:
-            sequence = int(await session.scalar(select(APPLICATION_REFERENCE_SEQ.next_value())) or 0)
-            reference_no = f"APP-{now.year}-{sequence:06d}"
+            sequence = int(
+                await session.scalar(select(APPLICATION_REFERENCE_SEQ.next_value())) or 0
+            )
             application = Application(
                 candidate_id=candidate.id,
                 job_id=job.id,
                 stage_id=stage.id,
-                reference_no=reference_no,
+                reference_no=f"APP-{now.year}-{sequence:06d}",
                 status=_status_for_stage(stage_type),
                 applied_at=applied_at,
                 stage_entered_at=stage_entered_at,
@@ -480,33 +393,22 @@ async def _seed_demo_candidates(
             )
             session.add(application)
             await session.flush()
-        else:
-            application.stage_id = stage.id
-            application.status = _status_for_stage(stage_type)
-            application.stage_entered_at = stage_entered_at
-            application.assigned_recruiter_id = recruiter.id
-            application.is_shortlisted = index % 11 == 0
-
         if stage_type is StageType.REJECTED:
             application.rejection_reason = (
                 application.rejection_reason or "Does not meet minimum bar after screening."
             )
-        elif application.rejection_reason and stage_type is not StageType.REJECTED:
-            application.rejection_reason = None
 
-        profile_data = _demo_profile_data(job_slug, years=years, experience_index=index)
-        overall_score = 48 + (index * 17) % 53  # 48..100 spread
         await _ensure_demo_cv_bundle(
             session,
             org_id=org.id,
             candidate=candidate,
             application=application,
-            profile_data=profile_data,
+            profile_data=_demo_profile_data(job_slug, years=years, experience_index=index),
             total_years=years,
-            overall_score=overall_score,
+            overall_score=48 + (index * 17) % 53,  # 48..100 spread
+            upload_files=upload_files,
         )
         seeded += 1
-
     return seeded
 
 
@@ -521,76 +423,28 @@ async def _get_or_create(
     return instance
 
 
-async def seed(session: AsyncSession) -> int:
-    org = await _get_or_create(
-        session, Organization, {"name": ORG_NAME}, domain=EMAIL_DOMAIN, settings={}
-    )
-
-    password_hash = hash_password(DEMO_PASSWORD)
-    users: dict[UserRole, User] = {}
-    for handle, full_name, role in DEMO_USERS:
-        user = await _get_or_create(
-            session,
-            User,
-            {"email": f"{handle}@{EMAIL_DOMAIN}"},
-            org_id=org.id,
-            full_name=full_name,
-            role=role,
-            password_hash=password_hash,
-        )
-        # Re-seeding restores the documented demo state, including after a lockout test.
-        user.role = role
-        user.is_active = True
-        user.password_hash = password_hash
-        user.failed_login_attempts = 0
-        user.locked_until = None
-        users[role] = user
-
-    for order, (name, stage_type) in enumerate(DEFAULT_STAGES, start=1):
-        await _get_or_create(
-            session,
-            PipelineStage,
-            {"org_id": org.id, "name": name},
-            order=order,
-            type=stage_type,
-            is_default=True,
-        )
-
-    manager = users[UserRole.HIRING_MANAGER]
-    engineering = await _get_or_create(
-        session, Department, {"org_id": org.id, "name": "Engineering"}, head_user_id=manager.id
-    )
-    people = await _get_or_create(
-        session, Department, {"org_id": org.id, "name": "People Operations"}
-    )
-    bengaluru = await _get_or_create(
-        session,
-        Location,
-        {"org_id": org.id, "name": "Bengaluru HQ"},
-        city="Bengaluru",
-        country="India",
-    )
-    remote = await _get_or_create(
-        session, Location, {"org_id": org.id, "name": "Remote (India)"}, country="India"
-    )
-
+def _job_specs(
+    departments: dict[str, Department],
+    location: Location,
+    manager: User,
+    recruiter: User,
+    interviewer: User,
+) -> list[dict[str, Any]]:
     now = datetime.now(UTC)
-    recruiter = users[UserRole.RECRUITER]
-    interviewer = users[UserRole.INTERVIEWER]
-    jobs: list[dict[str, Any]] = [
+    return [
         {
-            "slug": "senior-backend-engineer",
-            "title": "Senior Backend Engineer",
-            "department_id": engineering.id,
-            "location_id": bengaluru.id,
+            "slug": ANDROID_SLUG,
+            "title": "Senior Android Developer",
+            "department_id": departments["Android"].id,
+            "location_id": location.id,
             "work_mode": WorkMode.HYBRID,
             "employment_type": EmploymentType.FULL_TIME,
             "level": "Senior",
-            "description": "Build and scale the APIs behind our recruitment platform.",
-            "responsibilities": "Design services, own reliability, mentor engineers.",
-            "qualifications": "5+ years building production backend systems.",
-            "salary_min": Decimal("2500000"),
-            "salary_max": Decimal("4000000"),
+            "description": "Build and scale our consumer Android apps.",
+            "responsibilities": "Own features end to end, review code, mentor developers.",
+            "qualifications": "5+ years building production Android apps in Kotlin.",
+            "salary_min": Decimal("1800000"),
+            "salary_max": Decimal("3000000"),
             "openings": 2,
             "status": JobStatus.OPEN,
             "published_at": now,
@@ -602,9 +456,14 @@ async def seed(session: AsyncSession) -> int:
             ],
             "requirements": {
                 "required_skills": _skills(
-                    ("Python", 1.0), ("FastAPI", 0.8), ("PostgreSQL", 0.8), ("Docker", 0.6)
+                    ("Kotlin", 1.0),
+                    ("Jetpack Compose", 0.8),
+                    ("Retrofit", 0.8),
+                    ("Android SDK", 0.6),
                 ),
-                "preferred_skills": _skills(("Kubernetes", 0.5), ("Celery", 0.4), ("AWS", 0.4)),
+                "preferred_skills": _skills(
+                    ("Kotlin Coroutines", 0.5), ("Hilt", 0.4), ("Firebase", 0.4)
+                ),
                 "min_experience": Decimal("5"),
                 "max_experience": Decimal("10"),
                 "education_level": "Bachelor's",
@@ -612,18 +471,18 @@ async def seed(session: AsyncSession) -> int:
             },
         },
         {
-            "slug": "frontend-engineer",
-            "title": "Frontend Engineer",
-            "department_id": engineering.id,
-            "location_id": remote.id,
+            "slug": SHOPIFY_SLUG,
+            "title": "Shopify Developer",
+            "department_id": departments["Shopify"].id,
+            "location_id": location.id,
             "work_mode": WorkMode.REMOTE,
             "employment_type": EmploymentType.FULL_TIME,
             "level": "Mid",
-            "description": "Craft fast, accessible interfaces for recruiters and candidates.",
-            "responsibilities": "Build React features, own UI quality and accessibility.",
-            "qualifications": "3+ years with React and TypeScript.",
-            "salary_min": Decimal("1500000"),
-            "salary_max": Decimal("2800000"),
+            "description": "Build fast, accessible Shopify storefronts for our clients.",
+            "responsibilities": "Develop themes and apps, own storefront performance.",
+            "qualifications": "3+ years with Shopify, Liquid and JavaScript.",
+            "salary_min": Decimal("900000"),
+            "salary_max": Decimal("1800000"),
             "openings": 1,
             "status": JobStatus.OPEN,
             "published_at": now,
@@ -631,9 +490,9 @@ async def seed(session: AsyncSession) -> int:
             "team": [(recruiter, TeamRole.RECRUITER), (manager, TeamRole.MANAGER)],
             "requirements": {
                 "required_skills": _skills(
-                    ("React", 1.0), ("TypeScript", 1.0), ("Next.js", 0.7), ("CSS", 0.5)
+                    ("Shopify", 1.0), ("Liquid", 1.0), ("JavaScript", 0.7), ("CSS", 0.5)
                 ),
-                "preferred_skills": _skills(("Tailwind CSS", 0.5), ("Playwright", 0.4)),
+                "preferred_skills": _skills(("Storefront API", 0.5), ("GraphQL", 0.4)),
                 "min_experience": Decimal("3"),
                 "max_experience": Decimal("7"),
                 "education_level": None,
@@ -641,18 +500,18 @@ async def seed(session: AsyncSession) -> int:
             },
         },
         {
-            "slug": "hr-business-partner",
-            "title": "HR Business Partner",
-            "department_id": people.id,
-            "location_id": bengaluru.id,
+            "slug": CONTENT_SLUG,
+            "title": "Content Writer",
+            "department_id": departments["Content Writing"].id,
+            "location_id": location.id,
             "work_mode": WorkMode.ONSITE,
             "employment_type": EmploymentType.FULL_TIME,
-            "level": "Senior",
-            "description": "Partner with leaders on talent, performance and culture.",
-            "responsibilities": "Advise managers, run talent reviews, drive engagement.",
-            "qualifications": "6+ years in HR business partnering.",
-            "salary_min": Decimal("1800000"),
-            "salary_max": Decimal("3000000"),
+            "level": "Mid",
+            "description": "Write SEO-friendly content for our clients' websites and blogs.",
+            "responsibilities": "Research keywords, write and edit articles, publish in WordPress.",
+            "qualifications": "2+ years of SEO content writing.",
+            "salary_min": Decimal("500000"),
+            "salary_max": Decimal("900000"),
             "openings": 1,
             "status": JobStatus.DRAFT,
             "published_at": None,
@@ -660,19 +519,64 @@ async def seed(session: AsyncSession) -> int:
             "team": [(recruiter, TeamRole.RECRUITER)],
             "requirements": {
                 "required_skills": _skills(
-                    ("Employee Relations", 1.0), ("Talent Management", 0.8), ("HR Analytics", 0.6)
+                    ("SEO Writing", 1.0), ("Copywriting", 0.8), ("Keyword Research", 0.6)
                 ),
-                "preferred_skills": _skills(("SHRM-CP", 0.5), ("Workday", 0.4)),
-                "min_experience": Decimal("6"),
+                "preferred_skills": _skills(("WordPress", 0.5)),
+                "min_experience": Decimal("2"),
                 "max_experience": None,
-                "education_level": "Master's",
-                "certifications": ["SHRM-CP"],
+                "education_level": None,
+                "certifications": [],
             },
         },
     ]
 
+
+async def seed(session: AsyncSession, *, password: str, upload_files: bool = False) -> int:
+    """Create the demo users, jobs and candidates. Returns the number of demo candidates."""
+    org = await ensure_org(session)
+    await ensure_reference_data(session, org)
+
+    password_hash = hash_password(password)
+    users: dict[UserRole, User] = {}
+    for handle, full_name, role in DEMO_USERS:
+        user = await _get_or_create(
+            session,
+            User,
+            {"email": f"{handle}@{DEMO_EMAIL_DOMAIN}"},
+            org_id=org.id,
+            full_name=full_name,
+            role=role,
+            password_hash=password_hash,
+        )
+        # Re-seeding restores the demo state, including after a lockout test.
+        user.role = role
+        user.is_active = True
+        user.must_change_password = False
+        user.password_hash = password_hash
+        user.failed_login_attempts = 0
+        user.locked_until = None
+        users[role] = user
+
+    departments = {
+        d.name: d
+        for d in await session.scalars(select(Department).where(Department.org_id == org.id))
+    }
+    location = await _get_or_create(
+        session,
+        Location,
+        {"org_id": org.id, "name": "Bengaluru Office"},
+        city="Bengaluru",
+        country="India",
+    )
+    recruiter = users[UserRole.RECRUITER]
     jobs_by_slug: dict[str, Job] = {}
-    for spec in jobs:
+    for spec in _job_specs(
+        departments,
+        location,
+        users[UserRole.HIRING_MANAGER],
+        recruiter,
+        users[UserRole.INTERVIEWER],
+    ):
         team = spec.pop("team")
         requirements = spec.pop("requirements")
         slug = spec.pop("slug")
@@ -694,30 +598,32 @@ async def seed(session: AsyncSession) -> int:
 
     stage_rows = await session.scalars(select(PipelineStage).where(PipelineStage.org_id == org.id))
     stages_by_type = {row.type: row for row in stage_rows}
-    demo_candidates = await _seed_demo_candidates(
-        session, org, recruiter, stages_by_type, jobs_by_slug
+    count = await _seed_demo_candidates(
+        session, org, recruiter, stages_by_type, jobs_by_slug, upload_files=upload_files
     )
-
     await session.commit()
-    return demo_candidates
+    return count
 
 
-async def main() -> None:
-    configure_logging(get_settings().log_level)
+async def main() -> int:
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    if settings.app_env != "development":
+        print(
+            f"Refusing to seed demo data: APP_ENV is '{settings.app_env}', not 'development'.",
+            file=sys.stderr,
+        )
+        return 1
+    supplied = os.environ.get("DEMO_PASSWORD")
+    password = supplied or generate_password()
     async with SessionLocal() as session:
-        demo_candidates = await seed(session)
+        count = await seed(session, password=password, upload_files=True)
     await engine.dispose()
-    logger.info(
-        "seed complete",
-        extra={
-            "org": ORG_NAME,
-            "users": len(DEMO_USERS),
-            "stages": len(DEFAULT_STAGES),
-            "jobs": 3,
-            "demo_candidates": demo_candidates,
-        },
-    )
+    print(f"Demo data ready: {len(DEMO_USERS)} users @{DEMO_EMAIL_DOMAIN}, {count} candidates.")
+    if not supplied:
+        print(f"Demo password for this run (shown once): {password}")
+    return 0
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    sys.exit(asyncio.run(main()))

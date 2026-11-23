@@ -13,11 +13,14 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const job = await serverApi.getPublicJob(params.slug);
   if (!job) notFound();
-  return { title: `Apply: ${job.title} · Acme Careers` };
+  return { title: `Apply: ${job.title}` };
 }
 
 export default async function ApplyPage({ params }: Props) {
-  const job = await serverApi.getPublicJob(params.slug);
+  const [job, config] = await Promise.all([
+    serverApi.getPublicJob(params.slug),
+    serverApi.config(),
+  ]);
   if (!job) notFound();
 
   return (
@@ -35,7 +38,7 @@ export default async function ApplyPage({ params }: Props) {
           It takes about 3 minutes. Fields marked optional can be left blank.
         </p>
       </div>
-      <ApplyForm slug={job.slug} jobTitle={job.title} />
+      <ApplyForm slug={job.slug} jobTitle={job.title} orgName={config.org_name} />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import type {
   BulkActionResult,
   BoardOut,
   CandidateTagsOut,
+  ChangePasswordInput,
   Department,
   DownloadUrl,
   HealthResponse,
@@ -18,12 +19,15 @@ import type {
   JobListItem,
   JobListParams,
   Location,
+  LocationInput,
   LoginRequest,
   NoteCreateInput,
   NoteOut,
+  OrgSettings,
   Page,
   ParsedProfileOut,
   ParsedProfilePatchInput,
+  PublicConfig,
   PublicJob,
   PublicJobFilters,
   PublicJobListItem,
@@ -35,10 +39,14 @@ import type {
   TimelineEntry,
   TokenResponse,
   User,
+  UserCreateInput,
+  UserPatchInput,
   UserRef,
+  UserWithTemporaryPassword,
 } from "@/types/api";
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
+// Empty means same origin: next.config.mjs (dev) or Caddy (production) forwards /api/v1 to the API.
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export class ApiError extends Error {
   constructor(
@@ -185,10 +193,57 @@ export const api = {
       }
     },
     me: () => request<User>("/api/v1/auth/me"),
+    changePassword: async (body: ChangePasswordInput): Promise<TokenResponse> => {
+      const session = await request<TokenResponse>("/api/v1/auth/change-password", {
+        method: "POST",
+        body,
+      });
+      setAccessToken(session.access_token);
+      return session;
+    },
+    forgotPassword: (email: string) =>
+      request<{ message: string }>("/api/v1/auth/forgot-password", {
+        method: "POST",
+        body: { email },
+        skipAuthRetry: true,
+      }),
+    resetPassword: (token: string, newPassword: string) =>
+      request<{ message: string }>("/api/v1/auth/reset-password", {
+        method: "POST",
+        body: { token, new_password: newPassword },
+        skipAuthRetry: true,
+      }),
   },
+  config: () => request<PublicConfig>("/api/v1/config", { skipAuthRetry: true }),
   org: {
-    departments: () => request<Department[]>("/api/v1/departments"),
-    locations: () => request<Location[]>("/api/v1/locations"),
+    departments: (includeInactive = false) =>
+      request<Department[]>(
+        withQuery("/api/v1/departments", { include_inactive: includeInactive || undefined }),
+      ),
+    createDepartment: (name: string) =>
+      request<Department>("/api/v1/departments", { method: "POST", body: { name } }),
+    updateDepartment: (id: string, body: { name?: string; is_active?: boolean }) =>
+      request<Department>(`/api/v1/departments/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body,
+      }),
+    locations: (includeInactive = false) =>
+      request<Location[]>(
+        withQuery("/api/v1/locations", { include_inactive: includeInactive || undefined }),
+      ),
+    createLocation: (body: LocationInput) =>
+      request<Location>("/api/v1/locations", { method: "POST", body }),
+    updateLocation: (id: string, body: Partial<LocationInput> & { is_active?: boolean }) =>
+      request<Location>(`/api/v1/locations/${encodeURIComponent(id)}`, { method: "PATCH", body }),
+    settings: () => request<OrgSettings>("/api/v1/org/settings"),
+    updateSettings: (body: { name: string }) =>
+      request<OrgSettings>("/api/v1/org/settings", { method: "PATCH", body }),
+    uploadLogo: (file: File) => {
+      const form = new FormData();
+      form.append("file", file);
+      return request<OrgSettings>("/api/v1/org/logo", { method: "PUT", body: form });
+    },
+    removeLogo: () => request<OrgSettings>("/api/v1/org/logo", { method: "DELETE" }),
   },
   jobs: {
     list: (params: JobListParams = {}) =>
@@ -206,7 +261,8 @@ export const api = {
   applications: {
     list: (params: ApplicationListParams = {}) =>
       request<Page<ApplicationListItem>>(withQuery("/api/v1/applications", params)),
-    get: (id: string) => request<ApplicationDetail>(`/api/v1/applications/${encodeURIComponent(id)}`),
+    get: (id: string) =>
+      request<ApplicationDetail>(`/api/v1/applications/${encodeURIComponent(id)}`),
     analysis: (id: string) =>
       request<AnalysisOut>(`/api/v1/applications/${encodeURIComponent(id)}/analysis`),
     stages: () => request<StageRef[]>("/api/v1/applications/stages"),
@@ -226,8 +282,7 @@ export const api = {
   candidates: {
     timeline: (id: string) =>
       request<TimelineEntry[]>(`/api/v1/candidates/${encodeURIComponent(id)}/timeline`),
-    notes: (id: string) =>
-      request<NoteOut[]>(`/api/v1/candidates/${encodeURIComponent(id)}/notes`),
+    notes: (id: string) => request<NoteOut[]>(`/api/v1/candidates/${encodeURIComponent(id)}/notes`),
     createNote: (id: string, body: NoteCreateInput) =>
       request<NoteOut>(`/api/v1/candidates/${encodeURIComponent(id)}/notes`, {
         method: "POST",
@@ -241,6 +296,15 @@ export const api = {
   },
   users: {
     lookup: () => request<UserRef[]>("/api/v1/users/lookup"),
+    list: () => request<Page<User>>(withQuery("/api/v1/users", { page_size: 100 })),
+    create: (body: UserCreateInput) =>
+      request<UserWithTemporaryPassword>("/api/v1/users", { method: "POST", body }),
+    update: (id: string, body: UserPatchInput) =>
+      request<User>(`/api/v1/users/${encodeURIComponent(id)}`, { method: "PATCH", body }),
+    resetPassword: (id: string) =>
+      request<UserWithTemporaryPassword>(`/api/v1/users/${encodeURIComponent(id)}/reset-password`, {
+        method: "POST",
+      }),
   },
   documents: {
     downloadUrl: (id: string) =>
@@ -260,7 +324,8 @@ export const api = {
   },
   analytics: {
     overview: () => request<Record<string, number | object>>("/api/v1/analytics/overview"),
-    funnel: () => request<{ stage: string; type: string; count: number }[]>("/api/v1/analytics/funnel"),
+    funnel: () =>
+      request<{ stage: string; type: string; count: number }[]>("/api/v1/analytics/funnel"),
     sources: () => request<{ source: string; count: number }[]>("/api/v1/analytics/sources"),
     overTime: (days = 30) =>
       request<{ date: string; count: number }[]>(
@@ -275,11 +340,18 @@ export const api = {
   notifications: {
     list: (unreadOnly = false) =>
       request<
-        { id: string; type: string; payload: Record<string, unknown>; read_at: string | null; created_at: string }[]
+        {
+          id: string;
+          type: string;
+          payload: Record<string, unknown>;
+          read_at: string | null;
+          created_at: string;
+        }[]
       >(withQuery("/api/v1/notifications", { unread_only: unreadOnly })),
     markRead: (id: string) =>
       request(`/api/v1/notifications/${encodeURIComponent(id)}/read`, { method: "PATCH" }),
-    markAllRead: () => request<{ updated: number }>("/api/v1/notifications/read-all", { method: "POST" }),
+    markAllRead: () =>
+      request<{ updated: number }>("/api/v1/notifications/read-all", { method: "POST" }),
   },
   publicJobs: {
     list: (params: PublicJobListParams = {}) =>

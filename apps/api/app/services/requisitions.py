@@ -47,7 +47,9 @@ async def create_requisition(
     return {"id": str(req.id), "status": req.status.value}
 
 
-async def submit_requisition(session: AsyncSession, user: User, req_id: uuid.UUID) -> dict[str, Any]:
+async def submit_requisition(
+    session: AsyncSession, user: User, req_id: uuid.UUID
+) -> dict[str, Any]:
     req = await session.get(Requisition, req_id)
     if req is None or req.org_id != user.org_id:
         raise AppError(status.HTTP_404_NOT_FOUND, "not_found", "Requisition not found")
@@ -56,7 +58,9 @@ async def submit_requisition(session: AsyncSession, user: User, req_id: uuid.UUI
     return {"id": str(req.id), "status": req.status.value}
 
 
-async def approve_requisition(session: AsyncSession, user: User, req_id: uuid.UUID) -> dict[str, Any]:
+async def approve_requisition(
+    session: AsyncSession, user: User, req_id: uuid.UUID
+) -> dict[str, Any]:
     if user.role not in {UserRole.SUPER_ADMIN, UserRole.HR_ADMIN, UserRole.HIRING_MANAGER}:
         raise AppError(status.HTTP_403_FORBIDDEN, "forbidden", "Cannot approve")
     req = await session.get(Requisition, req_id)
@@ -94,7 +98,9 @@ async def convert_to_job(session: AsyncSession, user: User, req_id: uuid.UUID) -
 
 async def list_requisitions(session: AsyncSession, user: User) -> list[dict[str, Any]]:
     rows = await session.scalars(
-        select(Requisition).where(Requisition.org_id == user.org_id).order_by(Requisition.created_at.desc())
+        select(Requisition)
+        .where(Requisition.org_id == user.org_id)
+        .order_by(Requisition.created_at.desc())
     )
     return [
         {

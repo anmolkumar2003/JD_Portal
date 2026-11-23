@@ -141,7 +141,7 @@ def run_ats_check(
         "application/pdf",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "",
-    } or extracted.method in {"pdfplumber", "pymupdf", "python-docx", "tesseract"}
+    } or extracted.method in {"pdfplumber", "pypdf", "python-docx", "tesseract"}
     a2 = ok_type and extracted.file_size <= 5 * 1024 * 1024
     items.append(
         AtsCheckItem(

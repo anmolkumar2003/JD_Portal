@@ -1,6 +1,7 @@
 import { withQuery } from "@/lib/api";
 import type {
   Page,
+  PublicConfig,
   PublicJob,
   PublicJobFilters,
   PublicJobListItem,
@@ -8,8 +9,7 @@ import type {
 } from "@/types/api";
 
 // In Docker the Next.js server reaches the API by service name, not via the host port.
-const SERVER_API_URL =
-  process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
+const SERVER_API_URL = process.env.INTERNAL_API_URL ?? "http://localhost:8001";
 
 /** GET a public endpoint during server rendering. Resolves to null on 404. */
 async function serverGet<T>(path: string): Promise<T | null> {
@@ -22,7 +22,27 @@ async function serverGet<T>(path: string): Promise<T | null> {
   return (await response.json()) as T;
 }
 
+const FALLBACK_CONFIG: PublicConfig = {
+  org_name: "HR Portal",
+  logo_data_url: null,
+  features: {
+    public_careers: false,
+    interviews: false,
+    offers: false,
+    requisitions: false,
+    audit_ui: false,
+  },
+};
+
 export const serverApi = {
+  /** Branding and flags; falls back to defaults (all modules off) if the API is unreachable. */
+  config: async () => {
+    try {
+      return (await serverGet<PublicConfig>("/api/v1/config")) ?? FALLBACK_CONFIG;
+    } catch {
+      return FALLBACK_CONFIG;
+    }
+  },
   listPublicJobs: async (params: PublicJobListParams) =>
     (await serverGet<Page<PublicJobListItem>>(withQuery("/api/v1/public/jobs", params))) ?? {
       items: [],

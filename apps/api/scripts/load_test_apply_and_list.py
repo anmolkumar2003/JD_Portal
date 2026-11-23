@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 import statistics
 import time
 import uuid
@@ -20,9 +21,9 @@ import httpx
 
 PDF = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"
 DEFAULT_API = "http://localhost:8001/api/v1"
-DEFAULT_EMAIL = "recruiter@acme.example.com"
-DEFAULT_PASSWORD = "Demo@2026!"
-DEFAULT_JOB_SLUG = "senior-backend-engineer"
+DEFAULT_EMAIL = os.environ.get("DEMO_LOGIN_EMAIL", "recruiter@demo.example.com")
+DEFAULT_PASSWORD = os.environ.get("DEMO_PASSWORD", "")
+DEFAULT_JOB_SLUG = "senior-android-developer"
 
 
 @dataclass

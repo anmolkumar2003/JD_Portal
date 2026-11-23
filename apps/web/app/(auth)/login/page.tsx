@@ -2,11 +2,13 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { PasswordInput } from "@/components/password-field";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -54,7 +56,10 @@ function LoginForm() {
   } = useForm<LoginValues>({ resolver: zodResolver(loginSchema) });
 
   useEffect(() => {
-    if (!isLoading && user) router.replace(next);
+    if (isLoading || !user) return;
+    router.replace(
+      user.must_change_password ? `/change-password?next=${encodeURIComponent(next)}` : next,
+    );
   }, [isLoading, user, next, router]);
 
   const onSubmit = handleSubmit(async (values) => {
@@ -70,7 +75,7 @@ function LoginForm() {
     <Card className="w-full max-w-sm">
       <CardHeader>
         <CardTitle>Sign in</CardTitle>
-        <CardDescription>Use your HR Portal account.</CardDescription>
+        <CardDescription>Use the work account your administrator created for you.</CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={onSubmit} noValidate>
@@ -101,10 +106,17 @@ function LoginForm() {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              <Link
+                href="/forgot-password"
+                className="text-sm text-primary underline-offset-4 hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
+            <PasswordInput
               id="password"
-              type="password"
               autoComplete="current-password"
               aria-invalid={errors.password ? true : undefined}
               aria-describedby={errors.password ? "password-error" : undefined}
@@ -128,12 +140,8 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="container flex justify-center py-16">
-      <Suspense
-        fallback={<div className="h-80 w-full max-w-sm animate-pulse rounded-lg bg-muted" />}
-      >
-        <LoginForm />
-      </Suspense>
-    </div>
+    <Suspense fallback={<div className="h-80 w-full max-w-sm animate-pulse rounded-lg bg-muted" />}>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -82,7 +82,7 @@ async def test_list_filters_sorts_and_paginates(client: AsyncClient) -> None:
     body = response.json()
     assert response.status_code == 200
     assert body["total"] == 2
-    assert [j["title"] for j in body["items"]] == ["Frontend Engineer"]
+    assert [j["title"] for j in body["items"]] == ["Senior Android Developer"]
 
     bad_sort = await client.get(JOBS, headers=_auth(token), params={"sort": "password"})
     assert bad_sort.status_code == 400
@@ -93,8 +93,8 @@ async def test_hiring_manager_reads_own_jobs_but_cannot_edit(client: AsyncClient
 
     listing = await client.get(JOBS, headers=_auth(token))
     assert {j["slug"] for j in listing.json()["items"]} == {
-        "senior-backend-engineer",
-        "frontend-engineer",
+        "senior-android-developer",
+        "shopify-developer",
     }
 
     assert (await client.post(JOBS, headers=_auth(token), json=_job_payload())).status_code == 403

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 export const metadata: Metadata = {
-  title: "Application received · Acme Careers",
+  title: "Application received",
   robots: { index: false },
 };
 

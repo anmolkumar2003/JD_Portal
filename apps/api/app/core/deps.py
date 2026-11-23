@@ -24,10 +24,11 @@ def _unauthorized(message: str = "Not authenticated") -> AppError:
     return AppError(status.HTTP_401_UNAUTHORIZED, "unauthorized", message)
 
 
-async def get_current_user(
+async def get_authenticated_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
+    """Valid session, even if the user still has to replace a temporary password."""
     if credentials is None:
         raise _unauthorized()
     try:
@@ -41,6 +42,17 @@ async def get_current_user(
     return user
 
 
+async def get_current_user(user: Annotated[User, Depends(get_authenticated_user)]) -> User:
+    if user.must_change_password:
+        raise AppError(
+            status.HTTP_403_FORBIDDEN,
+            "password_change_required",
+            "Change your temporary password to continue",
+        )
+    return user
+
+
+AuthenticatedUser = Annotated[User, Depends(get_authenticated_user)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 

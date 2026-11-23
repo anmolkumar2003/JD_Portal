@@ -44,12 +44,12 @@ export function CandidateFilters({ value, onChange }: CandidateFiltersProps) {
 
   const hasFilters = Boolean(
     value.q ||
-      value.job_id ||
-      value.stage_id ||
-      value.source ||
-      value.score_min ||
-      value.score_max ||
-      value.skill,
+    value.job_id ||
+    value.stage_id ||
+    value.source ||
+    value.score_min ||
+    value.score_max ||
+    value.skill,
   );
 
   return (

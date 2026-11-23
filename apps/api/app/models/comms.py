@@ -40,7 +40,9 @@ class EmailTemplate(BaseModel):
     key: Mapped[str] = mapped_column(String(100), index=True)
     subject: Mapped[str] = mapped_column(String(500))
     body_html: Mapped[str] = mapped_column(Text)
-    variables: Mapped[list[str]] = mapped_column(ARRAY(String(100)), default=list, server_default="{}")
+    variables: Mapped[list[str]] = mapped_column(
+        ARRAY(String(100)), default=list, server_default="{}"
+    )
     trigger_stage_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("pipeline_stages.id", ondelete="SET NULL"), index=True
     )

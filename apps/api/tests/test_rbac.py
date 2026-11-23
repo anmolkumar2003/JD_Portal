@@ -45,20 +45,27 @@ async def test_hr_admin_creates_user_and_changes_role(client: AsyncClient) -> No
         USERS,
         headers=_auth(token),
         json={
-            "email": "new.recruiter@acme.example.com",
+            "email": "new.recruiter@demo.example.com",
             "full_name": "New Recruiter",
             "role": "recruiter",
-            "password": "Welcome#2026",
         },
     )
     assert created.status_code == 201
-    user_id = created.json()["id"]
+    body = created.json()
+    assert body["user"]["must_change_password"] is True
+    assert len(body["temporary_password"]) >= 12
+    user_id = body["user"]["id"]
 
     changed = await client.patch(
-        f"{USERS}/{user_id}/role", headers=_auth(token), json={"role": "hiring_manager"}
+        f"{USERS}/{user_id}/role", headers=_auth(token), json={"role": "hr_admin"}
     )
     assert changed.status_code == 200
-    assert changed.json()["role"] == "hiring_manager"
+    assert changed.json()["role"] == "hr_admin"
+
+    legacy = await client.patch(
+        f"{USERS}/{user_id}/role", headers=_auth(token), json={"role": "hiring_manager"}
+    )
+    assert legacy.status_code == 422
 
 
 async def test_hr_admin_cannot_grant_super_admin(client: AsyncClient) -> None:
@@ -89,9 +96,9 @@ async def test_recruiter_cannot_change_roles(client: AsyncClient) -> None:
 @pytest.mark.parametrize(
     ("handle", "visible_slugs"),
     [
-        ("recruiter", {"senior-backend-engineer", "frontend-engineer", "hr-business-partner"}),
-        ("manager", {"senior-backend-engineer", "frontend-engineer"}),
-        ("interviewer", {"senior-backend-engineer"}),
+        ("recruiter", {"senior-android-developer", "shopify-developer", "content-writer"}),
+        ("manager", {"senior-android-developer", "shopify-developer"}),
+        ("interviewer", {"senior-android-developer"}),
     ],
 )
 async def test_record_level_job_access(
@@ -104,6 +111,6 @@ async def test_record_level_job_access(
         slugs = set(await session.scalars(scope_jobs_query(user, select(Job.slug))))
         assert slugs == visible_slugs
 
-        hr_job = await session.scalar(select(Job).where(Job.slug == "hr-business-partner"))
+        hr_job = await session.scalar(select(Job).where(Job.slug == "content-writer"))
         assert hr_job is not None
         assert await can_access_job(session, user, hr_job.id) is (handle == "recruiter")

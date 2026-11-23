@@ -94,7 +94,9 @@ class ScorecardTemplate(BaseModel):
 class Scorecard(BaseModel):
     __tablename__ = "scorecards"
     __table_args__ = (
-        UniqueConstraint("interview_id", "interviewer_id", name="uq_scorecards_interview_interviewer"),
+        UniqueConstraint(
+            "interview_id", "interviewer_id", name="uq_scorecards_interview_interviewer"
+        ),
     )
 
     interview_id: Mapped[uuid.UUID] = mapped_column(

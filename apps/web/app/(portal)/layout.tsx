@@ -37,8 +37,11 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (isLoading) return;
+    if (!user) {
       router.replace(hadUser.current ? "/login" : `/login?next=${encodeURIComponent(pathname)}`);
+    } else if (user.must_change_password) {
+      router.replace(`/change-password?next=${encodeURIComponent(pathname)}`);
     }
   }, [isLoading, user, pathname, router]);
 
@@ -53,7 +56,7 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
     });
   };
 
-  if (isLoading || !user) {
+  if (isLoading || !user || user.must_change_password) {
     return <PortalSkeleton />;
   }
 

@@ -43,15 +43,12 @@ def _extract_pdf_pdfplumber(file_bytes: bytes) -> tuple[str, int]:
     return "\n".join(parts).strip(), page_count
 
 
-def _extract_pdf_pymupdf(file_bytes: bytes) -> tuple[str, int]:
-    import fitz
+def _extract_pdf_pypdf(file_bytes: bytes) -> tuple[str, int]:
+    from pypdf import PdfReader
 
-    doc = fitz.open(stream=file_bytes, filetype="pdf")
-    try:
-        parts = [page.get_text("text") for page in doc]
-        return "\n".join(parts).strip(), doc.page_count
-    finally:
-        doc.close()
+    reader = PdfReader(io.BytesIO(file_bytes))
+    parts = [page.extract_text() or "" for page in reader.pages]
+    return "\n".join(parts).strip(), len(reader.pages)
 
 
 def _extract_docx(file_bytes: bytes) -> tuple[str, int]:
@@ -73,19 +70,21 @@ def _extract_docx(file_bytes: bytes) -> tuple[str, int]:
 def _ocr_pdf(file_bytes: bytes) -> str:
     """Render PDF pages and OCR with Tesseract. Best-effort; returns empty on failure."""
     try:
-        import fitz
+        import pypdfium2 as pdfium
         import pytesseract
-        from PIL import Image
     except ImportError:
         logger.warning("ocr_dependencies_missing")
         return ""
 
     parts: list[str] = []
-    doc = fitz.open(stream=file_bytes, filetype="pdf")
+    try:
+        doc = pdfium.PdfDocument(file_bytes)
+    except Exception:
+        logger.exception("ocr_failed")
+        return ""
     try:
         for page in doc:
-            pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
-            image = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+            image = page.render(scale=2).to_pil()
             parts.append(pytesseract.image_to_string(image) or "")
     except Exception:
         logger.exception("ocr_failed")
@@ -108,9 +107,9 @@ def extract_text(file_bytes: bytes, mime_or_ext: str | None = None) -> ExtractRe
             text, page_count = _extract_pdf_pdfplumber(file_bytes)
             method = "pdfplumber"
         except Exception:
-            logger.warning("pdfplumber_failed_falling_back_to_pymupdf")
-            text, page_count = _extract_pdf_pymupdf(file_bytes)
-            method = "pymupdf"
+            logger.warning("pdfplumber_failed_falling_back_to_pypdf")
+            text, page_count = _extract_pdf_pypdf(file_bytes)
+            method = "pypdf"
         if len(text) < OCR_THRESHOLD:
             ocr_text = _ocr_pdf(file_bytes)
             if len(ocr_text) > len(text):

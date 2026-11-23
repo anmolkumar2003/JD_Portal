@@ -7,7 +7,7 @@ from typing import Any
 
 from fastapi import status
 from redis.asyncio import Redis
-from sqlalchemy import Select, cast, or_, select, update
+from sqlalchemy import Select, cast, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import String
@@ -135,7 +135,7 @@ def _confirmation_email(candidate: Candidate, job: Job, reference_no: str) -> tu
     return subject, body
 
 
-async def apply(  # noqa: PLR0913 - one call carries the whole multipart submission
+async def apply(
     session: AsyncSession,
     redis: Redis,
     *,
@@ -317,6 +317,10 @@ async def list_applications(
         stmt = stmt.where(Application.stage_id == filters.stage_id)
     if filters.candidate_id is not None:
         stmt = stmt.where(Application.candidate_id == filters.candidate_id)
+    if filters.department_id is not None:
+        stmt = stmt.where(
+            func.coalesce(Candidate.department_id, Job.department_id) == filters.department_id
+        )
     if filters.source is not None:
         stmt = stmt.where(Candidate.source == filters.source)
     if filters.applied_from is not None:
@@ -549,7 +553,7 @@ async def get_board(session: AsyncSession, user: User, job_id: uuid.UUID) -> Boa
     )
 
 
-async def apply_stage_change(  # noqa: PLR0913
+async def apply_stage_change(
     session: AsyncSession,
     user: User,
     application: Application,
@@ -630,7 +634,7 @@ async def move_stage(
             new_stage = await session.get(PipelineStage, application.stage_id)
             if new_stage is not None:
                 await maybe_send_stage_email(session, user, application, new_stage)
-        except Exception:  # noqa: BLE001
+        except Exception:
             logger.exception("stage_email_failed application_id=%s", application_id)
     return await get_application(session, user, application_id)
 

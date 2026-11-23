@@ -43,7 +43,10 @@ function ComponentBar({ label, value }: { label: string; value: number }) {
         <span className="font-mono tabular-nums">{value}</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-muted">
-        <div className={cn("h-full rounded-full transition-all", tone)} style={{ width: `${value}%` }} />
+        <div
+          className={cn("h-full rounded-full transition-all", tone)}
+          style={{ width: `${value}%` }}
+        />
       </div>
     </div>
   );
@@ -135,7 +138,10 @@ export function MatchAnalysis({ applicationId }: MatchAnalysisProps) {
         description={data.parsed_profile?.error ?? "Something went wrong while parsing the CV."}
         action={
           data.document_id ? (
-            <Button onClick={() => reprocess.mutate(data.document_id!)} disabled={reprocess.isPending}>
+            <Button
+              onClick={() => reprocess.mutate(data.document_id!)}
+              disabled={reprocess.isPending}
+            >
               <RefreshCw className="h-4 w-4" aria-hidden />
               Retry
             </Button>
@@ -160,7 +166,9 @@ export function MatchAnalysis({ applicationId }: MatchAnalysisProps) {
     <div className="space-y-6">
       <p className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
         {data.disclaimer} Score version:{" "}
-        <span className="font-mono">{explanation.score_version ?? match?.engine_version ?? "—"}</span>
+        <span className="font-mono">
+          {explanation.score_version ?? match?.engine_version ?? "—"}
+        </span>
       </p>
 
       <div className="grid gap-6 lg:grid-cols-[auto_1fr]">
@@ -333,7 +341,9 @@ export function MatchAnalysis({ applicationId }: MatchAnalysisProps) {
               </Button>
             </div>
             {correct.isError && (
-              <p className="text-sm text-destructive">Could not save corrections. Check JSON syntax.</p>
+              <p className="text-sm text-destructive">
+                Could not save corrections. Check JSON syntax.
+              </p>
             )}
           </CardContent>
         </Card>

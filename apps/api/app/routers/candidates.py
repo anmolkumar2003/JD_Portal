@@ -90,7 +90,7 @@ async def create_candidate(
             tag_list = [t.strip() for t in tags.split(",") if t.strip()]
 
     years = None
-    if total_experience_years not in (None, ""):
+    if total_experience_years:
         from decimal import Decimal, InvalidOperation
 
         try:

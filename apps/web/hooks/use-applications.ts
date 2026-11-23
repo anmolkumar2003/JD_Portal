@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import type {
@@ -97,10 +92,7 @@ export function useMoveStage() {
         const card = previous.stages.flatMap((c) => c.cards).find((c) => c.id === applicationId);
         const next = stages.map((col) => {
           if (col.stage.id !== body.stage_id || !card) return { ...col, count: col.cards.length };
-          const cards = [
-            { ...card, stage_entered_at: new Date().toISOString() },
-            ...col.cards,
-          ];
+          const cards = [{ ...card, stage_entered_at: new Date().toISOString() }, ...col.cards];
           return { ...col, cards, count: cards.length };
         });
         queryClient.setQueryData<BoardOut>(applicationKeys.board(jobId), {

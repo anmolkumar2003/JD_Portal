@@ -28,9 +28,7 @@ async def overview(
     jobs_stmt: Select[Any] = scope_jobs_query(
         user, select(func.count()).select_from(Job).where(Job.deleted_at.is_(None))
     )
-    open_jobs = int(
-        await session.scalar(jobs_stmt.where(Job.status == JobStatus.OPEN)) or 0
-    )
+    open_jobs = int(await session.scalar(jobs_stmt.where(Job.status == JobStatus.OPEN)) or 0)
 
     app_base = (
         select(Application)
@@ -46,7 +44,10 @@ async def overview(
     new_this_week = int(
         await session.scalar(
             select(func.count()).select_from(
-                app_base.where(Application.applied_at >= datetime.combine(week_ago, datetime.min.time(), tzinfo=UTC)).subquery()
+                app_base.where(
+                    Application.applied_at
+                    >= datetime.combine(week_ago, datetime.min.time(), tzinfo=UTC)
+                ).subquery()
             )
         )
         or 0
@@ -101,13 +102,18 @@ async def overview(
         "interviews_today": interviews_today,
         "offers_pending": offers_pending,
         "hires_this_month": hires_month,
-        "range": {"start": start.isoformat() if start else None, "end": end.isoformat() if end else None},
+        "range": {
+            "start": start.isoformat() if start else None,
+            "end": end.isoformat() if end else None,
+        },
     }
 
 
 async def funnel(session: AsyncSession, user: User) -> list[dict[str, Any]]:
     stages = await session.scalars(
-        select(PipelineStage).where(PipelineStage.org_id == user.org_id).order_by(PipelineStage.order)
+        select(PipelineStage)
+        .where(PipelineStage.org_id == user.org_id)
+        .order_by(PipelineStage.order)
     )
     result: list[dict[str, Any]] = []
     for stage in stages:
@@ -133,10 +139,15 @@ async def sources(session: AsyncSession, user: User) -> list[dict[str, Any]]:
     )
     stmt = scope_jobs_query(user, stmt)
     rows = (await session.execute(stmt)).all()
-    return [{"source": str(src.value if hasattr(src, "value") else src), "count": int(cnt)} for src, cnt in rows]
+    return [
+        {"source": str(src.value if hasattr(src, "value") else src), "count": int(cnt)}
+        for src, cnt in rows
+    ]
 
 
-async def applications_over_time(session: AsyncSession, user: User, days: int = 30) -> list[dict[str, Any]]:
+async def applications_over_time(
+    session: AsyncSession, user: User, days: int = 30
+) -> list[dict[str, Any]]:
     start = datetime.now(UTC) - timedelta(days=days)
     stmt = (
         select(cast(Application.applied_at, Date).label("day"), func.count())

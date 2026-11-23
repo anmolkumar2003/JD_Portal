@@ -112,7 +112,9 @@ export function CandidateOverview({ application }: CandidateOverviewProps) {
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Cover letter
             </h2>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed">{application.cover_letter}</p>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed">
+              {application.cover_letter}
+            </p>
           </section>
         )}
       </div>

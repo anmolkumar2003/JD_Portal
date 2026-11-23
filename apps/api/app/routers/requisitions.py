@@ -58,7 +58,9 @@ async def create_requisition(
 
 
 @router.post("/{req_id}/submit")
-async def submit_requisition(req_id: uuid.UUID, user: Requester, session: Session) -> dict[str, Any]:
+async def submit_requisition(
+    req_id: uuid.UUID, user: Requester, session: Session
+) -> dict[str, Any]:
     return await requisitions_service.submit_requisition(session, user, req_id)
 
 

@@ -11,6 +11,14 @@ _TEST_ENV = {
     "S3_ENDPOINT_URL": "http://localhost:9000",
     "S3_ACCESS_KEY_ID": "test",
     "S3_SECRET_ACCESS_KEY": "test",
+    "API_RATE_LIMIT_PER_MINUTE": "0",
+    # Optional modules keep their own tests (and public apply is the quickest way to create
+    # applications); test_org_settings.py covers the default, switched-off behaviour.
+    "ENABLE_PUBLIC_CAREERS": "true",
+    "ENABLE_INTERVIEWS": "true",
+    "ENABLE_OFFERS": "true",
+    "ENABLE_REQUISITIONS": "true",
+    "ENABLE_AUDIT_UI": "true",
 }
 for _key, _value in _TEST_ENV.items():
     os.environ.setdefault(_key, _value)
@@ -32,9 +40,11 @@ from app.core.db import get_db  # noqa: E402
 from app.core.redis import get_redis  # noqa: E402
 from app.main import app as fastapi_app  # noqa: E402
 from app.models import Base  # noqa: E402
-from app.seed import DEMO_PASSWORD, seed  # noqa: E402
+from app.seed_demo import DEMO_EMAIL_DOMAIN, seed  # noqa: E402
 
-__all__ = ["DEMO_PASSWORD", "login"]
+# Generated-looking but fixed so tests are reproducible; only ever used in the test database.
+DEMO_PASSWORD = "Tq7!test-fixture-pw"  # noqa: S105
+__all__ = ["DEMO_EMAIL_DOMAIN", "DEMO_PASSWORD", "login"]
 
 _schema_ready = False
 
@@ -144,8 +154,22 @@ async def db(
     app.dependency_overrides[get_db] = override_db
     app.dependency_overrides[get_redis] = lambda: fake_redis
     async with factory() as session:
-        await seed(session)
+        await seed(session, password=DEMO_PASSWORD)
     yield factory
+
+
+@pytest.fixture(autouse=True)
+def _no_real_storage(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests must never write to the real bucket (this is how stub CVs piled up before)."""
+
+    async def put_object(key: str, data: bytes, content_type: str) -> None:
+        return None
+
+    async def delete_object(key: str) -> None:
+        return None
+
+    monkeypatch.setattr("app.core.storage.put_object", put_object)
+    monkeypatch.setattr("app.core.storage.delete_object", delete_object)
 
 
 @pytest.fixture
@@ -181,7 +205,7 @@ def stored_objects(monkeypatch: pytest.MonkeyPatch) -> dict[str, bytes]:
 async def login(client: AsyncClient, handle: str, password: str = DEMO_PASSWORD) -> str:
     response = await client.post(
         "/api/v1/auth/login",
-        json={"email": f"{handle}@acme.example.com", "password": password},
+        json={"email": f"{handle}@{DEMO_EMAIL_DOMAIN}", "password": password},
     )
     assert response.status_code == 200, response.text
     token: str = response.json()["access_token"]

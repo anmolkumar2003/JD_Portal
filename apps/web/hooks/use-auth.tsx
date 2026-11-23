@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 
 import { api, refreshSession } from "@/lib/api";
-import type { LoginRequest, User } from "@/types/api";
+import type { ChangePasswordInput, LoginRequest, User } from "@/types/api";
 
 const SESSION_KEY = ["auth", "session"] as const;
 
@@ -13,6 +13,7 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (credentials: LoginRequest) => Promise<User>;
   logout: () => Promise<void>;
+  changePassword: (input: ChangePasswordInput) => Promise<User>;
   isLoggingOut: boolean;
 }
 
@@ -34,6 +35,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: ({ user }) => queryClient.setQueryData(SESSION_KEY, user),
   });
 
+  const changePasswordMutation = useMutation({
+    mutationFn: api.auth.changePassword,
+    onSuccess: ({ user }) => queryClient.setQueryData(SESSION_KEY, user),
+  });
+
   const logoutMutation = useMutation({
     mutationFn: api.auth.logout,
     onSettled: () => {
@@ -48,9 +54,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: session.isPending,
       login: async (credentials) => (await loginMutation.mutateAsync(credentials)).user,
       logout: () => logoutMutation.mutateAsync(),
+      changePassword: async (input) => (await changePasswordMutation.mutateAsync(input)).user,
       isLoggingOut: logoutMutation.isPending,
     }),
-    [session.data, session.isPending, loginMutation, logoutMutation],
+    [session.data, session.isPending, loginMutation, logoutMutation, changePasswordMutation],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

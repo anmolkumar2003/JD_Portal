@@ -22,7 +22,9 @@ Python, FastAPI, PostgreSQL, Docker
 
 
 def test_ats_check_weights_and_band() -> None:
-    extracted = ExtractResult(text=SAMPLE, ocr_used=False, page_count=1, method="pdfplumber", file_size=1000)
+    extracted = ExtractResult(
+        text=SAMPLE, ocr_used=False, page_count=1, method="pdfplumber", file_size=1000
+    )
     parsed = RuleBasedParser().parse(SAMPLE, file_meta=extracted)
     result = run_ats_check(extracted=extracted, parsed=parsed, mime_type="application/pdf")
     assert 0 <= result.score <= 100
@@ -72,6 +74,8 @@ def test_weight_renormalization_when_no_preferred() -> None:
         preferred_skills=[],
         min_experience=2,
     )
-    candidate = CandidateMatchInput(skills=["Python"], titles=["Engineer"], total_experience_years=3)
+    candidate = CandidateMatchInput(
+        skills=["Python"], titles=["Engineer"], total_experience_years=3
+    )
     out = score_match(job, candidate)
     assert out.overall_score >= 50

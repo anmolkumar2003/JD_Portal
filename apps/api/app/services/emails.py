@@ -18,6 +18,7 @@ from app.models import (
     EmailLog,
     EmailTemplate,
     Job,
+    Organization,
     PipelineStage,
     User,
 )
@@ -29,6 +30,7 @@ from app.schemas.comms import (
     EmailTemplateIn,
     EmailTemplateOut,
 )
+from app.services.org import org_display_name
 from app.workers.tasks import send_email
 
 logger = logging.getLogger(__name__)
@@ -86,6 +88,7 @@ async def _context(
     if candidate is None:
         return {}
     ctx: dict[str, str] = {
+        "org_name": org_display_name(await session.get(Organization, candidate.org_id)),
         "candidate_name": f"{candidate.first_name} {candidate.last_name}".strip(),
         "first_name": candidate.first_name,
         "last_name": candidate.last_name,

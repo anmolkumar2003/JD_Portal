@@ -50,6 +50,20 @@ def delete_object_sync(key: str) -> None:
     _internal_client().delete_object(Bucket=get_settings().s3_bucket, Key=key)
 
 
+def delete_all_objects_sync() -> int:
+    """Empty the bucket. Used only by the demo-cleanup command."""
+    client = _internal_client()
+    bucket = get_settings().s3_bucket
+    removed = 0
+    for page in client.get_paginator("list_objects_v2").paginate(Bucket=bucket):
+        keys = [{"Key": item["Key"]} for item in page.get("Contents", [])]
+        for start in range(0, len(keys), 1000):
+            chunk = keys[start : start + 1000]
+            client.delete_objects(Bucket=bucket, Delete={"Objects": chunk, "Quiet": True})
+            removed += len(chunk)
+    return removed
+
+
 async def put_object(key: str, data: bytes, content_type: str) -> None:
     await to_thread.run_sync(lambda: put_object_sync(key, data, content_type))
 

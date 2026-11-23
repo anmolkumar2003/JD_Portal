@@ -1,11 +1,18 @@
+import json
 import logging
 import re
 import time
 from uuid import uuid4
 
+from redis.exceptions import RedisError
 from starlette.datastructures import Headers, MutableHeaders
+from starlette.requests import HTTPConnection
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from app.core.config import get_settings
+from app.core.net import client_ip
+from app.core.rate_limit import resolve
+from app.core.redis import redis_client
 from app.core.request_context import request_id_ctx
 
 REQUEST_ID_HEADER = "X-Request-ID"
@@ -52,6 +59,53 @@ class RequestIDMiddleware:
                 },
             )
             request_id_ctx.reset(token)
+
+
+class RateLimitMiddleware:
+    """Fixed one-minute window per client IP across the API. Fails open if Redis is down."""
+
+    _EXEMPT_PREFIXES = ("/health", "/docs", "/openapi.json")
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        limit = get_settings().api_rate_limit_per_minute
+        if (
+            scope["type"] != "http"
+            or limit <= 0
+            or scope["method"] == "OPTIONS"
+            or scope["path"].startswith(self._EXEMPT_PREFIXES)
+        ):
+            await self.app(scope, receive, send)
+            return
+
+        ip = client_ip(HTTPConnection(scope))
+        key = f"ratelimit:api:{ip}:{int(time.time() // 60)}"
+        count = 0
+        try:
+            count = int(await resolve(redis_client.incr(key)))
+            if count == 1:
+                await resolve(redis_client.expire(key, 60))
+        except (RedisError, OSError):
+            logger.warning("rate limiter unavailable; allowing request")
+        if count > limit:
+            body = json.dumps(
+                {"error": {"code": "rate_limited", "message": "Too many requests", "details": None}}
+            ).encode()
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 429,
+                    "headers": [
+                        (b"content-type", b"application/json"),
+                        (b"retry-after", b"60"),
+                    ],
+                }
+            )
+            await send({"type": "http.response.body", "body": body})
+            return
+        await self.app(scope, receive, send)
 
 
 class SecurityHeadersMiddleware:

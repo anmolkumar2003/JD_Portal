@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Resolved before streaming starts, so a missing job still gets a real 404 status.
   if (!job) notFound();
   return {
-    title: `${job.title} · Acme Careers`,
+    title: job.title,
     description: job.description.slice(0, 160),
   };
 }

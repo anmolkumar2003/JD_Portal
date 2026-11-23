@@ -14,17 +14,20 @@ def to_docx(text: str, path: Path) -> None:
     doc = Document()
     for line in text.splitlines():
         doc.add_paragraph(line)
-    doc.save(path)
+    doc.save(str(path))
 
 
 def to_pdf(text: str, path: Path) -> None:
-    import fitz
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfgen import canvas
 
-    doc = fitz.open()
-    page = doc.new_page()
-    page.insert_text((50, 50), text[:5000], fontsize=10)
-    doc.save(path)
-    doc.close()
+    pdf = canvas.Canvas(str(path), pagesize=A4)
+    lines = pdf.beginText(50, A4[1] - 50)
+    lines.setFont("Helvetica", 10)
+    for line in text[:5000].splitlines():
+        lines.textLine(line)
+    pdf.drawText(lines)
+    pdf.save()
 
 
 def main() -> None:

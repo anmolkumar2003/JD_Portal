@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut, UserCog } from "lucide-react";
+import Link from "next/link";
 
 import {
   DropdownMenu,
@@ -49,6 +50,12 @@ export function TopBar() {
             <span className="block text-xs font-normal text-muted-foreground">{user.email}</span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href="/settings/account">
+              <UserCog aria-hidden />
+              My account
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => void logout()}>
             <LogOut aria-hidden />
             Log out

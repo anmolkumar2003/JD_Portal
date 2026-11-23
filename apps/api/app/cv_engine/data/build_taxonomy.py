@@ -142,7 +142,7 @@ TAXONOMY: dict[str, list[tuple[str, list[str]]]] = {
         ("Amazon ECS", ["ecs"]),
         ("Amazon EKS", ["eks"]),
         ("AWS CloudFormation", ["cloudformation"]),
-        ("AWS IAM", ["iam"]),
+        ("AWS IAM", ["aws iam"]),
         ("Azure", ["microsoft azure"]),
         ("Azure DevOps", ["azure devops"]),
         ("Google Cloud", ["gcp", "google cloud platform"]),
@@ -312,7 +312,7 @@ TAXONOMY: dict[str, list[tuple[str, list[str]]]] = {
         ("OKRs", ["okr", "okrs"]),
         ("Product Discovery", ["product discovery"]),
         ("Stakeholder Management", ["stakeholder management"]),
-        ("Go-to-Market", ["gtm", "go to market"]),
+        ("Go-to-Market", ["go to market", "go-to-market strategy"]),
         ("Pricing Strategy", ["pricing"]),
         ("Competitive Analysis", ["competitive analysis"]),
         ("Product Analytics", ["product analytics"]),
@@ -472,7 +472,7 @@ TAXONOMY: dict[str, list[tuple[str, list[str]]]] = {
     ],
     "healthcare": [
         ("Clinical Research", ["clinical research"]),
-        ("GCP", ["good clinical practice"]),
+        ("Good Clinical Practice", []),
         ("Pharmacovigilance", ["pharmacovigilance"]),
         ("HIPAA", ["hipaa"]),
         ("EMR", ["emr", "ehr"]),
@@ -496,7 +496,6 @@ TAXONOMY: dict[str, list[tuple[str, list[str]]]] = {
         ("Contract Drafting", ["contract drafting"]),
         ("Contract Negotiation", ["contract negotiation"]),
         ("Corporate Law", ["corporate law"]),
-        ("Employment Law", ["employment law"]),
         ("Intellectual Property", ["intellectual property", "ip"]),
         ("Litigation", ["litigation"]),
         ("Legal Research", ["legal research"]),
@@ -561,22 +560,137 @@ TAXONOMY: dict[str, list[tuple[str, list[str]]]] = {
 }
 
 
+# Skills for the company's departments. A name that already exists above keeps its category;
+# its synonyms are merged in (e.g. "GA" for Google Analytics).
+DEPARTMENT_SKILLS: dict[str, list[tuple[str, list[str]]]] = {
+    "content_writing": [
+        ("Content Writing", ["content writer", "web content writing", "blog writing"]),
+        ("SEO Writing", ["seo content writing", "seo copywriting", "seo writer", "seo content"]),
+        ("Copywriting", ["copy writing", "copywriter", "ad copy"]),
+        ("Keyword Research", ["keyword analysis", "keyword planning"]),
+        ("WordPress", ["wordpress", "wp", "wordpress cms"]),
+        ("SEO", ["on-page seo", "off-page seo", "technical seo"]),
+        ("Content Strategy", ["content planning", "editorial calendar"]),
+        ("Proofreading", ["editing and proofreading", "copy editing"]),
+        ("Google Search Console", ["search console", "gsc"]),
+    ],
+    "shopify": [
+        ("Shopify", ["shopify development", "shopify store", "shopify developer"]),
+        ("Shopify Plus", ["shopify plus"]),
+        ("Liquid", ["shopify liquid", "liquid templating"]),
+        ("Shopify Themes", ["shopify theme development", "theme development", "online store 2.0"]),
+        ("Storefront API", ["shopify storefront api", "storefront graphql api"]),
+        ("Shopify Apps", ["shopify app development", "shopify admin api"]),
+        ("Shopify Polaris", ["polaris"]),
+        ("Shopify Checkout Extensibility", ["checkout extensions", "checkout ui extensions"]),
+    ],
+    "ppc": [
+        ("PPC", ["pay per click", "pay-per-click", "paid search", "sem campaigns"]),
+        ("Google Ads", ["google adwords", "adwords", "google ads"]),
+        ("Meta Ads", ["facebook ads", "meta ads", "facebook advertising", "instagram ads"]),
+        ("Google Analytics", ["ga", "ga4", "google analytics 4", "universal analytics"]),
+        ("Google Tag Manager", ["gtm", "tag manager"]),
+        ("ROAS", ["return on ad spend"]),
+        ("Conversion Tracking", ["conversion tracking setup", "conversion pixels"]),
+        ("Microsoft Ads", ["bing ads", "microsoft advertising"]),
+        ("Google Shopping", ["shopping ads", "shopping campaigns", "google shopping ads"]),
+        ("Google Merchant Center", ["merchant center", "gmc"]),
+        ("Remarketing", ["retargeting", "remarketing campaigns"]),
+        ("Performance Max", ["pmax", "performance max campaigns"]),
+        ("LinkedIn Ads", ["linkedin advertising", "linkedin campaign manager"]),
+    ],
+    "android": [
+        ("Kotlin", ["kotlin"]),
+        ("Jetpack Compose", ["compose", "jetpack"]),
+        ("Retrofit", ["retrofit2"]),
+        ("Android SDK", ["android", "android development", "android studio"]),
+        ("Kotlin Coroutines", ["coroutines", "kotlin flow"]),
+        ("Room", ["room database", "android room"]),
+        ("Hilt", ["dagger hilt", "dagger", "dagger2"]),
+        ("MVVM", ["mvvm architecture", "model-view-viewmodel"]),
+    ],
+    "ios": [
+        ("Swift", ["swift 5"]),
+        ("SwiftUI", ["swift ui"]),
+        ("UIKit", ["uikit", "ui kit"]),
+        ("Xcode", ["xcode"]),
+        ("Core Data", ["coredata"]),
+        ("Combine", ["combine framework"]),
+        ("iOS", ["ios development", "iphone app development", "ios app development"]),
+        ("App Store Connect", ["testflight", "app store submission"]),
+    ],
+    "flutter": [
+        ("Flutter", ["flutter sdk", "flutter development"]),
+        ("Dart", ["dart"]),
+        ("Bloc", ["flutter bloc", "bloc pattern", "cubit"]),
+        ("Riverpod", ["flutter riverpod"]),
+        ("Provider", ["flutter provider"]),
+        ("GetX", ["getx"]),
+    ],
+    "quality_analyst": [
+        ("QA", ["quality assurance", "quality analyst", "software testing", "qa testing"]),
+        ("Selenium", ["selenium webdriver", "selenium"]),
+        ("Cypress", ["cypress.io"]),
+        ("Postman", ["postman api testing"]),
+        ("Jira", ["jira software", "atlassian jira"]),
+        ("Manual Testing", ["manual qa", "functional testing"]),
+        ("API Testing", ["api testing", "rest api testing"]),
+        ("Appium", ["appium"]),
+        ("Regression Testing", ["regression testing"]),
+        ("Test Cases", ["test case design", "test case writing"]),
+        ("Bug Tracking", ["bug reporting", "defect tracking", "defect management"]),
+        ("Test Plans", ["test plan", "test strategy"]),
+        ("Mobile Testing", ["mobile app testing", "android testing", "ios testing"]),
+    ],
+    "ux_design": [
+        ("Figma", ["figma design"]),
+        ("Wireframing", ["wireframes", "wireframe"]),
+        ("Prototyping", ["prototypes", "interactive prototyping"]),
+        ("User Research", ["ux research"]),
+        ("UI Design", ["user interface design"]),
+        ("UX Design", ["user experience design", "ux designer"]),
+        ("Design Systems", ["design system"]),
+        ("Graphic Design", ["graphic designer", "visual communication"]),
+        ("Adobe Photoshop", ["photoshop"]),
+        ("Canva", ["canva design"]),
+        ("Usability Testing", ["user testing", "usability studies"]),
+    ],
+    "project_manager": [
+        ("Agile", ["agile methodology", "agile project management"]),
+        ("Scrum", ["scrum master", "scrum framework"]),
+        ("Jira", ["jira"]),
+        ("Stakeholder Management", ["stakeholder communication", "stakeholder engagement"]),
+        ("Project Management", ["project planning", "delivery management"]),
+        ("Sprint Planning", ["sprint planning"]),
+        ("Risk Management", ["risk mitigation"]),
+        ("Trello", ["trello boards"]),
+        ("Microsoft Project", ["ms project"]),
+        ("SDLC", ["software development life cycle", "software development lifecycle"]),
+        ("Client Communication", ["client management", "client handling"]),
+    ],
+}
+
+
 def main() -> None:
-    seen: set[str] = set()
+    by_key: dict[str, dict[str, object]] = {}
     skills: list[dict[str, object]] = []
-    for category, rows in TAXONOMY.items():
-        for name, synonyms in rows:
-            key = name.casefold()
-            if key in seen:
-                continue
-            seen.add(key)
-            skills.append(
-                {
+    for taxonomy in (TAXONOMY, DEPARTMENT_SKILLS):
+        for category, rows in taxonomy.items():
+            for name, synonyms in rows:
+                key = name.casefold()
+                aliases = {s.casefold() for s in synonyms if s.casefold() != key}
+                existing = by_key.get(key)
+                if existing is not None:
+                    merged = set(existing["synonyms"]) | aliases  # type: ignore[call-overload]
+                    existing["synonyms"] = sorted(merged)
+                    continue
+                entry: dict[str, object] = {
                     "name": name,
                     "category": category,
-                    "synonyms": sorted({s.casefold() for s in synonyms if s.casefold() != key}),
+                    "synonyms": sorted(aliases),
                 }
-            )
+                by_key[key] = entry
+                skills.append(entry)
     out = Path(__file__).with_name("skills.json")
     out.write_text(json.dumps(skills, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {len(skills)} skills to {out}")

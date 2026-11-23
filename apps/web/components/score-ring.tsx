@@ -25,8 +25,7 @@ export function ScoreRing({ score, size = 36, className }: ScoreRingProps) {
         )}
         title="Score not available yet"
       >
-        <CircleHelp className="h-3.5 w-3.5" aria-hidden />
-        —
+        <CircleHelp className="h-3.5 w-3.5" aria-hidden />—
       </span>
     );
   }

@@ -65,6 +65,9 @@ class Candidate(BaseModel, SoftDeleteMixin):
     notice_period_days: Mapped[int | None] = mapped_column(Integer)
     linkedin_url: Mapped[str | None] = mapped_column(String(500))
     portfolio_url: Mapped[str | None] = mapped_column(String(500))
+    department_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("departments.id", ondelete="SET NULL"), index=True
+    )
     source: Mapped[CandidateSource] = mapped_column(
         pg_enum(CandidateSource, "candidate_source"),
         default=CandidateSource.CAREER_SITE,

@@ -1,5 +1,4 @@
 import { SearchX } from "lucide-react";
-import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CareersFilters } from "@/components/careers/careers-filters";
@@ -7,11 +6,6 @@ import { JobCard } from "@/components/careers/job-card";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { serverApi } from "@/lib/server-api";
-
-export const metadata: Metadata = {
-  title: "Careers at Acme",
-  description: "Explore open roles at Acme and apply online.",
-};
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -24,9 +18,10 @@ export default async function CareersPage({ searchParams }: { searchParams: Sear
     department_id: param(searchParams.department_id),
     location_id: param(searchParams.location_id),
   };
-  const [jobs, options] = await Promise.all([
+  const [jobs, options, config] = await Promise.all([
     serverApi.listPublicJobs({ ...filters, page_size: 100 }),
     serverApi.publicJobFilters(),
+    serverApi.config(),
   ]);
   const filtered = Boolean(filters.q || filters.department_id || filters.location_id);
 
@@ -36,7 +31,7 @@ export default async function CareersPage({ searchParams }: { searchParams: Sear
         <div className="container space-y-8 py-14 sm:py-20">
           <div className="max-w-2xl space-y-3">
             <p className="text-sm font-semibold uppercase tracking-wide text-primary">
-              Careers at Acme
+              Careers at {config.org_name}
             </p>
             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
               Do the best work of your career

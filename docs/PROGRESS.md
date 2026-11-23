@@ -2,44 +2,63 @@
 
 Legend: `[x]` done · `[~]` partial · `[ ]` pending · `[-]` skipped
 
-## Baseline (Prompts 1–5)
+## Earlier build (before the go-live plan)
 
-- [x] Scaffold, auth, jobs, careers apply, candidates/Kanban
+- [x] Scaffold, auth, jobs, careers apply, candidates and Kanban
+- [x] CV engine: parsing, ATS check, JD match, Celery `process_document`, golden set
+- [x] Match Analysis tab, score filters and sort, compare page
+- [x] APIs for notes, tags, shortlist, bulk actions, email templates, notifications, analytics,
+      interviews, requisitions, offers, export, anonymize and audit
+- [-] AUTH-04 TOTP (optional, skipped)
 
-## Phase 1: CV engine — committed `phase 1: CV engine`
+## Go-live plan
 
-- [x] CV-01..CV-08, CV-10, CAND-10, Celery `process_document`, golden set
+### Phase 1: cleanup, users, security
 
-## Phase 2: Match Analysis UI — committed `phase 2: Match Analysis UI`
+- [x] Pre-cleanup backup: database dump and MinIO listing in `backups/pre-cleanup/` (git-ignored)
+- [x] Demo data removed from the development database; demo passwords removed from code and docs
+- [x] `make init-admin` (interactive; role prompt; strong password or a generated one); the
+      super_admin and the hr_admin (Akanksha) accounts created
+- [x] `make seed-demo` gated on `APP_ENV=development`; password from `DEMO_PASSWORD` or generated;
+      tests mock storage so no stub files reach MinIO
+- [x] Forced password change at first sign-in (`must_change_password`); a password change or
+      reset signs out other sessions
+- [x] Settings > Users: create (temporary password), change role, deactivate, reset password;
+      assignable roles hr_admin, super_admin, recruiter; last-admin and self-demotion guards
+- [x] `/forgot-password` and `/reset-password` pages
+- [x] "Acme" replaced by `ORG_NAME` and Settings > Organization (name, logo); `{{org_name}}` in
+      emails
+- [x] The 9 reference departments; Settings > Departments; department filter on the applications
+      API (the dropdowns in Add Candidate and the candidate filters come in Phases 2 and 4)
+- [x] Skill taxonomy: department skills and synonyms filled in; no synonym maps to two skills
+- [x] Feature flags `ENABLE_PUBLIC_CAREERS`, `ENABLE_INTERVIEWS`, `ENABLE_OFFERS`,
+      `ENABLE_REQUISITIONS`, `ENABLE_AUDIT_UI`, all off by default: hidden in the UI, 404 from
+      the API; audit logging stays on
+- [x] PyMuPDF (AGPL) replaced by pypdf and pypdfium2 with identical golden results; Redis
+      replaced by Valkey; licenses in `docs/LICENSES.md`
+- [x] Ruff and mypy clean; Alembic drift fixed (`20261123_0006`), `alembic check` clean
+- [x] `make test-e2e` runs in an isolated throwaway stack; it does not touch the development
+      containers or `.env`
 
-- [x] Match Analysis tab, score filters/sort, compare page
-- [x] Notes/tags/shortlist/bulk APIs
-- [~] Rich notes composer / bulk toolbar UI (APIs ready)
+### Phase 2: Add Candidate
 
-## Phase 3: Email and notifications — committed `phase 3: email and notifications`
+- [ ] Manual form with salary fields, multi-CV drop zone, drafts, CV autofill, budget badge,
+      editable profile and documents
 
-- [x] Models + migration, COMM-01/02 APIs, PIPE-03 hook, notifications APIs
-- [~] Notification bell dropdown UI
+### Phase 3: review, notes, interview rating
 
-## Phase 4–7: analytics, interviews, offers, compliance — committed `phase 4-7: ...`
+- [ ] Profile tabs, parsed-data correction, notes with @mentions, email composer, bulk toolbar,
+      bell, simple interview rating, final score panel, reject and Move-to
 
-- [x] DASH-01 KPIs + funnel/sources/trend lists; analytics + search APIs
-- [~] Recharts charts (list UI for now); Cmd+K palette UI
-- [x] INT APIs: schedule, mine, scorecard, summary helpers
-- [~] Interviews/My interviews portal pages
-- [x] REQ + OFFER APIs incl. local PDF + hired openings decrement
-- [~] Requisition/Offer portal pages
-- [x] Export/anonymize/audit APIs; security headers; `docs/security-review.md`
-- [-] AUTH-04 TOTP (optional — skipped)
-- [~] Settings admin UI; retention Celery job
+### Phase 4: search and filters
 
-## Phase 8: Quality and demo readiness
+- [ ] Full-text and trigram search, filter popover, saved filters, jobs filters, Cmd+K
 
-- [x] Split docs (`requirements`, `data-model`, `cv-engine`, `api`, `ui`)
-- [x] Seed 30 demo candidates (`make seed`), Playwright e2e (`apps/web` `npm run test:e2e`), load script (`apps/api/scripts/load_test_apply_and_list.py`)
-- [~] Accessibility axe polish (eslint jsx-a11y only; no dedicated axe pass yet)
-- [x] Full stack verification (`make up` / migrate / seed); golden/real CV eval + parser fixes
+### Phase 5: dashboard, polish, responsive
 
-## Done
+- [ ] Charts, table and Kanban polish, design tokens, dark mode, responsive screenshots
 
-Docker stack healthy; migration `20261121_0004` applied; CV eval on `tests/golden/real/` clean after parser fixes.
+### Phase 6: go-live package
+
+- [ ] Production compose with Caddy, secrets script, SMTP, hardening, backups and restore drill,
+      ClamAV, retention job, `DEPLOY.md`, `USER-GUIDE.md`

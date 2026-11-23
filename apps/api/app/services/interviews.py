@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -25,6 +26,8 @@ from app.models.interviews import (
 from app.schemas.comms import EmailSendIn
 from app.services.emails import send_candidate_email
 from app.workers.tasks import send_email
+
+logger = logging.getLogger(__name__)
 
 
 def _ics(interview: Interview, candidate_name: str, job_title: str) -> str:
@@ -97,7 +100,7 @@ async def create_interview(
                         f"You are on the panel.\n\n{ics}",
                     )
                 except Exception:
-                    pass
+                    logger.warning("Could not queue the panel invite", exc_info=True)
         try:
             await send_candidate_email(
                 session,
@@ -110,7 +113,7 @@ async def create_interview(
                 ),
             )
         except Exception:
-            pass
+            logger.warning("Could not send the interview email to the candidate", exc_info=True)
 
     return {"id": str(interview.id), "status": interview.status.value}
 
@@ -181,9 +184,7 @@ async def interview_summary(
     if app is None or not await can_access_job(session, user, app.job_id):
         raise AppError(status.HTTP_404_NOT_FOUND, "not_found", "Application not found")
     interviews = list(
-        await session.scalars(
-            select(Interview).where(Interview.application_id == application_id)
-        )
+        await session.scalars(select(Interview).where(Interview.application_id == application_id))
     )
     cards: list[dict[str, Any]] = []
     for interview in interviews:
@@ -201,9 +202,11 @@ async def interview_summary(
                 )
             )
         )
-        visible = scorecards if submitted or my_panel is None else [
-            s for s in scorecards if s.interviewer_id == user.id
-        ]
+        visible = (
+            scorecards
+            if submitted or my_panel is None
+            else [s for s in scorecards if s.interviewer_id == user.id]
+        )
         cards.append(
             {
                 "interview_id": str(interview.id),
@@ -213,7 +216,9 @@ async def interview_summary(
                         "interviewer_id": str(s.interviewer_id),
                         "ratings": s.ratings,
                         "recommendation": s.recommendation.value if s.recommendation else None,
-                        "comments": s.comments if submitted or s.interviewer_id == user.id else None,
+                        "comments": s.comments
+                        if submitted or s.interviewer_id == user.id
+                        else None,
                     }
                     for s in visible
                 ],

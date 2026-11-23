@@ -157,9 +157,10 @@ function Field({
 interface ApplyFormProps {
   slug: string;
   jobTitle: string;
+  orgName: string;
 }
 
-export function ApplyForm({ slug, jobTitle }: ApplyFormProps) {
+export function ApplyForm({ slug, jobTitle, orgName }: ApplyFormProps) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const {
@@ -470,9 +471,9 @@ export function ApplyForm({ slug, jobTitle }: ApplyFormProps) {
                     {...invalid("consent")}
                   />
                   <span>
-                    I agree that Acme may store and process my personal data and CV to assess my
-                    application for this and similar roles. I can ask for my data to be deleted at
-                    any time.
+                    I agree that {orgName} may store and process my personal data and CV to assess
+                    my application for this and similar roles. I can ask for my data to be deleted
+                    at any time.
                   </span>
                 </label>
                 {errors.consent && (

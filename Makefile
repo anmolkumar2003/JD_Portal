@@ -1,12 +1,16 @@
 COMPOSE ?= docker compose
 API_RUN := $(COMPOSE) run --rm --no-deps api
 WEB_RUN := $(COMPOSE) run --rm --no-deps web
+E2E := docker compose -f docker-compose.e2e.yml
+BACKUP_DIR ?= backups/manual
+S3_BUCKET ?= cvs
 
 .DEFAULT_GOAL := help
-.PHONY: help env up down logs migrate test test-api test-web test-e2e lint lint-api lint-web format seed
+.PHONY: help env up down logs migrate test test-api test-web test-e2e lint lint-api lint-web \
+	format init-admin seed-demo cleanup-demo reference-data backup
 
 help: ## Show available targets
-	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
 env: ## Create .env from .env.example if it does not exist
 	@test -f .env || (cp .env.example .env && echo "Created .env from .env.example")
@@ -23,36 +27,52 @@ logs: ## Follow logs (optionally s=<service>)
 migrate: ## Apply Alembic migrations (stack must be up)
 	$(COMPOSE) exec api alembic upgrade head
 
+init-admin: ## Create or reset a portal account interactively (run once per admin)
+	$(COMPOSE) exec api python -m app.cli.init_admin
+
+reference-data: ## Add any missing stages, email templates and departments (idempotent)
+	$(COMPOSE) exec api python -m app.cli.reference_data
+
+seed-demo: ## Load fake demo data (refuses unless APP_ENV=development; never runs automatically)
+	$(COMPOSE) exec api python -m app.seed_demo
+
+cleanup-demo: ## Delete all candidates, jobs and demo users, and empty the CV bucket (asks first)
+	$(COMPOSE) exec api python -m app.cli.cleanup_demo
+
+backup: ## Dump the database and copy the CV bucket into $(BACKUP_DIR)/<timestamp>
+	@set -e; stamp=$$(date +%Y%m%d-%H%M%S); dir="$(BACKUP_DIR)/$$stamp"; mkdir -p "$$dir"; \
+	$(COMPOSE) exec -T postgres sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -Fc' > "$$dir/db.dump"; \
+	$(COMPOSE) run --rm --no-deps -v "$(CURDIR)/$$dir:/backup" minio-init \
+		mirror --quiet local/$(S3_BUCKET) /backup/cvs >/dev/null; \
+	echo "Backup written to $$dir"
+
 test: test-api test-web ## Run all tests
 
-test-api: ## Run API tests (pytest)
+test-api: ## Run API tests (pytest, separate <db>_test database)
 	$(API_RUN) pytest
 
-test-web: ## Type-check the web app (no web test runner yet)
+test-web: ## Type-check the web app
 	$(WEB_RUN) npm run typecheck
 
-test-e2e: ## Playwright e2e (stack must be up + seeded; uses Docker Playwright image)
-	# Same-site host.docker.internal so the refresh cookie works across web↔API ports.
-	NEXT_PUBLIC_API_URL=http://host.docker.internal:8001 $(COMPOSE) up -d --force-recreate web
-	@sleep 8
-	docker run --rm --add-host=host.docker.internal:host-gateway \
-		-e PLAYWRIGHT_BASE_URL=http://host.docker.internal:3000 \
-		-v "$(CURDIR)/apps/web:/work" -w /work \
-		mcr.microsoft.com/playwright:v1.49.1-jammy \
-		bash -c "npm ci && npx playwright test"
-	NEXT_PUBLIC_API_URL=http://localhost:8001 $(COMPOSE) up -d --force-recreate web
+# The e2e stack is a separate compose project with throwaway storage; it does not restart or
+# reconfigure the development stack, and the demo password only exists for this run.
+test-e2e: ## Playwright e2e in an isolated, throwaway stack
+	@set -e; \
+	export E2E_PASSWORD="E2e!$$(openssl rand -hex 12)"; \
+	trap '$(E2E) --profile runner down -v --remove-orphans >/dev/null 2>&1' EXIT; \
+	$(E2E) up -d --build --wait postgres redis minio minio-init mailpit api worker web; \
+	$(E2E) exec -T api alembic upgrade head; \
+	$(E2E) exec -T -e DEMO_PASSWORD="$$E2E_PASSWORD" api python -m app.seed_demo >/dev/null; \
+	$(E2E) --profile runner run --rm playwright
 
 lint: lint-api lint-web ## Run all linters
 
 lint-api: ## Ruff + mypy
 	$(API_RUN) sh -c "ruff check . && ruff format --check . && mypy"
 
-lint-web: ## ESLint + Prettier
-	$(WEB_RUN) sh -c "npm run lint && npm run format:check"
+lint-web: ## ESLint + Prettier + tsc
+	$(WEB_RUN) sh -c "npm run lint && npm run format:check && npm run typecheck"
 
 format: ## Auto-format API and web code
 	$(API_RUN) sh -c "ruff check --fix . && ruff format ."
 	$(WEB_RUN) npm run format
-
-seed: ## Seed demo org, users, pipeline stages and jobs (stack must be up, run migrate first)
-	$(COMPOSE) exec api python -m app.seed

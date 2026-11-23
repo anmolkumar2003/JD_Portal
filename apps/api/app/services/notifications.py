@@ -25,7 +25,9 @@ async def list_notifications(
     return [NotificationOut.model_validate(r) for r in rows]
 
 
-async def mark_read(session: AsyncSession, user: User, notification_id: uuid.UUID) -> NotificationOut:
+async def mark_read(
+    session: AsyncSession, user: User, notification_id: uuid.UUID
+) -> NotificationOut:
     row = await session.get(Notification, notification_id)
     if row is None or row.user_id != user.id:
         raise AppError(status.HTTP_404_NOT_FOUND, "not_found", "Notification not found")
@@ -40,6 +42,8 @@ async def mark_all_read(session: AsyncSession, user: User) -> int:
         update(Notification)
         .where(Notification.user_id == user.id, Notification.read_at.is_(None))
         .values(read_at=datetime.now(UTC))
+        .returning(Notification.id)
     )
+    updated = len(result.all())
     await session.commit()
-    return int(result.rowcount or 0)
+    return updated

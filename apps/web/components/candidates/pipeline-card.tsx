@@ -35,7 +35,13 @@ export function PipelineCard({
   onMoveTo,
   disabled,
 }: PipelineCardProps) {
-  const { attributes, listeners, setNodeRef: setDragRef, transform, isDragging } = useDraggable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+    transform,
+    isDragging,
+  } = useDraggable({
     id: card.id,
     disabled: !canEdit || disabled,
     data: { stageId: currentStageId },

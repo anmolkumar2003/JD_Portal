@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.models import ActivityLog, Application, Job, PipelineStage
 from app.models.enums import ApplicationStatus, StageType
 from tests.conftest import login
-from tests.test_apply import BACKEND, _apply, _form
+from tests.test_apply import ANDROID, _apply, _form
 
 pytestmark = pytest.mark.usefixtures("db", "sent_emails", "stored_objects")
 
@@ -20,7 +20,8 @@ def _auth(token: str) -> dict[str, str]:
 async def _seed_application(client: AsyncClient) -> dict[str, Any]:
     response = await _apply(client, data=_form("pipeline@example.com"))
     assert response.status_code == 201, response.text
-    return response.json()
+    body: dict[str, Any] = response.json()
+    return body
 
 
 async def test_list_applications_and_hm_scope(client: AsyncClient) -> None:
@@ -40,10 +41,30 @@ async def test_list_applications_and_hm_scope(client: AsyncClient) -> None:
     assert hm_list.json()["total"] >= 1
 
     interviewer = await login(client, "interviewer")
-    # Interviewer is on the seeded backend job panel, so that applicant is visible.
+    # Interviewer is on the seeded Android job panel, so that applicant is visible.
     panel = await client.get("/api/v1/applications", headers=_auth(interviewer))
     assert panel.status_code == 200
     assert panel.json()["total"] >= 1
+
+
+async def test_filter_applications_by_department(client: AsyncClient) -> None:
+    token = await login(client, "recruiter")
+    departments = (await client.get("/api/v1/departments", headers=_auth(token))).json()
+    android = next(d["id"] for d in departments if d["name"] == "Android")
+    ux = next(d["id"] for d in departments if d["name"] == "UX Design")
+
+    listed = await client.get(
+        "/api/v1/applications",
+        headers=_auth(token),
+        params={"department_id": android, "page_size": 100},
+    )
+    empty = await client.get(
+        "/api/v1/applications", headers=_auth(token), params={"department_id": ux}
+    )
+
+    assert listed.json()["total"] > 0
+    assert {item["job"]["name"] for item in listed.json()["items"]} == {"Senior Android Developer"}
+    assert empty.json()["total"] == 0
 
 
 async def test_get_application_detail(client: AsyncClient) -> None:
@@ -68,7 +89,7 @@ async def test_job_board_and_stage_move_with_reject(
     token = await login(client, "recruiter")
 
     async with db() as session:
-        job = await session.scalar(select(Job).where(Job.slug == BACKEND))
+        job = await session.scalar(select(Job).where(Job.slug == ANDROID))
         assert job is not None
         stages = {
             s.type: s
@@ -135,9 +156,7 @@ async def test_job_board_and_stage_move_with_reject(
         assert reject_log.actor_id is not None
 
     candidate_id = rejected.json()["candidate"]["id"]
-    timeline = await client.get(
-        f"/api/v1/candidates/{candidate_id}/timeline", headers=_auth(token)
-    )
+    timeline = await client.get(f"/api/v1/candidates/{candidate_id}/timeline", headers=_auth(token))
     assert timeline.status_code == 200, timeline.text
     entries = timeline.json()
     assert any(e["action"] == "application.created" for e in entries)
