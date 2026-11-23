@@ -1,0 +1,6 @@
+{
+  "email": "vikram.singh@example.com",
+  "phone_contains": "98765",
+  "skills": ["Kubernetes", "Docker", "Terraform", "AWS", "Ansible", "Jenkins", "Prometheus", "Grafana"],
+  "min_experience_years": 7
+}

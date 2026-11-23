@@ -9,6 +9,7 @@ from app.core.deps import CurrentUser, require_roles
 from app.core.pagination import Page, PageParams, page_params
 from app.models import User
 from app.models.enums import JobStatus, UserRole
+from app.schemas.application import BoardOut, RescoreOut
 from app.schemas.job import (
     JobCreate,
     JobFilters,
@@ -18,6 +19,8 @@ from app.schemas.job import (
     RequirementsIn,
     TeamIn,
 )
+from app.services import analysis as analysis_service
+from app.services import applications as applications_service
 from app.services import jobs as jobs_service
 
 router = APIRouter(prefix="/api/v1/jobs", tags=["jobs"])
@@ -61,6 +64,11 @@ async def get_job(job_id: uuid.UUID, user: CurrentUser, session: Session) -> Job
     return await jobs_service.get_job(session, user, job_id)
 
 
+@router.get("/{job_id}/board", response_model=BoardOut)
+async def get_job_board(job_id: uuid.UUID, user: CurrentUser, session: Session) -> BoardOut:
+    return await applications_service.get_board(session, user, job_id)
+
+
 @router.patch("/{job_id}", response_model=JobOut)
 async def update_job(
     job_id: uuid.UUID, body: JobUpdate, user: JobEditor, session: Session
@@ -90,3 +98,8 @@ async def replace_team(
     job_id: uuid.UUID, body: TeamIn, user: JobEditor, session: Session
 ) -> JobOut:
     return await jobs_service.replace_team(session, user, job_id, body)
+
+
+@router.post("/{job_id}/rescore", response_model=RescoreOut)
+async def rescore_job(job_id: uuid.UUID, user: JobEditor, session: Session) -> RescoreOut:
+    return await analysis_service.enqueue_job_rescore(session, user, job_id)

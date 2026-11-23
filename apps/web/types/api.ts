@@ -214,3 +214,272 @@ export interface ApiErrorBody {
     details?: unknown;
   };
 }
+
+// --- Applications / pipeline (CAND / PIPE) ----------------------------------------------------
+
+export type StageType =
+  | "applied"
+  | "screening"
+  | "interview"
+  | "offer"
+  | "hired"
+  | "rejected"
+  | "custom";
+
+export type ApplicationStatus = "active" | "rejected" | "withdrawn" | "hired";
+
+export type CandidateSource =
+  | "career_site"
+  | "referral"
+  | "linkedin"
+  | "agency"
+  | "manual";
+
+export type DocumentType = "cv" | "cover_letter" | "offer" | "other";
+
+export type ParseStatus = "pending" | "processing" | "done" | "failed";
+
+export interface StageRef {
+  id: string;
+  name: string;
+  type: StageType;
+  order: number;
+}
+
+export interface ApplicationListItem {
+  id: string;
+  reference_no: string;
+  status: ApplicationStatus;
+  candidate_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  current_title: string | null;
+  current_company: string | null;
+  source: CandidateSource;
+  job: NamedRef;
+  stage: StageRef;
+  overall_score: number | null;
+  is_shortlisted: boolean;
+  tags: string[];
+  applied_at: string;
+  stage_entered_at: string;
+}
+
+export interface ApplicationListParams {
+  page?: number;
+  page_size?: number;
+  sort?: string;
+  job_id?: string;
+  stage_id?: string;
+  candidate_id?: string;
+  q?: string;
+  source?: CandidateSource;
+  applied_from?: string;
+  applied_to?: string;
+  score_min?: number;
+  score_max?: number;
+  skill?: string;
+}
+
+export interface DocumentOut {
+  id: string;
+  type: DocumentType;
+  file_name: string;
+  mime_type: string;
+  size: number;
+  is_primary: boolean;
+}
+
+export interface ParsedProfileOut {
+  id?: string | null;
+  document_id?: string | null;
+  parse_status: ParseStatus;
+  data: Record<string, unknown>;
+  corrected_data?: Record<string, unknown> | null;
+  total_experience_years: string | null;
+  confidence: Record<string, unknown>;
+  error: string | null;
+  parser_version?: string | null;
+}
+
+export interface AtsCheckItem {
+  id: string;
+  label: string;
+  passed: boolean;
+  weight: number;
+  detail: string;
+  suggestion: string;
+}
+
+export interface AtsCheckOut {
+  score: number;
+  checks: AtsCheckItem[];
+  engine_version: string;
+  band?: string | null;
+}
+
+export interface MatchResultOut {
+  overall_score: number;
+  breakdown: Record<string, unknown>;
+  matched_skills: string[];
+  missing_required: string[];
+  missing_preferred: string[];
+  extra_skills: string[];
+  explanation: Record<string, unknown>;
+  engine_version: string;
+  computed_at: string;
+}
+
+export interface AnalysisOut {
+  application_id: string;
+  document_id: string | null;
+  parsed_profile: ParsedProfileOut | null;
+  ats_check: AtsCheckOut | null;
+  match_result: MatchResultOut | null;
+  disclaimer: string;
+}
+
+export interface CandidateSummary {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string | null;
+  current_location: string | null;
+  current_company: string | null;
+  current_title: string | null;
+  total_experience_years: string | null;
+  expected_ctc: string | null;
+  notice_period_days: number | null;
+  linkedin_url: string | null;
+  source: CandidateSource;
+  tags: string[];
+}
+
+export interface ApplicationDetail {
+  id: string;
+  reference_no: string;
+  status: ApplicationStatus;
+  rejection_reason: string | null;
+  cover_letter: string | null;
+  applied_at: string;
+  stage_entered_at: string;
+  is_shortlisted: boolean;
+  candidate: CandidateSummary;
+  job: NamedRef;
+  stage: StageRef;
+  documents: DocumentOut[];
+  parsed_profile: ParsedProfileOut | null;
+  match_result: MatchResultOut | null;
+}
+
+export interface StagePatchInput {
+  stage_id: string;
+  reason?: string | null;
+}
+
+export interface BoardCard {
+  id: string;
+  candidate_id: string;
+  first_name: string;
+  last_name: string;
+  current_title: string | null;
+  overall_score: number | null;
+  stage_entered_at: string;
+  applied_at: string;
+  reference_no: string;
+}
+
+export interface BoardColumn {
+  stage: StageRef;
+  count: number;
+  cards: BoardCard[];
+}
+
+export interface BoardOut {
+  job_id: string;
+  job_title: string;
+  stages: BoardColumn[];
+}
+
+export interface TimelineEntry {
+  id: string;
+  action: string;
+  occurred_at: string;
+  actor_name: string | null;
+  application_id: string | null;
+  meta: Record<string, unknown>;
+}
+
+export interface DownloadUrl {
+  url: string;
+  expires_in: number;
+  file_name: string;
+}
+
+// --- Notes, tags, shortlist, bulk actions (CAND-05, CAND-06) ------------------------------------
+
+export interface UserRef {
+  id: string;
+  full_name: string;
+  role: Role;
+}
+
+export interface NoteOut {
+  id: string;
+  candidate_id: string;
+  application_id: string | null;
+  author: UserRef | null;
+  body: string;
+  mentions: UserRef[];
+  created_at: string;
+}
+
+export interface NoteCreateInput {
+  body: string;
+  mentions: string[];
+  application_id?: string | null;
+}
+
+export interface CandidateTagsOut {
+  id: string;
+  tags: string[];
+}
+
+export interface ShortlistOut {
+  application_id: string;
+  is_shortlisted: boolean;
+}
+
+export type BulkActionType = "move_stage" | "reject" | "tag";
+
+export interface BulkPayload {
+  stage_id?: string;
+  reason?: string;
+  add_tags?: string[];
+  remove_tags?: string[];
+}
+
+export interface BulkActionInput {
+  action: BulkActionType;
+  ids: string[];
+  payload: BulkPayload;
+}
+
+export interface BulkFailure {
+  id: string;
+  code: string;
+  message: string;
+}
+
+export interface BulkActionResult {
+  action: BulkActionType;
+  succeeded: string[];
+  failed: BulkFailure[];
+}
+
+export interface ParsedProfilePatchInput {
+  data: Record<string, unknown>;
+  total_experience_years?: number | null;
+}

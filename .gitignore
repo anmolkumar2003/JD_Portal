@@ -25,6 +25,11 @@ htmlcov/
 build/
 dist/
 
+# Playwright
+playwright-report/
+test-results/
+blob-report/
+
 # Node / Next.js
 node_modules/
 .next/

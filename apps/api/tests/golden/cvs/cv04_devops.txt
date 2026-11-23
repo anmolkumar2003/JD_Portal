@@ -1,0 +1,28 @@
+Vikram Singh
+vikram.singh@example.com
+Phone: +91 98765 00112
+Pune, India | https://linkedin.com/in/vikramsingh
+
+Professional Experience
+DevOps Engineer
+ScaleOps
+Feb 2018 – Present
+Kubernetes, Terraform, AWS, Docker, Jenkins, Prometheus, Grafana.
+Automated blue/green deployments.
+
+Systems Engineer
+HostNet
+Jan 2015 – Jan 2018
+Linux administration, Ansible, Bash scripting.
+
+Education
+B.E. Information Technology
+Pune University
+2011 – 2015
+
+Skills
+Kubernetes, Docker, Terraform, AWS, Ansible, Jenkins, Linux, Prometheus, Grafana, Bash
+
+Certifications
+Certified Kubernetes Administrator (CKA)
+HashiCorp Terraform Associate

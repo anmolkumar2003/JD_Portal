@@ -1,0 +1,30 @@
+Ananya Iyer
+ananya.iyer@example.com | +91 91234 56789
+https://github.com/ananya | Hyderabad
+
+Summary
+Data scientist focused on NLP and recommendation systems.
+
+Work Experience
+Data Scientist
+InsightAI
+Jun 2019 – Present
+Python, scikit-learn, PyTorch, pandas, SQL. Built ranking models.
+
+Analyst
+RetailMetrics
+May 2016 – May 2019
+SQL, Tableau, Excel for business reporting.
+
+Education
+M.Sc Data Science
+IIIT Hyderabad
+2014 – 2016
+B.Sc Mathematics
+2011 – 2014
+
+Skills
+Python, SQL, pandas, scikit-learn, PyTorch, TensorFlow, Tableau, Spark
+
+Certifications
+Google Data Analytics Professional Certificate

@@ -1,7 +1,26 @@
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Any
+from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, StringConstraints, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
+
+from app.models.enums import (
+    ApplicationStatus,
+    CandidateSource,
+    DocumentType,
+    ParseStatus,
+    StageType,
+)
+from app.schemas.job import NamedRef
 
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
 ShortText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)]
@@ -70,3 +89,220 @@ class DownloadUrlOut(BaseModel):
     url: str
     expires_in: int
     file_name: str
+
+
+# --- Portal applications (CAND-01..04, CAND-09, PIPE-01/02) ------------------------------------
+
+
+class ApplicationFilters(BaseModel):
+    job_id: UUID | None = None
+    stage_id: UUID | None = None
+    candidate_id: UUID | None = None
+    q: str | None = Field(default=None, max_length=200)
+    source: CandidateSource | None = None
+    applied_from: date | None = None
+    applied_to: date | None = None
+    score_min: Annotated[int, Field(ge=0, le=100)] | None = None
+    score_max: Annotated[int, Field(ge=0, le=100)] | None = None
+    skill: str | None = Field(default=None, max_length=100)
+
+
+class StageRef(BaseModel):
+    id: UUID
+    name: str
+    type: StageType
+    order: int
+
+
+class ApplicationListItem(BaseModel):
+    id: UUID
+    reference_no: str
+    status: ApplicationStatus
+    candidate_id: UUID
+    first_name: str
+    last_name: str
+    email: str
+    current_title: str | None
+    current_company: str | None
+    source: CandidateSource
+    job: NamedRef
+    stage: StageRef
+    overall_score: int | None
+    is_shortlisted: bool = False
+    tags: list[str] = Field(default_factory=list)
+    applied_at: datetime
+    stage_entered_at: datetime
+
+
+class DocumentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    type: DocumentType
+    file_name: str
+    mime_type: str
+    size: int
+    is_primary: bool
+
+
+class ParsedProfileOut(BaseModel):
+    id: UUID | None = None
+    document_id: UUID | None = None
+    parse_status: ParseStatus
+    data: dict[str, Any]
+    corrected_data: dict[str, Any] | None = None
+    total_experience_years: Decimal | None
+    confidence: dict[str, Any]
+    error: str | None
+    parser_version: str | None = None
+
+
+class AtsCheckOut(BaseModel):
+    score: int
+    checks: list[dict[str, Any]]
+    engine_version: str
+    band: str | None = None
+
+
+class MatchResultOut(BaseModel):
+    overall_score: int
+    breakdown: dict[str, Any]
+    matched_skills: list[str]
+    missing_required: list[str]
+    missing_preferred: list[str]
+    extra_skills: list[str]
+    explanation: dict[str, Any]
+    engine_version: str
+    computed_at: datetime
+
+
+class AnalysisOut(BaseModel):
+    """GET /applications/{id}/analysis — parsed profile, ATS check, match (CV-04..07)."""
+
+    application_id: UUID
+    document_id: UUID | None
+    parsed_profile: ParsedProfileOut | None
+    ats_check: AtsCheckOut | None
+    match_result: MatchResultOut | None
+    disclaimer: str = "Score is advisory; a recruiter makes the decision."
+
+
+class ParsedProfilePatch(BaseModel):
+    """Recruiter corrections (CV-08). Partial overlay stored in corrected_data."""
+
+    data: dict[str, Any]
+    total_experience_years: Annotated[Decimal, Field(ge=0, le=50, decimal_places=1)] | None = None
+
+
+class ManualCandidateCreate(BaseModel):
+    """CAND-10: HR creates a candidate (optionally linked to a job) with CV upload."""
+
+    first_name: Name
+    last_name: Name
+    email: EmailStr
+    phone: Phone | None = None
+    current_location: ShortText | None = None
+    current_company: ShortText | None = None
+    current_title: ShortText | None = None
+    total_experience_years: Annotated[Decimal, Field(ge=0, le=50, decimal_places=1)] | None = None
+    notice_period_days: Annotated[int, Field(ge=0, le=365)] | None = None
+    linkedin_url: (
+        Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] | None
+    ) = None
+    job_id: UUID | None = None
+    source: CandidateSource = CandidateSource.MANUAL
+    tags: list[str] = Field(default_factory=list)
+
+
+class ManualCandidateResult(BaseModel):
+    candidate_id: UUID
+    application_id: UUID | None = None
+    document_id: UUID | None = None
+    reference_no: str | None = None
+
+
+class ReprocessOut(BaseModel):
+    document_id: UUID
+    status: str = "queued"
+
+
+class RescoreOut(BaseModel):
+    job_id: UUID
+    status: str = "queued"
+
+
+class CandidateSummary(BaseModel):
+    id: UUID
+    first_name: str
+    last_name: str
+    email: str
+    phone: str | None
+    current_location: str | None
+    current_company: str | None
+    current_title: str | None
+    total_experience_years: Decimal | None
+    expected_ctc: Decimal | None
+    notice_period_days: int | None
+    linkedin_url: str | None
+    source: CandidateSource
+    tags: list[str]
+
+
+class ApplicationOut(BaseModel):
+    id: UUID
+    reference_no: str
+    status: ApplicationStatus
+    rejection_reason: str | None
+    cover_letter: str | None
+    applied_at: datetime
+    stage_entered_at: datetime
+    is_shortlisted: bool
+    candidate: CandidateSummary
+    job: NamedRef
+    stage: StageRef
+    documents: list[DocumentOut]
+    parsed_profile: ParsedProfileOut | None
+    match_result: MatchResultOut | None
+
+
+ReasonText = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)
+]
+
+
+class StagePatch(BaseModel):
+    stage_id: UUID
+    reason: ReasonText | None = None
+
+
+class BoardCard(BaseModel):
+    id: UUID
+    candidate_id: UUID
+    first_name: str
+    last_name: str
+    current_title: str | None
+    overall_score: int | None
+    stage_entered_at: datetime
+    applied_at: datetime
+    reference_no: str
+
+
+class BoardColumn(BaseModel):
+    stage: StageRef
+    count: int
+    cards: list[BoardCard]
+
+
+class BoardOut(BaseModel):
+    job_id: UUID
+    job_title: str
+    stages: list[BoardColumn]
+
+
+class TimelineEntry(BaseModel):
+    id: UUID
+    action: str
+    occurred_at: datetime
+    actor_name: str | None
+    application_id: UUID | None
+    meta: dict[str, Any]

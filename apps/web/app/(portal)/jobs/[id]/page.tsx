@@ -1,9 +1,10 @@
 "use client";
 
-import { ExternalLink, FileQuestion, Loader2, Pencil, Send, Users, XCircle } from "lucide-react";
+import { ExternalLink, FileQuestion, Loader2, Pencil, Send, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
+import { PipelineBoard } from "@/components/candidates/pipeline-board";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { JobDetails } from "@/components/jobs/job-details";
@@ -156,21 +157,13 @@ export default function JobDetailPage() {
       <Tabs defaultValue="details">
         <TabsList>
           <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="applicants">Applicants ({data.applicants_count})</TabsTrigger>
+          <TabsTrigger value="pipeline">Pipeline ({data.applicants_count})</TabsTrigger>
         </TabsList>
         <TabsContent value="details" className="pt-4">
           <JobDetails job={data} />
         </TabsContent>
-        <TabsContent value="applicants" className="pt-4">
-          <EmptyState
-            icon={Users}
-            title="No applicants yet"
-            description={
-              data.status === "open"
-                ? "Applications will appear here as candidates apply."
-                : "Publish this job to start receiving applications."
-            }
-          />
+        <TabsContent value="pipeline" className="pt-4">
+          <PipelineBoard jobId={data.id} />
         </TabsContent>
       </Tabs>
     </div>

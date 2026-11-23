@@ -1,4 +1,12 @@
-import type { EmploymentType, JobStatus, Role, TeamRole, WorkMode } from "@/types/api";
+import type {
+  CandidateSource,
+  EmploymentType,
+  JobStatus,
+  Role,
+  StageType,
+  TeamRole,
+  WorkMode,
+} from "@/types/api";
 
 export const ROLE_LABELS: Record<Role, string> = {
   super_admin: "Super Admin",
@@ -34,6 +42,40 @@ export const TEAM_ROLE_LABELS: Record<TeamRole, string> = {
   interviewer: "Interviewer",
   manager: "Hiring manager",
 };
+
+export const STAGE_TYPE_LABELS: Record<StageType, string> = {
+  applied: "Applied",
+  screening: "Screening",
+  interview: "Interview",
+  offer: "Offer",
+  hired: "Hired",
+  rejected: "Rejected",
+  custom: "Custom",
+};
+
+export const CANDIDATE_SOURCE_LABELS: Record<CandidateSource, string> = {
+  career_site: "Career site",
+  referral: "Referral",
+  linkedin: "LinkedIn",
+  agency: "Agency",
+  manual: "Manual",
+};
+
+export function daysInStage(stageEnteredAt: string): number {
+  const ms = Date.now() - new Date(stageEnteredAt).getTime();
+  return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
+}
+
+export function formatDateTime(value: string | null | undefined): string {
+  if (!value) return "—";
+  return new Date(value).toLocaleString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export function formatDate(value: string | null | undefined): string {
   if (!value) return "—";

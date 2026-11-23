@@ -21,7 +21,16 @@ dependencies = [
   "pyjwt>=2.10,<3.0",
   "email-validator>=2.2,<3.0",
   "python-multipart>=0.0.18,<1.0",
-  "boto3>=1.35,<2.0",
+  "boto3>=1.35.0,<1.36",
+  "pdfplumber>=0.11,<1.0",
+  "pymupdf>=1.24.14,<1.25",
+  "python-docx>=1.1,<2.0",
+  "pytesseract>=0.3,<1.0",
+  "Pillow>=10.0,<12.0",
+  "spacy>=3.7,<4.0",
+  "scikit-learn>=1.5,<2.0",
+  "psycopg[binary]>=3.2,<4.0",
+  "reportlab>=4.2,<5.0",
 ]
 
 [project.optional-dependencies]
@@ -33,6 +42,7 @@ dev = [
   "ruff>=0.8,<1.0",
   "mypy>=1.13,<2.0",
   "celery-types>=0.22",
+  "types-Pillow>=10.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -49,6 +59,20 @@ ignore = ["PLR2004"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "PLR2004"]
+"app/cv_engine/**" = ["PLC0415", "PLR0913", "PLR0915", "PLW2901", "RUF001", "RUF002", "RUF046", "RUF100", "RUF005", "C420", "E501", "S105"]
+"app/services/analysis.py" = ["PLC0415", "PLR0912", "PLR0915", "E501"]
+"app/services/cv_processing.py" = ["PLR0912", "SIM105", "E501"]
+"app/services/analytics.py" = ["E501"]
+"app/services/notifications.py" = ["E501"]
+"app/services/notes.py" = ["E501"]
+"app/services/search.py" = ["E501"]
+"app/services/applications.py" = ["PLC0415", "BLE001"]
+"app/routers/candidates.py" = ["PLC0415", "PLR0913", "PLR0917"]
+"app/services/interviews.py" = ["BLE001", "E501", "PLR0913"]
+"app/services/offers.py" = ["E501", "PLC0415"]
+"app/services/requisitions.py" = ["E501"]
+"app/services/compliance.py" = ["E501"]
+"app/routers/applications.py" = ["PLR0913", "PLR0917"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
@@ -61,7 +85,17 @@ files = ["app", "tests", "alembic"]
 exclude = ["alembic/versions/"]
 
 [[tool.mypy.overrides]]
-module = ["kombu.*", "boto3.*", "botocore.*"]
+module = [
+  "kombu.*",
+  "boto3.*",
+  "botocore.*",
+  "pdfplumber.*",
+  "fitz.*",
+  "docx.*",
+  "pytesseract.*",
+  "spacy.*",
+  "sklearn.*",
+]
 ignore_missing_imports = true
 
 [tool.pydantic-mypy]

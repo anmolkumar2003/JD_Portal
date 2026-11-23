@@ -6,3 +6,8 @@ const JOB_EDITORS: ReadonlySet<Role> = new Set(["super_admin", "hr_admin", "recr
 export function canManageJobs(role: Role | undefined): boolean {
   return role !== undefined && JOB_EDITORS.has(role);
 }
+
+/** Stage moves use the same editor roles as job publish/close. */
+export function canMoveStages(role: Role | undefined): boolean {
+  return canManageJobs(role);
+}

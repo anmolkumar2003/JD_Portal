@@ -135,10 +135,8 @@ services:
       WATCHPACK_POLLING: "true"
     ports:
       - "${WEB_PORT:-3000}:3000"
-    volumes:
-      - ./apps/web:/app
-      - /app/node_modules
-      - /app/.next
+    # Bind-mount disabled for local demo reliability (Mac FS + Next compile hangs).
+    # Re-enable volumes for hot-reload when iterating on the web app.
     depends_on:
       api:
         condition: service_healthy

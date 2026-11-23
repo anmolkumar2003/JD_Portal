@@ -1,0 +1,29 @@
+Priya Sharma
+priya.sharma@example.com | +91 98111 22334
+https://linkedin.com/in/priyasharma | Bengaluru, India
+
+Summary
+Senior backend engineer with 7 years building payment and lending platforms.
+
+Experience
+Senior Software Engineer
+PayFlow India
+Mar 2021 – Present
+Designed Python FastAPI microservices with PostgreSQL, Redis and Kafka.
+Owned Kubernetes deployments and CI/CD on GitHub Actions.
+
+Software Engineer
+CloudKart
+Jul 2017 – Feb 2021
+Built REST APIs in Python and Django; introduced Docker for local development.
+
+Education
+B.Tech Computer Science
+NIT Trichy
+2013 – 2017
+
+Skills
+Python, FastAPI, Django, PostgreSQL, Redis, Kafka, Docker, Kubernetes, AWS
+
+Certifications
+AWS Certified Solutions Architect – Associate

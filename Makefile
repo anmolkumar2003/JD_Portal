@@ -3,7 +3,7 @@ API_RUN := $(COMPOSE) run --rm --no-deps api
 WEB_RUN := $(COMPOSE) run --rm --no-deps web
 
 .DEFAULT_GOAL := help
-.PHONY: help env up down logs migrate test test-api test-web lint lint-api lint-web format seed
+.PHONY: help env up down logs migrate test test-api test-web test-e2e lint lint-api lint-web format seed
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -30,6 +30,17 @@ test-api: ## Run API tests (pytest)
 
 test-web: ## Type-check the web app (no web test runner yet)
 	$(WEB_RUN) npm run typecheck
+
+test-e2e: ## Playwright e2e (stack must be up + seeded; uses Docker Playwright image)
+	# Same-site host.docker.internal so the refresh cookie works across web↔API ports.
+	NEXT_PUBLIC_API_URL=http://host.docker.internal:8001 $(COMPOSE) up -d --force-recreate web
+	@sleep 8
+	docker run --rm --add-host=host.docker.internal:host-gateway \
+		-e PLAYWRIGHT_BASE_URL=http://host.docker.internal:3000 \
+		-v "$(CURDIR)/apps/web:/work" -w /work \
+		mcr.microsoft.com/playwright:v1.49.1-jammy \
+		bash -c "npm ci && npx playwright test"
+	NEXT_PUBLIC_API_URL=http://localhost:8001 $(COMPOSE) up -d --force-recreate web
 
 lint: lint-api lint-web ## Run all linters
 

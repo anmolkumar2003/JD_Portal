@@ -1,0 +1,75 @@
+[
+  {
+    "page": "careers",
+    "size": "390x844",
+    "overflowX": false,
+    "tablesOverflow": 0,
+    "sidebarBroken": false,
+    "smallTargets": 4,
+    "evidence": "CDP Runtime.evaluate"
+  },
+  {
+    "page": "dashboard",
+    "size": "390x844",
+    "overflowX": false,
+    "tablesOverflow": 0,
+    "sidebarBroken": true,
+    "asideW": 240,
+    "mainW": 150,
+    "smallTargets": 4,
+    "evidence": "CDP: aside 240px leaves main 150px"
+  },
+  {
+    "page": "candidates",
+    "size": "390x844",
+    "overflowX": false,
+    "tablesOverflow": 1,
+    "sidebarBroken": true,
+    "asideW": 240,
+    "mainW": 150,
+    "smallTargets": 9,
+    "evidence": "CDP"
+  },
+  {
+    "page": "candidates",
+    "size": "844x390",
+    "overflowX": false,
+    "tablesOverflow": 1,
+    "sidebarBroken": false,
+    "asideW": 240,
+    "mainW": 604,
+    "smallTargets": 9,
+    "evidence": "CDP"
+  },
+  {
+    "page": "candidates",
+    "size": "820x1180",
+    "overflowX": false,
+    "tablesOverflow": 1,
+    "sidebarBroken": false,
+    "asideW": 240,
+    "mainW": 580,
+    "smallTargets": 9,
+    "evidence": "CDP"
+  },
+  {
+    "page": "candidates",
+    "size": "1280x800",
+    "overflowX": false,
+    "tablesOverflow": 0,
+    "sidebarBroken": false,
+    "asideW": 240,
+    "mainW": 1040,
+    "smallTargets": 9,
+    "evidence": "CDP"
+  },
+  {
+    "page": "candidates",
+    "size": "1920x1080",
+    "overflowX": false,
+    "tablesOverflow": 0,
+    "sidebarBroken": false,
+    "smallTargets": 9,
+    "evidence": "CDP"
+  }
+]

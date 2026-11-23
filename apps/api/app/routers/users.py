@@ -5,8 +5,10 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
-from app.core.deps import AdminUser
+from app.core.deps import AdminUser, CurrentUser
+from app.schemas.candidate_actions import UserRef
 from app.schemas.user import UserCreate, UserList, UserOut, UserRoleUpdate
+from app.services import candidate_actions as actions_service
 from app.services import users as users_service
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
@@ -28,6 +30,12 @@ async def list_users(
         page=page,
         page_size=page_size,
     )
+
+
+@router.get("/lookup", response_model=list[UserRef])
+async def lookup_users(user: CurrentUser, session: Session) -> list[UserRef]:
+    """Active org users (id, name, role only) for @mention pickers."""
+    return await actions_service.lookup_users(session, user)
 
 
 @router.post("", response_model=UserOut, status_code=status.HTTP_201_CREATED)
