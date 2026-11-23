@@ -32,9 +32,10 @@ if [[ ! -f "${DEST}/db.dump" ]]; then
   exit 1
 fi
 
+# Tolerate backups taken when the MinIO bucket was empty (no cvs/ directory).
 if [[ ! -d "${DEST}/cvs" ]]; then
-  echo "Missing ${DEST}/cvs (MinIO mirror)" >&2
-  exit 1
+  echo "Note: ${DEST}/cvs missing — treating as empty MinIO mirror"
+  mkdir -p "${DEST}/cvs"
 fi
 
 if [[ ! -f .env ]]; then

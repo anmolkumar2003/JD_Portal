@@ -42,10 +42,11 @@ cleanup-demo: ## Delete all candidates, jobs and demo users, and empty the CV bu
 	$(COMPOSE) exec api python -m app.cli.cleanup_demo
 
 backup: ## Dump the database and copy the CV bucket into $(BACKUP_DIR)/<timestamp>
-	@set -e; stamp=$$(date +%Y%m%d-%H%M%S); dir="$(BACKUP_DIR)/$$stamp"; mkdir -p "$$dir"; \
+	@set -e; stamp=$$(date +%Y%m%d-%H%M%S); dir="$(BACKUP_DIR)/$$stamp"; mkdir -p "$$dir/cvs"; \
 	$(COMPOSE) exec -T postgres sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -Fc' > "$$dir/db.dump"; \
 	$(COMPOSE) run --rm --no-deps -v "$(CURDIR)/$$dir:/backup" minio-init \
-		mirror --quiet local/$(S3_BUCKET) /backup/cvs >/dev/null; \
+		mirror --quiet local/$(S3_BUCKET) /backup/cvs >/dev/null || true; \
+	mkdir -p "$$dir/cvs"; \
 	echo "Backup written to $$dir"
 
 backup-nightly: ## Production backup (pg_dump + MinIO) into backups/nightly/

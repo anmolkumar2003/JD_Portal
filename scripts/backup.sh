@@ -18,6 +18,9 @@ if [[ ! -f .env ]]; then
 fi
 
 mkdir -p "$DEST"
+# Always create the cvs/ mirror directory, even when the bucket is empty.
+# `mc mirror` of an empty source may omit the directory; restore expects it.
+mkdir -p "${DEST}/cvs"
 
 echo "Backing up to ${DEST} (compose: ${COMPOSE_FILE})"
 
@@ -26,7 +29,9 @@ docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c \
 
 docker compose -f "$COMPOSE_FILE" run --rm --no-deps \
   -v "${ROOT}/${DEST}:/backup" \
-  minio-init mirror --quiet "local/${S3_BUCKET}" /backup/cvs
+  minio-init mirror --quiet "local/${S3_BUCKET}" /backup/cvs || true
+# Re-ensure empty mirror survives a no-op/failed empty bucket mirror.
+mkdir -p "${DEST}/cvs"
 
 echo "Backup complete: ${DEST}"
 
