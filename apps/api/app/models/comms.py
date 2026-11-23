@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -15,6 +15,14 @@ from app.models.base import BaseModel
 
 class Note(BaseModel):
     __tablename__ = "notes"
+    __table_args__ = (
+        Index(
+            "ix_notes_body_trgm",
+            "body",
+            postgresql_using="gin",
+            postgresql_ops={"body": "gin_trgm_ops"},
+        ),
+    )
 
     candidate_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("candidates.id", ondelete="CASCADE"), index=True

@@ -48,6 +48,27 @@ class Candidate(BaseModel, SoftDeleteMixin):
             postgresql_using="gin",
             postgresql_ops={"last_name": "gin_trgm_ops"},
         ),
+        Index("ix_candidates_current_location", "current_location"),
+        Index("ix_candidates_total_experience_years", "total_experience_years"),
+        Index("ix_candidates_notice_period_days", "notice_period_days"),
+        Index(
+            "ix_candidates_expected_ctc_lookup",
+            "expected_ctc_currency",
+            "expected_ctc_unit",
+            "expected_ctc",
+        ),
+        Index(
+            "ix_candidates_current_company_trgm",
+            "current_company",
+            postgresql_using="gin",
+            postgresql_ops={"current_company": "gin_trgm_ops"},
+        ),
+        Index(
+            "ix_candidates_current_title_trgm",
+            "current_title",
+            postgresql_using="gin",
+            postgresql_ops={"current_title": "gin_trgm_ops"},
+        ),
     )
 
     org_id: Mapped[uuid.UUID] = mapped_column(
@@ -124,6 +145,7 @@ class Application(BaseModel):
     __table_args__ = (
         UniqueConstraint("candidate_id", "job_id", name="uq_applications_candidate_id_job_id"),
         Index("ix_applications_job_id_stage_id", "job_id", "stage_id"),
+        Index("ix_applications_overall_rating", "overall_rating"),
     )
 
     candidate_id: Mapped[uuid.UUID] = mapped_column(

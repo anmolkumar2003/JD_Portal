@@ -13,7 +13,15 @@ from app.models.enums import ParseStatus, pg_enum
 
 class ParsedProfile(BaseModel):
     __tablename__ = "parsed_profiles"
-    __table_args__ = (Index("ix_parsed_profiles_data", "data", postgresql_using="gin"),)
+    __table_args__ = (
+        Index("ix_parsed_profiles_data", "data", postgresql_using="gin"),
+        Index(
+            "ix_parsed_profiles_raw_text_trgm",
+            "raw_text",
+            postgresql_using="gin",
+            postgresql_ops={"raw_text": "gin_trgm_ops"},
+        ),
+    )
 
     document_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("documents.id", ondelete="CASCADE"), index=True
@@ -43,7 +51,7 @@ class AtsCheck(BaseModel):
     document_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("documents.id", ondelete="CASCADE"), index=True
     )
-    score: Mapped[int] = mapped_column(Integer)
+    score: Mapped[int] = mapped_column(Integer, index=True)
     # [{id, label, passed, weight, detail, suggestion}]
     checks: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list, server_default="[]")
     engine_version: Mapped[str] = mapped_column(String(50))
