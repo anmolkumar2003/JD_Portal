@@ -126,7 +126,7 @@ function CandidateProfileContent() {
           <CandidateOverview application={data} onEmail={openEmail} />
         </TabsContent>
         <TabsContent value="cv" className="pt-4">
-          <CvViewer documents={data.documents} />
+          <CvViewer documents={data.documents} applicationId={data.id} />
         </TabsContent>
         <TabsContent value="match" className="pt-4">
           <MatchAnalysis applicationId={data.id} />

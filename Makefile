@@ -7,9 +7,9 @@ BACKUP_DIR ?= backups/manual
 S3_BUCKET ?= cvs
 
 .DEFAULT_GOAL := help
-.PHONY: help env up down logs migrate test test-api test-web test-e2e lint lint-api lint-web \
-	format init-admin seed-demo cleanup-demo reference-data backup backup-nightly restore \
-	prod-up prod-down prod-logs prod-migrate
+.PHONY: help env up down logs migrate test test-api test-web test-e2e test-e2e-screenshots \
+	lint lint-api lint-web format init-admin seed-demo cleanup-demo reference-data backup \
+	backup-nightly restore prod-up prod-down prod-logs prod-migrate
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -77,14 +77,27 @@ test-web: ## Type-check the web app
 
 # The e2e stack is a separate compose project with throwaway storage; it does not restart or
 # reconfigure the development stack, and the demo password only exists for this run.
-test-e2e: ## Playwright e2e in an isolated, throwaway stack
+# Screenshots run as a separate target so their long viewport matrix cannot time out the suite.
+test-e2e: ## Playwright e2e (excludes screenshot projects) in an isolated stack
 	@set -e; \
 	export E2E_PASSWORD="E2e!$$(openssl rand -hex 12)"; \
 	trap '$(E2E) --profile runner down -v --remove-orphans >/dev/null 2>&1' EXIT; \
 	$(E2E) up -d --build --wait postgres redis minio minio-init mailpit api worker web; \
 	$(E2E) exec -T api alembic upgrade head; \
 	$(E2E) exec -T -e DEMO_PASSWORD="$$E2E_PASSWORD" api python -m app.seed_demo >/dev/null; \
-	$(E2E) --profile runner run --rm playwright
+	$(E2E) --profile runner run --rm -e E2E_PASSWORD playwright \
+		bash -c 'npm ci --no-audit --no-fund --loglevel=error && npx playwright test --project=chromium'
+
+test-e2e-screenshots: ## Playwright screenshot projects only (longer timeout)
+	@set -e; \
+	export E2E_PASSWORD="E2e!$$(openssl rand -hex 12)"; \
+	trap '$(E2E) --profile runner down -v --remove-orphans >/dev/null 2>&1' EXIT; \
+	$(E2E) up -d --build --wait postgres redis minio minio-init mailpit api worker web; \
+	$(E2E) exec -T api alembic upgrade head; \
+	$(E2E) exec -T -e DEMO_PASSWORD="$$E2E_PASSWORD" api python -m app.seed_demo >/dev/null; \
+	$(E2E) --profile runner run --rm -e E2E_PASSWORD \
+		-v "$(CURDIR)/docs:/work/docs" playwright \
+		bash -c 'npm ci --no-audit --no-fund --loglevel=error && npx playwright test --project=screenshots'
 
 lint: lint-api lint-web ## Run all linters
 

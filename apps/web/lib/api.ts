@@ -427,6 +427,13 @@ export const api = {
         `/api/v1/documents/${encodeURIComponent(id)}/reprocess`,
         { method: "POST" },
       ),
+    rename: (id: string, file_name: string) =>
+      request<DocumentOut>(`/api/v1/documents/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: { file_name },
+      }),
+    delete: (id: string) =>
+      request<null>(`/api/v1/documents/${encodeURIComponent(id)}`, { method: "DELETE" }),
   },
   parsedProfiles: {
     patch: (id: string, body: ParsedProfilePatchInput) =>

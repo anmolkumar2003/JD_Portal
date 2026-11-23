@@ -1,8 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * Run with `make test-e2e`: it starts an isolated stack (docker-compose.e2e.yml), seeds demo
- * data with a one-off password (E2E_PASSWORD) and runs these tests against http://web:3000.
+ * Run with `make test-e2e`: isolated stack (docker-compose.e2e.yml), seeded demo data,
+ * password via E2E_PASSWORD. Screenshots run as a separate job (`make test-e2e-screenshots`)
+ * so the long viewport matrix cannot time out the main suite.
  */
 export default defineConfig({
   testDir: "./e2e",
@@ -11,11 +12,25 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: "list",
-  timeout: 60_000,
+  testIgnore: /screenshots\.spec\.ts$/,
+  timeout: 90_000,
+  expect: { timeout: 10_000 },
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "chromium",
+      testIgnore: [/screenshots\.spec\.ts$/, /final-screenshots\.spec\.ts$/],
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "screenshots",
+      testMatch: [/screenshots\.spec\.ts$/, /final-screenshots\.spec\.ts$/],
+      timeout: 180_000,
+      use: { ...devices["Desktop Chrome"] },
+    },
+  ],
 });

@@ -124,3 +124,86 @@ async def upload_candidate_document(
         except Exception:
             logger.exception("document_process_enqueue_failed")
     return DocumentOut.model_validate(document)
+
+
+async def delete_document(session: AsyncSession, user: User, document_id: uuid.UUID) -> None:
+    """Remove a document row and its object storage blob (recruiter+)."""
+    row = (
+        await session.execute(
+            select(Document, Candidate.org_id, Application.job_id)
+            .join(Candidate, Candidate.id == Document.candidate_id)
+            .outerjoin(Application, Application.id == Document.application_id)
+            .where(Document.id == document_id, Candidate.deleted_at.is_(None))
+        )
+    ).first()
+    not_found = AppError(status.HTTP_404_NOT_FOUND, "not_found", "Document not found")
+    if row is None:
+        raise not_found
+    document, org_id, job_id = row
+    if org_id != user.org_id:
+        raise not_found
+    if job_id is None:
+        if user.role not in ORG_WIDE_JOB_ROLES:
+            raise not_found
+    elif not await can_access_job(session, user, job_id):
+        raise not_found
+
+    storage_key = document.storage_key
+    candidate_id = document.candidate_id
+    application_id = document.application_id
+    file_name = document.file_name
+    await session.delete(document)
+    session.add(
+        ActivityLog(
+            candidate_id=candidate_id,
+            application_id=application_id,
+            actor_id=user.id,
+            action="document.deleted",
+            meta={"file_name": file_name},
+        )
+    )
+    await session.commit()
+    try:
+        await storage.delete_object(storage_key)
+    except Exception:
+        logger.exception("document_storage_delete_failed key=%s", storage_key)
+
+
+async def rename_document(
+    session: AsyncSession, user: User, document_id: uuid.UUID, file_name: str
+) -> DocumentOut:
+    """Update the display file name for a document."""
+    row = (
+        await session.execute(
+            select(Document, Candidate.org_id, Application.job_id)
+            .join(Candidate, Candidate.id == Document.candidate_id)
+            .outerjoin(Application, Application.id == Document.application_id)
+            .where(Document.id == document_id, Candidate.deleted_at.is_(None))
+        )
+    ).first()
+    not_found = AppError(status.HTTP_404_NOT_FOUND, "not_found", "Document not found")
+    if row is None:
+        raise not_found
+    document, org_id, job_id = row
+    if org_id != user.org_id:
+        raise not_found
+    if job_id is None:
+        if user.role not in ORG_WIDE_JOB_ROLES:
+            raise not_found
+    elif not await can_access_job(session, user, job_id):
+        raise not_found
+
+    safe = _safe_file_name(file_name, document.file_name.rsplit(".", 1)[-1])
+    document.file_name = safe
+    session.add(
+        ActivityLog(
+            candidate_id=document.candidate_id,
+            application_id=document.application_id,
+            actor_id=user.id,
+            action="document.renamed",
+            meta={"file_name": safe},
+        )
+    )
+    await session.commit()
+    await session.refresh(document)
+    return DocumentOut.model_validate(document)
