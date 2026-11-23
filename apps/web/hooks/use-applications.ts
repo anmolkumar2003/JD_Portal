@@ -7,6 +7,7 @@ import type {
   ApplicationDetail,
   ApplicationListParams,
   BoardOut,
+  BulkActionInput,
   StagePatchInput,
 } from "@/types/api";
 
@@ -117,5 +118,44 @@ export function useMoveStage() {
         queryKey: applicationKeys.timeline(detail.candidate.id),
       });
     },
+  });
+}
+
+export function useShortlist() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      applicationId,
+      shortlisted,
+    }: {
+      applicationId: string;
+      shortlisted?: boolean;
+    }) => api.applications.shortlist(applicationId, shortlisted),
+    onSuccess: (result) => {
+      queryClient.setQueryData<ApplicationDetail>(
+        applicationKeys.detail(result.application_id),
+        (prev) => (prev ? { ...prev, is_shortlisted: result.is_shortlisted } : prev),
+      );
+      void queryClient.invalidateQueries({ queryKey: applicationKeys.all });
+    },
+  });
+}
+
+export function useBulkAction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: BulkActionInput) => api.applications.bulkAction(body),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: applicationKeys.all });
+    },
+  });
+}
+
+export function useApplicationFinalScore(applicationId: string | null) {
+  return useQuery({
+    queryKey: ["applications", "final-score", applicationId ?? ""],
+    queryFn: () => api.applications.finalScore(applicationId!),
+    enabled: Boolean(applicationId),
+    staleTime: 60_000,
   });
 }

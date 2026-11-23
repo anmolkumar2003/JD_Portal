@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 const SECTIONS = [
   { href: "/settings/account", label: "My account", adminOnly: false },
   { href: "/settings/organization", label: "Organization", adminOnly: true },
+  { href: "/settings/scoring", label: "Scoring", adminOnly: true },
   { href: "/settings/users", label: "Users", adminOnly: true },
   { href: "/settings/departments", label: "Departments & locations", adminOnly: true },
 ] as const;

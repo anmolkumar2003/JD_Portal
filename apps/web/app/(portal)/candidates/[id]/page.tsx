@@ -3,23 +3,26 @@
 import { FileQuestion } from "lucide-react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { Suspense, useMemo } from "react";
+import { Suspense, useMemo, useState } from "react";
 
 import { ActivityTimeline } from "@/components/candidates/activity-timeline";
 import { CandidateOverview } from "@/components/candidates/candidate-overview";
+import { CandidateProfileHeader } from "@/components/candidates/candidate-profile-header";
 import { CvViewer } from "@/components/candidates/cv-viewer";
+import { EmailComposer } from "@/components/candidates/email-composer";
+import { InterviewRatings } from "@/components/candidates/interview-ratings";
 import { MatchAnalysis } from "@/components/candidates/match-analysis";
+import { NotesPanel } from "@/components/candidates/notes-panel";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
-import { BudgetBadge } from "@/components/candidates/budget-badge";
-import { ScoreRing } from "@/components/score-ring";
-import { StageBadge } from "@/components/stage-badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useApplication, useApplications } from "@/hooks/use-applications";
+import { useAuth } from "@/hooks/use-auth";
 import { ApiError } from "@/lib/api";
+import { canManageJobs } from "@/lib/permissions";
 
 function ProfileSkeleton() {
   return (
@@ -36,6 +39,9 @@ function CandidateProfileContent() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const applicationParam = searchParams.get("application");
+  const { user } = useAuth();
+  const canEmail = canManageJobs(user?.role);
+  const [emailOpen, setEmailOpen] = useState(false);
 
   const list = useApplications({
     candidate_id: id,
@@ -99,46 +105,46 @@ function CandidateProfileContent() {
 
   const data = detail.data;
   const name = `${data.candidate.first_name} ${data.candidate.last_name}`;
+  const openEmail = canEmail ? () => setEmailOpen(true) : undefined;
 
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
-        <Breadcrumbs items={[{ label: "Candidates", href: "/candidates" }, { label: name }]} />
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight">{name}</h1>
-              <StageBadge stage={data.stage} />
-              <BudgetBadge status={data.budget_status} />
-              <ScoreRing score={data.match_result?.overall_score ?? null} />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {data.candidate.current_title ?? "No current title"} · {data.job.name}
-            </p>
-          </div>
-        </div>
-      </div>
+      <Breadcrumbs items={[{ label: "Candidates", href: "/candidates" }, { label: name }]} />
+
+      <CandidateProfileHeader application={data} onEmail={openEmail} />
 
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="cv">CV</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
           <TabsTrigger value="match">Match Analysis</TabsTrigger>
+          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+          <TabsTrigger value="notes">Notes</TabsTrigger>
+          <TabsTrigger value="interviews">Interviews</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="pt-4">
-          <CandidateOverview application={data} />
+          <CandidateOverview application={data} onEmail={openEmail} />
         </TabsContent>
         <TabsContent value="cv" className="pt-4">
           <CvViewer documents={data.documents} />
         </TabsContent>
-        <TabsContent value="timeline" className="pt-4">
-          <ActivityTimeline candidateId={data.candidate.id} />
-        </TabsContent>
         <TabsContent value="match" className="pt-4">
           <MatchAnalysis applicationId={data.id} />
         </TabsContent>
+        <TabsContent value="notes" className="pt-4">
+          <NotesPanel application={data} onEmail={openEmail} />
+        </TabsContent>
+        <TabsContent value="interviews" className="pt-4">
+          <InterviewRatings applicationId={data.id} />
+        </TabsContent>
+        <TabsContent value="timeline" className="pt-4">
+          <ActivityTimeline candidateId={data.candidate.id} />
+        </TabsContent>
       </Tabs>
+
+      {canEmail && (
+        <EmailComposer application={data} open={emailOpen} onOpenChange={setEmailOpen} />
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, Loader2, RefreshCw, XCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
@@ -10,6 +10,8 @@ import { ScoreRing } from "@/components/score-ring";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -64,6 +66,12 @@ export function MatchAnalysis({ applicationId }: MatchAnalysisProps) {
   });
 
   const [editJson, setEditJson] = useState<string | null>(null);
+  const [useJsonEditor, setUseJsonEditor] = useState(false);
+  const [formName, setFormName] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+  const [formPhone, setFormPhone] = useState("");
+  const [formSkills, setFormSkills] = useState("");
+  const [formYears, setFormYears] = useState("");
 
   const reprocess = useMutation({
     mutationFn: (documentId: string) => api.documents.reprocess(documentId),
@@ -72,12 +80,58 @@ export function MatchAnalysis({ applicationId }: MatchAnalysisProps) {
     },
   });
 
+  const loadFormFromProfile = (data: Record<string, unknown>) => {
+    const name =
+      typeof data.full_name === "string"
+        ? data.full_name
+        : [data.first_name, data.last_name].filter(Boolean).join(" ");
+    setFormName(name);
+    setFormEmail(String(data.email ?? ""));
+    setFormPhone(String(data.phone ?? ""));
+    const skills = data.skills;
+    if (Array.isArray(skills)) {
+      setFormSkills(
+        skills
+          .map((s) => (typeof s === "string" ? s : (s as { name?: string })?.name))
+          .filter(Boolean)
+          .join(", "),
+      );
+    } else setFormSkills("");
+    setFormYears(data.total_experience_years != null ? String(data.total_experience_years) : "");
+  };
+
   const correct = useMutation({
     mutationFn: async () => {
       const profile = analysis.data?.parsed_profile;
-      if (!profile?.id || editJson === null) throw new Error("Nothing to save");
-      const data = JSON.parse(editJson) as Record<string, unknown>;
-      return api.parsedProfiles.patch(profile.id, { data });
+      if (!profile?.id) throw new Error("Nothing to save");
+      let data: Record<string, unknown>;
+      let total_experience_years: number | null | undefined;
+      if (useJsonEditor) {
+        if (editJson === null) throw new Error("Nothing to save");
+        data = JSON.parse(editJson) as Record<string, unknown>;
+      } else {
+        const base = { ...(profile.corrected_data ?? profile.data ?? {}) } as Record<
+          string,
+          unknown
+        >;
+        if (formName.includes(" ")) {
+          const [first, ...rest] = formName.trim().split(/\s+/);
+          base.first_name = first;
+          base.last_name = rest.join(" ");
+          base.full_name = formName.trim();
+        } else if (formName) {
+          base.full_name = formName.trim();
+        }
+        if (formEmail.trim()) base.email = formEmail.trim();
+        if (formPhone.trim()) base.phone = formPhone.trim();
+        base.skills = formSkills
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        total_experience_years = formYears.trim() ? Number(formYears) : null;
+        data = base;
+      }
+      return api.parsedProfiles.patch(profile.id, { data, total_experience_years });
     },
     onSuccess: () => {
       setEditJson(null);
@@ -85,6 +139,17 @@ export function MatchAnalysis({ applicationId }: MatchAnalysisProps) {
       void queryClient.invalidateQueries({ queryKey: ["applications", "detail", applicationId] });
     },
   });
+
+  const profilePayload = analysis.data?.parsed_profile;
+
+  useEffect(() => {
+    if (profilePayload && !useJsonEditor) {
+      loadFormFromProfile(
+        (profilePayload.corrected_data ?? profilePayload.data ?? {}) as Record<string, unknown>,
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset form when profile payload changes
+  }, [profilePayload?.id, profilePayload?.corrected_data, useJsonEditor]);
 
   if (analysis.isPending) {
     return (
@@ -312,37 +377,120 @@ export function MatchAnalysis({ applicationId }: MatchAnalysisProps) {
 
       {data.parsed_profile && (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Correct parsed data</CardTitle>
-            <CardDescription>
-              Edit the JSON overlay. Saving recalculates the advisory match score (CV-08).
-            </CardDescription>
+          <CardHeader className="flex flex-row items-start justify-between gap-2">
+            <div>
+              <CardTitle className="text-base">Correct parsed data</CardTitle>
+              <CardDescription>
+                Fix extracted fields or edit raw JSON. Saving recalculates the advisory match score.
+              </CardDescription>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const next = !useJsonEditor;
+                setUseJsonEditor(next);
+                if (!next) {
+                  loadFormFromProfile(
+                    (data.parsed_profile?.corrected_data ??
+                      data.parsed_profile?.data ??
+                      {}) as Record<string, unknown>,
+                  );
+                }
+              }}
+            >
+              {useJsonEditor ? "Simple form" : "Raw JSON"}
+            </Button>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Textarea
-              className="min-h-48 font-mono text-xs"
-              value={
-                editJson ??
-                JSON.stringify(
-                  data.parsed_profile.corrected_data ?? data.parsed_profile.data ?? {},
-                  null,
-                  2,
-                )
-              }
-              onChange={(e) => setEditJson(e.target.value)}
-              aria-label="Parsed profile JSON"
-            />
+            {useJsonEditor ? (
+              <Textarea
+                className="min-h-48 font-mono text-xs"
+                value={
+                  editJson ??
+                  JSON.stringify(
+                    data.parsed_profile.corrected_data ?? data.parsed_profile.data ?? {},
+                    null,
+                    2,
+                  )
+                }
+                onChange={(e) => setEditJson(e.target.value)}
+                aria-label="Parsed profile JSON"
+              />
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="parsed-name">Name</Label>
+                  <Input
+                    id="parsed-name"
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="parsed-email">Email</Label>
+                  <Input
+                    id="parsed-email"
+                    type="email"
+                    value={formEmail}
+                    onChange={(e) => setFormEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="parsed-phone">Phone</Label>
+                  <Input
+                    id="parsed-phone"
+                    value={formPhone}
+                    onChange={(e) => setFormPhone(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="parsed-years">Experience (years)</Label>
+                  <Input
+                    id="parsed-years"
+                    type="number"
+                    min={0}
+                    step={0.5}
+                    value={formYears}
+                    onChange={(e) => setFormYears(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="parsed-skills">Skills (comma-separated)</Label>
+                  <Textarea
+                    id="parsed-skills"
+                    value={formSkills}
+                    onChange={(e) => setFormSkills(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+              </div>
+            )}
             <div className="flex gap-2">
-              <Button onClick={() => correct.mutate()} disabled={correct.isPending || !editJson}>
+              <Button
+                onClick={() => correct.mutate()}
+                disabled={correct.isPending || (useJsonEditor && !editJson)}
+              >
                 Save corrections &amp; re-score
               </Button>
-              <Button variant="outline" onClick={() => setEditJson(null)}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditJson(null);
+                  loadFormFromProfile(
+                    (data.parsed_profile?.corrected_data ??
+                      data.parsed_profile?.data ??
+                      {}) as Record<string, unknown>,
+                  );
+                }}
+              >
                 Reset
               </Button>
             </div>
             {correct.isError && (
               <p className="text-sm text-destructive">
-                Could not save corrections. Check JSON syntax.
+                Could not save corrections. Check field values or JSON syntax.
               </p>
             )}
           </CardContent>

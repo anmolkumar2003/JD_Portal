@@ -73,6 +73,9 @@ interface CandidatesTableProps {
   total: number;
   onPageChange: (page: number) => void;
   onRowClick: (row: ApplicationListItem) => void;
+  selectedIds?: ReadonlySet<string>;
+  onToggleRow?: (id: string) => void;
+  onToggleAll?: (ids: string[], select: boolean) => void;
 }
 
 export function CandidatesTable({
@@ -87,7 +90,15 @@ export function CandidatesTable({
   total,
   onPageChange,
   onRowClick,
+  selectedIds,
+  onToggleRow,
+  onToggleAll,
 }: CandidatesTableProps) {
+  const selection =
+    selectedIds && onToggleRow && onToggleAll
+      ? { selectedIds, onToggle: onToggleRow, onToggleAll }
+      : undefined;
+
   return (
     <DataTable
       columns={COLUMNS}
@@ -100,6 +111,7 @@ export function CandidatesTable({
       onSortChange={onSortChange}
       pagination={{ page, pageSize, total, onPageChange }}
       onRowClick={onRowClick}
+      selection={selection}
       caption="Applications"
       empty={
         <EmptyState

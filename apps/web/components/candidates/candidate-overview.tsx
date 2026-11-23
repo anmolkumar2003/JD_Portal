@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil } from "lucide-react";
+import { Mail, Pencil } from "lucide-react";
 import { useState } from "react";
 
 import { BudgetBadge } from "@/components/candidates/budget-badge";
@@ -48,9 +48,10 @@ function formatSalaryLine(
 
 interface CandidateOverviewProps {
   application: ApplicationDetail;
+  onEmail?: () => void;
 }
 
-export function CandidateOverview({ application }: CandidateOverviewProps) {
+export function CandidateOverview({ application, onEmail }: CandidateOverviewProps) {
   const { user } = useAuth();
   const canEdit = canManageJobs(user?.role);
   const [editOpen, setEditOpen] = useState(false);
@@ -70,12 +71,20 @@ export function CandidateOverview({ application }: CandidateOverviewProps) {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Summary
           </h2>
-          {canEdit && (
-            <Button type="button" variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-              <Pencil className="mr-2 h-3.5 w-3.5" aria-hidden />
-              Edit
-            </Button>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {onEmail && (
+              <Button type="button" variant="outline" size="sm" onClick={onEmail}>
+                <Mail className="mr-2 h-3.5 w-3.5" aria-hidden />
+                Email
+              </Button>
+            )}
+            {canEdit && (
+              <Button type="button" variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+                <Pencil className="mr-2 h-3.5 w-3.5" aria-hidden />
+                Edit
+              </Button>
+            )}
+          </div>
         </div>
         <section className="space-y-3">
           <dl className="grid gap-3 sm:grid-cols-2">

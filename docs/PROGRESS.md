@@ -47,10 +47,11 @@ Legend: `[x]` done · `[~]` partial · `[ ]` pending · `[-]` skipped
       "from CV" badges, duplicate email/phone warning, budget badge, editable profile and
       document upload; APIs: parse-cv, duplicates, expanded create/patch
 
-### Phase 3: review, notes, interview rating
+### Phase 3: review, notes, interview rating — committed `phase 3: review, notes, interview rating`
 
-- [ ] Profile tabs, parsed-data correction, notes with @mentions, email composer, bulk toolbar,
-      bell, simple interview rating, final score panel, reject and Move-to
+- [x] Profile tabs (Notes, Interviews), parsed-data correction form, notes with @mentions,
+      email composer, bulk toolbar, notification bell, simple interview ratings (always on),
+      final-score panel + Settings scoring weights (default 50/50), Move-to + reject on profile
 
 ### Phase 4: search and filters
 

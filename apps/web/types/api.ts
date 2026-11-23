@@ -630,3 +630,106 @@ export interface ParsedProfilePatchInput {
   data: Record<string, unknown>;
   total_experience_years?: number | null;
 }
+
+// --- Email (comms) ----------------------------------------------------------------------------
+
+export interface EmailTemplateOut {
+  id: string;
+  org_id: string;
+  key: string;
+  subject: string;
+  body_html: string;
+  variables: string[];
+  trigger_stage_id: string | null;
+  is_active: boolean;
+}
+
+export interface EmailPreviewIn {
+  subject: string;
+  body_html: string;
+  variables?: Record<string, string>;
+}
+
+export interface EmailPreviewOut {
+  subject: string;
+  body_html: string;
+}
+
+export interface EmailSendIn {
+  candidate_id: string;
+  application_id?: string | null;
+  template_key?: string | null;
+  to?: string | null;
+  subject: string;
+  body: string;
+}
+
+export interface EmailLogOut {
+  id: string;
+  candidate_id: string;
+  application_id: string | null;
+  template_key: string | null;
+  to_address: string;
+  subject: string;
+  body: string;
+  status: string;
+  sent_at: string;
+}
+
+// --- Notifications ----------------------------------------------------------------------------
+
+export interface NotificationOut {
+  id: string;
+  type: string;
+  payload: Record<string, unknown>;
+  read_at: string | null;
+  created_at: string;
+}
+
+// --- Interview ratings (always on) ------------------------------------------------------------
+
+export type InterviewMode = "phone" | "video" | "onsite" | "other";
+
+export type InterviewRecommendation = "strong_no" | "no" | "mixed" | "yes" | "strong_yes";
+
+export interface SkillRatingIn {
+  skill: string;
+  rating: number | null;
+}
+
+export interface InterviewRatingIn {
+  round_name: string;
+  interviewed_at: string;
+  interviewer_name: string;
+  interviewer_id?: string | null;
+  mode?: InterviewMode | string;
+  comments?: string | null;
+  skill_ratings?: SkillRatingIn[];
+  overall_rating: number;
+  recommendation: InterviewRecommendation;
+  strengths?: string | null;
+  concerns?: string | null;
+}
+
+export interface InterviewRatingOut extends InterviewRatingIn {
+  id: string;
+  application_id: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  skill_ratings: SkillRatingIn[];
+}
+
+export interface ScoringWeights {
+  match_weight: number;
+  interview_weight: number;
+}
+
+export interface FinalScoreOut {
+  match_score: number | null;
+  ats_score: number | null;
+  interview_avg: number | null;
+  weights: ScoringWeights;
+  final_score: number | null;
+  note: string;
+}

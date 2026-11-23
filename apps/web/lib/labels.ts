@@ -1,6 +1,7 @@
 import type {
   CandidateSource,
   EmploymentType,
+  InterviewRecommendation,
   JobStatus,
   Role,
   StageType,
@@ -51,6 +52,14 @@ export const STAGE_TYPE_LABELS: Record<StageType, string> = {
   hired: "Hired",
   rejected: "Rejected",
   custom: "Custom",
+};
+
+export const RECOMMENDATION_LABELS: Record<InterviewRecommendation, string> = {
+  strong_no: "Strong no",
+  no: "No",
+  mixed: "Mixed",
+  yes: "Yes",
+  strong_yes: "Strong yes",
 };
 
 export const CANDIDATE_SOURCE_LABELS: Record<CandidateSource, string> = {

@@ -49,6 +49,16 @@ import type {
   UserPatchInput,
   UserRef,
   UserWithTemporaryPassword,
+  EmailTemplateOut,
+  EmailPreviewIn,
+  EmailPreviewOut,
+  EmailSendIn,
+  EmailLogOut,
+  NotificationOut,
+  InterviewRatingOut,
+  InterviewRatingIn,
+  FinalScoreOut,
+  ScoringWeights,
 } from "@/types/api";
 
 // Empty means same origin: next.config.mjs (dev) or Caddy (production) forwards /api/v1 to the API.
@@ -250,6 +260,18 @@ export const api = {
       return request<OrgSettings>("/api/v1/org/logo", { method: "PUT", body: form });
     },
     removeLogo: () => request<OrgSettings>("/api/v1/org/logo", { method: "DELETE" }),
+    scoringWeights: () => request<ScoringWeights>("/api/v1/org/scoring-weights"),
+    updateScoringWeights: (body: ScoringWeights) =>
+      request<ScoringWeights>("/api/v1/org/scoring-weights", { method: "PUT", body }),
+  },
+  emails: {
+    listTemplates: () => request<EmailTemplateOut[]>("/api/v1/email-templates"),
+    preview: (body: EmailPreviewIn) =>
+      request<EmailPreviewOut>("/api/v1/emails/preview", { method: "POST", body }),
+    send: (body: EmailSendIn) =>
+      request<EmailLogOut>("/api/v1/emails/send", { method: "POST", body }),
+    listForCandidate: (candidateId: string) =>
+      request<EmailLogOut[]>(`/api/v1/candidates/${encodeURIComponent(candidateId)}/emails`),
   },
   jobs: {
     list: (params: JobListParams = {}) =>
@@ -284,6 +306,28 @@ export const api = {
       }),
     bulkAction: (body: BulkActionInput) =>
       request<BulkActionResult>("/api/v1/applications/bulk-action", { method: "POST", body }),
+    listRatings: (applicationId: string) =>
+      request<InterviewRatingOut[]>(
+        `/api/v1/applications/${encodeURIComponent(applicationId)}/ratings`,
+      ),
+    createRating: (applicationId: string, body: InterviewRatingIn) =>
+      request<InterviewRatingOut>(
+        `/api/v1/applications/${encodeURIComponent(applicationId)}/ratings`,
+        { method: "POST", body },
+      ),
+    finalScore: (applicationId: string) =>
+      request<FinalScoreOut>(
+        `/api/v1/applications/${encodeURIComponent(applicationId)}/final-score`,
+      ),
+  },
+  ratings: {
+    update: (id: string, body: InterviewRatingIn) =>
+      request<InterviewRatingOut>(`/api/v1/ratings/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body,
+      }),
+    delete: (id: string) =>
+      request<null>(`/api/v1/ratings/${encodeURIComponent(id)}`, { method: "DELETE" }),
   },
   candidates: {
     parseCv: (file: File) => {
@@ -364,17 +408,11 @@ export const api = {
     }>(withQuery("/api/v1/search", { q })),
   notifications: {
     list: (unreadOnly = false) =>
-      request<
-        {
-          id: string;
-          type: string;
-          payload: Record<string, unknown>;
-          read_at: string | null;
-          created_at: string;
-        }[]
-      >(withQuery("/api/v1/notifications", { unread_only: unreadOnly })),
+      request<NotificationOut[]>(withQuery("/api/v1/notifications", { unread_only: unreadOnly })),
     markRead: (id: string) =>
-      request(`/api/v1/notifications/${encodeURIComponent(id)}/read`, { method: "PATCH" }),
+      request<NotificationOut>(`/api/v1/notifications/${encodeURIComponent(id)}/read`, {
+        method: "PATCH",
+      }),
     markAllRead: () =>
       request<{ updated: number }>("/api/v1/notifications/read-all", { method: "POST" }),
   },

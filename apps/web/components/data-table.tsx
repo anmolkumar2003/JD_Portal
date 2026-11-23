@@ -32,6 +32,12 @@ interface Pagination {
   onPageChange: (page: number) => void;
 }
 
+interface RowSelection {
+  selectedIds: ReadonlySet<string>;
+  onToggle: (id: string) => void;
+  onToggleAll: (ids: string[], select: boolean) => void;
+}
+
 interface DataTableProps<T> {
   columns: Column<T>[];
   rows: T[] | undefined;
@@ -46,6 +52,7 @@ interface DataTableProps<T> {
   onSortChange?: (sort: string) => void;
   pagination?: Pagination;
   onRowClick?: (row: T) => void;
+  selection?: RowSelection;
   caption: string;
 }
 
@@ -67,6 +74,7 @@ export function DataTable<T>({
   onSortChange,
   pagination,
   onRowClick,
+  selection,
   caption,
 }: DataTableProps<T>) {
   if (error && !rows) {
@@ -92,12 +100,30 @@ export function DataTable<T>({
     ? Math.max(1, Math.ceil(pagination.total / pagination.pageSize))
     : 1;
 
+  const rowIds = rows?.map(getRowId) ?? [];
+  const allSelected = rowIds.length > 0 && rowIds.every((id) => selection?.selectedIds.has(id));
+  const someSelected = rowIds.some((id) => selection?.selectedIds.has(id));
+
   return (
     <div className="overflow-hidden rounded-lg border bg-card">
       <Table aria-busy={isLoading}>
         <caption className="sr-only">{caption}</caption>
         <TableHeader>
           <TableRow>
+            {selection && (
+              <TableHead className="w-10">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-input"
+                  aria-label="Select all on this page"
+                  checked={allSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = someSelected && !allSelected;
+                  }}
+                  onChange={() => selection.onToggleAll(rowIds, !allSelected)}
+                />
+              </TableHead>
+            )}
             {columns.map((column) => {
               const direction = directionFor(column.sortKey);
               return (
@@ -133,6 +159,11 @@ export function DataTable<T>({
           {isLoading && !rows
             ? Array.from({ length: 5 }, (_, i) => (
                 <TableRow key={`skeleton-${i}`}>
+                  {selection && (
+                    <TableCell>
+                      <Skeleton className="h-4 w-4" />
+                    </TableCell>
+                  )}
                   {columns.map((column) => (
                     <TableCell key={column.id} className={column.className}>
                       <Skeleton className="h-4 w-full max-w-[160px]" />
@@ -140,19 +171,33 @@ export function DataTable<T>({
                   ))}
                 </TableRow>
               ))
-            : rows?.map((row) => (
-                <TableRow
-                  key={getRowId(row)}
-                  onClick={onRowClick ? () => onRowClick(row) : undefined}
-                  className={cn(onRowClick && "cursor-pointer hover:bg-muted/50")}
-                >
-                  {columns.map((column) => (
-                    <TableCell key={column.id} className={column.className}>
-                      {column.cell(row)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
+            : rows?.map((row) => {
+                const id = getRowId(row);
+                return (
+                  <TableRow
+                    key={id}
+                    onClick={onRowClick ? () => onRowClick(row) : undefined}
+                    className={cn(onRowClick && "cursor-pointer hover:bg-muted/50")}
+                  >
+                    {selection && (
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-input"
+                          aria-label="Select row"
+                          checked={selection.selectedIds.has(id)}
+                          onChange={() => selection.onToggle(id)}
+                        />
+                      </TableCell>
+                    )}
+                    {columns.map((column) => (
+                      <TableCell key={column.id} className={column.className}>
+                        {column.cell(row)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })}
         </TableBody>
       </Table>
       {pagination && pagination.total > 0 && (

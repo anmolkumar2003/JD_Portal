@@ -3,13 +3,14 @@
 import { Plus, SearchX } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useMemo } from "react";
+import { Suspense, useCallback, useMemo, useState } from "react";
 
 import { CandidateDrawer } from "@/components/candidates/candidate-drawer";
 import {
   CandidateFilters,
   type CandidateFilterValues,
 } from "@/components/candidates/candidate-filters";
+import { BulkActionsBar } from "@/components/candidates/bulk-actions-bar";
 import { CandidatesTable } from "@/components/candidates/candidates-table";
 import { EmptyState } from "@/components/empty-state";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
@@ -80,6 +81,7 @@ function CandidatesPageContent() {
   );
 
   const query = useApplications(params);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
 
   const replaceParams = useCallback(
     (mutate: (next: URLSearchParams) => void) => {
@@ -136,7 +138,7 @@ function CandidatesPageContent() {
         />
       ) : (
         <CandidatesTable
-          rows={query.data?.items}
+          rows={query.data?.items ?? []}
           isLoading={query.isPending}
           error={query.error}
           onRetry={() => void query.refetch()}
@@ -161,6 +163,39 @@ function CandidatesPageContent() {
               next.set("application", row.id);
             })
           }
+          selectedIds={canManageJobs(user?.role) ? selectedIds : undefined}
+          onToggleRow={
+            canManageJobs(user?.role)
+              ? (id) =>
+                  setSelectedIds((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(id)) next.delete(id);
+                    else next.add(id);
+                    return next;
+                  })
+              : undefined
+          }
+          onToggleAll={
+            canManageJobs(user?.role)
+              ? (ids, select) =>
+                  setSelectedIds((prev) => {
+                    const next = new Set(prev);
+                    for (const id of ids) {
+                      if (select) next.add(id);
+                      else next.delete(id);
+                    }
+                    return next;
+                  })
+              : undefined
+          }
+        />
+      )}
+
+      {canManageJobs(user?.role) && (
+        <BulkActionsBar
+          selectedIds={[...selectedIds]}
+          rows={query.data?.items ?? []}
+          onClear={() => setSelectedIds(new Set())}
         />
       )}
 
