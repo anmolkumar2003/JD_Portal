@@ -1,6 +1,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ThemeProvider } from "next-themes";
 import { useEffect, useState, type ReactNode } from "react";
 import { Toaster } from "sonner";
 
@@ -25,9 +26,11 @@ export function Providers({ children }: { children: ReactNode }) {
     document.documentElement.dataset.hydrated = "true";
   }, []);
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>{children}</AuthProvider>
-      <Toaster position="bottom-right" richColors closeButton />
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>{children}</AuthProvider>
+        <Toaster position="bottom-right" richColors closeButton />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

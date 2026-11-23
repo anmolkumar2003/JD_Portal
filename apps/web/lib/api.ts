@@ -126,6 +126,40 @@ async function send(path: string, { body, headers, ...init }: SendOptions): Prom
   }
 }
 
+async function requestBlob(path: string, options: RequestOptions = {}): Promise<Blob> {
+  const { skipAuthRetry = false, headers, ...sendOptions } = options;
+  let response = await send(path, {
+    ...sendOptions,
+    headers: { Accept: "text/csv", ...headers },
+  });
+
+  if (response.status === 401 && !skipAuthRetry && accessToken) {
+    const session = await refreshSession();
+    if (session) {
+      response = await send(path, {
+        ...sendOptions,
+        headers: { Accept: "text/csv", ...headers },
+      });
+    }
+  }
+
+  if (response.ok) {
+    return response.blob();
+  }
+  const requestId = response.headers.get("X-Request-ID") ?? undefined;
+  const data: unknown = await response.json().catch(() => null);
+  if (isErrorBody(data)) {
+    throw new ApiError(
+      response.status,
+      data.error.code,
+      data.error.message,
+      data.error.details,
+      requestId,
+    );
+  }
+  throw new ApiError(response.status, "http_error", response.statusText, data, requestId);
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { acceptStatuses = [], skipAuthRetry = false, ...sendOptions } = options;
   let response = await send(path, sendOptions);
@@ -395,7 +429,10 @@ export const api = {
       }),
   },
   analytics: {
-    overview: () => request<Record<string, number | object>>("/api/v1/analytics/overview"),
+    overview: (range?: { start?: string; end?: string }) =>
+      request<Record<string, number | object>>(
+        withQuery("/api/v1/analytics/overview", range ?? {}),
+      ),
     funnel: () =>
       request<{ stage: string; type: string; count: number }[]>("/api/v1/analytics/funnel"),
     sources: () => request<{ source: string; count: number }[]>("/api/v1/analytics/sources"),
@@ -403,6 +440,7 @@ export const api = {
       request<{ date: string; count: number }[]>(
         withQuery("/api/v1/analytics/applications-over-time", { days }),
       ),
+    exportCsv: () => requestBlob("/api/v1/analytics/export"),
   },
   search: (q: string) => request<SearchResult>(withQuery("/api/v1/search", { q })),
   savedFilters: {

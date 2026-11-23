@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, ChevronDown, Loader2, LogOut, UserCog } from "lucide-react";
+import { Bell, ChevronDown, Loader2, LogOut, Menu, UserCog } from "lucide-react";
 import Link from "next/link";
 
 import {
@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -36,7 +37,11 @@ function notificationText(type: string, payload: Record<string, unknown>): strin
   return type.replace(/_/g, " ");
 }
 
-export function TopBar() {
+interface TopBarProps {
+  onOpenNav?: () => void;
+}
+
+export function TopBar({ onOpenNav }: TopBarProps) {
   const { user, logout } = useAuth();
   const notifications = useNotifications();
   const markRead = useMarkNotificationRead();
@@ -47,7 +52,20 @@ export function TopBar() {
   const unread = (notifications.data ?? []).filter((n) => !n.read_at).length;
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-end gap-2 border-b bg-card px-6">
+    <header className="flex h-14 shrink-0 items-center justify-end gap-1 border-b bg-card px-3 sm:gap-2 sm:px-6">
+      {onOpenNav && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="mr-auto md:hidden"
+          aria-label="Open navigation"
+          onClick={onOpenNav}
+        >
+          <Menu className="h-5 w-5" aria-hidden />
+        </Button>
+      )}
+      <ThemeToggle />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">

@@ -25,7 +25,7 @@ const fontVars = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   // System stacks avoid blocking on fonts.googleapis.com inside Docker.
   return (
-    <html lang="en" className="font-sans" style={fontVars}>
+    <html lang="en" className="font-sans" style={fontVars} suppressHydrationWarning>
       <body>
         <Providers>{children}</Providers>
       </body>

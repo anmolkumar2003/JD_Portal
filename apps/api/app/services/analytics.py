@@ -37,6 +37,14 @@ async def overview(
         .where(Candidate.deleted_at.is_(None))
     )
     app_base = scope_jobs_query(user, app_base)
+    if start is not None:
+        app_base = app_base.where(
+            Application.applied_at >= datetime.combine(start, datetime.min.time(), tzinfo=UTC)
+        )
+    if end is not None:
+        app_base = app_base.where(
+            Application.applied_at <= datetime.combine(end, datetime.max.time(), tzinfo=UTC)
+        )
 
     total_applicants = int(
         await session.scalar(select(func.count()).select_from(app_base.subquery())) or 0

@@ -6,7 +6,8 @@ import { DataTable, type Column } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { ScoreRing } from "@/components/score-ring";
 import { StageBadge } from "@/components/stage-badge";
-import { daysInStage, formatDate } from "@/lib/labels";
+import { DaysInStageBadge } from "@/components/days-in-stage-badge";
+import { formatDate } from "@/lib/labels";
 import type { BoardCard, BoardOut } from "@/types/api";
 
 interface FlatCard extends BoardCard {
@@ -39,7 +40,7 @@ const COLUMNS: Column<FlatCard>[] = [
   {
     id: "days",
     header: "Days in stage",
-    cell: (row) => daysInStage(row.stage_entered_at),
+    cell: (row) => <DaysInStageBadge stageEnteredAt={row.stage_entered_at} />,
   },
   {
     id: "score",

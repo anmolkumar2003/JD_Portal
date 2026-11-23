@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { daysInStage } from "@/lib/labels";
+import { DaysInStageBadge } from "@/components/days-in-stage-badge";
 import { cn } from "@/lib/utils";
 import type { BoardCard, StageRef } from "@/types/api";
 
@@ -60,7 +60,6 @@ export function PipelineCard({
     ? { transform: CSS.Translate.toString(transform), opacity: isDragging ? 0.4 : 1 }
     : undefined;
 
-  const days = daysInStage(card.stage_entered_at);
   const otherStages = stages.filter((s) => s.id !== currentStageId);
 
   return (
@@ -93,9 +92,7 @@ export function PipelineCard({
         <ScoreRing score={card.overall_score} size={32} />
       </div>
       <div className="mt-2 flex items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground">
-          {days === 0 ? "Today" : `${days}d in stage`}
-        </p>
+        <DaysInStageBadge stageEnteredAt={card.stage_entered_at} />
         {canEdit && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

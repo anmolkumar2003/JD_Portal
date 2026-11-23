@@ -58,11 +58,13 @@ Legend: `[x]` done · `[~]` partial · `[ ]` pending · `[-]` skipped
 - [x] Trigram + ILIKE search, filter popover with chips/Clear all/URL state (incl. tag,
       shortlisted, department, dates), named saved filter sets, jobs filter chips, Cmd+K palette
 
-### Phase 5: dashboard, polish, responsive
+### Phase 5: dashboard, polish, responsive — committed `phase 5: dashboard, polish, responsive`
 
-- [ ] Charts, table and Kanban polish, design tokens, dark mode, responsive screenshots
+- [x] Recharts dashboard (KPIs, date range, CSV export), days-in-stage badges (amber 7 / red 14),
+      design tokens, skeletons, toasts, dark mode toggle, mobile sidebar sheet, Playwright
+      screenshot suite → `docs/screenshots/`
 
-### Phase 6: go-live package
+### Phase 6: go-live package — committed `phase 6: go-live package`
 
-- [ ] Production compose with Caddy, secrets script, SMTP, hardening, backups and restore drill,
-      ClamAV, retention job, `DEPLOY.md`, `USER-GUIDE.md`
+- [x] Production compose with Caddy, secrets script, SMTP, hardening (HSTS/CSP/secure cookies),
+      nightly backups + restore, ClamAV, retention job (default off), `DEPLOY.md`, `USER-GUIDE.md`
