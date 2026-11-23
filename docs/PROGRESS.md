@@ -68,3 +68,7 @@ Legend: `[x]` done · `[~]` partial · `[ ]` pending · `[-]` skipped
 
 - [x] Production compose with Caddy, secrets script, SMTP, hardening (HSTS/CSP/secure cookies),
       nightly backups + restore, ClamAV, retention job (default off), `DEPLOY.md`, `USER-GUIDE.md`
+
+### FINAL
+
+- [x] Re-audit written to `docs/AUDIT.md` (2026-11-23)
