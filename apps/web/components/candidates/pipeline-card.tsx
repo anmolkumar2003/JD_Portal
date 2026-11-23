@@ -107,7 +107,7 @@ export function PipelineCard({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7"
+                className="min-h-11 min-w-11"
                 aria-label={`Move ${card.first_name} ${card.last_name}`}
               >
                 <MoreHorizontal className="h-4 w-4" />

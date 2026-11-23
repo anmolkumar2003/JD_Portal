@@ -55,7 +55,7 @@ export function SidebarNav({ collapsed = false, onNavigate, className }: Sidebar
             aria-current={active ? "page" : undefined}
             onClick={() => onNavigate?.()}
             className={cn(
-              "flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               active
                 ? "bg-accent text-accent-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",

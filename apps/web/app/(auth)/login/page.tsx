@@ -110,7 +110,7 @@ function LoginForm() {
               <Label htmlFor="password">Password</Label>
               <Link
                 href="/forgot-password"
-                className="text-sm text-primary underline-offset-4 hover:underline"
+                className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline"
               >
                 Forgot password?
               </Link>

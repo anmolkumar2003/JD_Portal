@@ -66,4 +66,20 @@
   body {
     @apply bg-background font-sans text-foreground antialiased;
   }
+
+  /* Mobile: keep interactive targets at least 44×44px (WCAG 2.5.5). */
+  @media (max-width: 767px) {
+    a[href],
+    button,
+    [role="button"],
+    summary {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    a[href] {
+      display: inline-flex;
+      align-items: center;
+    }
+  }
 }
