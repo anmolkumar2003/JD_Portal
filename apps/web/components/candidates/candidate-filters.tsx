@@ -43,6 +43,7 @@ import {
 } from "@/hooks/use-saved-filters";
 import {
   DEFAULT_CANDIDATE_SORT,
+  DEFAULT_SKILLS_MODE,
   EMPTY_CANDIDATE_FILTERS,
   filtersToSavedPayload,
   savedPayloadToCandidateFilters,
@@ -51,8 +52,8 @@ import {
 } from "@/lib/candidate-filters";
 
 export type { CandidateFilterValues };
-import { CANDIDATE_SOURCE_LABELS } from "@/lib/labels";
-import type { CandidateSource } from "@/types/api";
+import { APPLICATION_STATUS_LABELS, CANDIDATE_SOURCE_LABELS } from "@/lib/labels";
+import type { ApplicationStatus, CandidateSource } from "@/types/api";
 
 interface CandidateFiltersProps {
   value: CandidateFilterValues;
@@ -68,14 +69,35 @@ const POPOVER_FILTER_KEYS: CandidateFilterKey[] = [
   "score_min",
   "score_max",
   "skill",
+  "skills",
+  "skills_mode",
   "tag",
   "is_shortlisted",
   "applied_from",
   "applied_to",
+  "location",
+  "experience_min",
+  "experience_max",
+  "notice_min_days",
+  "notice_max_days",
+  "expected_ctc_min",
+  "expected_ctc_max",
+  "expected_ctc_currency",
+  "expected_ctc_unit",
+  "ats_score_min",
+  "ats_score_max",
+  "rating_min",
+  "rating_max",
+  "status",
 ];
 
 function activePopoverCount(value: CandidateFilterValues): number {
-  return POPOVER_FILTER_KEYS.filter((key) => Boolean(value[key])).length;
+  return POPOVER_FILTER_KEYS.filter((key) => {
+    if (key === "skills_mode") {
+      return Boolean(value.skills) && value.skills_mode !== DEFAULT_SKILLS_MODE;
+    }
+    return Boolean(value[key]);
+  }).length;
 }
 
 export function CandidateFilters({ value, onChange }: CandidateFiltersProps) {
@@ -143,9 +165,14 @@ export function CandidateFilters({ value, onChange }: CandidateFiltersProps) {
         label: `Department: ${departmentNameById.get(value.department_id) ?? value.department_id}`,
       });
     }
-    if (value.score_min) list.push({ key: "score_min", label: `Min score: ${value.score_min}` });
-    if (value.score_max) list.push({ key: "score_max", label: `Max score: ${value.score_max}` });
-    if (value.skill) list.push({ key: "skill", label: `Skill: ${value.skill}` });
+    if (value.score_min) list.push({ key: "score_min", label: `Min match: ${value.score_min}` });
+    if (value.score_max) list.push({ key: "score_max", label: `Max match: ${value.score_max}` });
+    if (value.skills) {
+      const mode = value.skills_mode === "all" ? "all" : "any";
+      list.push({ key: "skills", label: `Skills (${mode}): ${value.skills}` });
+    } else if (value.skill) {
+      list.push({ key: "skill", label: `Skill: ${value.skill}` });
+    }
     if (value.tag) list.push({ key: "tag", label: `Tag: ${value.tag}` });
     if (value.is_shortlisted === "1") list.push({ key: "is_shortlisted", label: "Shortlisted" });
     if (value.is_shortlisted === "0")
@@ -153,6 +180,36 @@ export function CandidateFilters({ value, onChange }: CandidateFiltersProps) {
     if (value.applied_from)
       list.push({ key: "applied_from", label: `From: ${value.applied_from}` });
     if (value.applied_to) list.push({ key: "applied_to", label: `To: ${value.applied_to}` });
+    if (value.location) list.push({ key: "location", label: `Location: ${value.location}` });
+    if (value.experience_min)
+      list.push({ key: "experience_min", label: `Exp ≥ ${value.experience_min}y` });
+    if (value.experience_max)
+      list.push({ key: "experience_max", label: `Exp ≤ ${value.experience_max}y` });
+    if (value.notice_min_days)
+      list.push({ key: "notice_min_days", label: `Notice ≥ ${value.notice_min_days}d` });
+    if (value.notice_max_days)
+      list.push({ key: "notice_max_days", label: `Notice ≤ ${value.notice_max_days}d` });
+    if (value.expected_ctc_min || value.expected_ctc_max) {
+      const unit = value.expected_ctc_unit || "pa";
+      const cur = value.expected_ctc_currency || "INR";
+      const range = [value.expected_ctc_min || "…", value.expected_ctc_max || "…"].join("–");
+      list.push({
+        key: "expected_ctc_min",
+        label: `CTC ${range} ${cur}/${unit}`,
+      });
+    }
+    if (value.ats_score_min)
+      list.push({ key: "ats_score_min", label: `ATS ≥ ${value.ats_score_min}` });
+    if (value.ats_score_max)
+      list.push({ key: "ats_score_max", label: `ATS ≤ ${value.ats_score_max}` });
+    if (value.rating_min) list.push({ key: "rating_min", label: `Rating ≥ ${value.rating_min}` });
+    if (value.rating_max) list.push({ key: "rating_max", label: `Rating ≤ ${value.rating_max}` });
+    if (value.status) {
+      list.push({
+        key: "status",
+        label: `Status: ${APPLICATION_STATUS_LABELS[value.status as ApplicationStatus] ?? value.status}`,
+      });
+    }
     return list;
   }, [value, jobTitleById, stageNameById, departmentNameById]);
 
@@ -162,7 +219,15 @@ export function CandidateFilters({ value, onChange }: CandidateFiltersProps) {
 
   const removeChip = (key: string) => {
     if (key === "sort") onChange({ sort: DEFAULT_CANDIDATE_SORT });
-    else onChange({ [key]: "" } as Partial<CandidateFilterValues>);
+    else if (key === "skills") onChange({ skills: "", skills_mode: DEFAULT_SKILLS_MODE });
+    else if (key === "expected_ctc_min") {
+      onChange({
+        expected_ctc_min: "",
+        expected_ctc_max: "",
+        expected_ctc_currency: "",
+        expected_ctc_unit: "",
+      });
+    } else onChange({ [key]: "" } as Partial<CandidateFilterValues>);
   };
 
   const applySaved = (filters: Record<string, unknown>) => {
@@ -199,12 +264,12 @@ export function CandidateFilters({ value, onChange }: CandidateFiltersProps) {
             aria-hidden
           />
           <label htmlFor="candidate-search" className="sr-only">
-            Search by name, email or skill
+            Search name, email, company, title, skills, tags, notes or CV text
           </label>
           <Input
             id="candidate-search"
             type="search"
-            placeholder="Search name, email or skill"
+            placeholder="Search name, company, skills, tags, notes…"
             className="pl-9"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -286,7 +351,7 @@ export function CandidateFilters({ value, onChange }: CandidateFiltersProps) {
                     ))}
                   </Select>
                 </Field>
-                <Field label="Min score" htmlFor="popover-score-min">
+                <Field label="Min match score" htmlFor="popover-score-min">
                   <Input
                     id="popover-score-min"
                     type="number"
@@ -297,7 +362,7 @@ export function CandidateFilters({ value, onChange }: CandidateFiltersProps) {
                     onChange={(e) => onChange({ score_min: e.target.value })}
                   />
                 </Field>
-                <Field label="Max score" htmlFor="popover-score-max">
+                <Field label="Max match score" htmlFor="popover-score-max">
                   <Input
                     id="popover-score-max"
                     type="number"
@@ -308,13 +373,188 @@ export function CandidateFilters({ value, onChange }: CandidateFiltersProps) {
                     onChange={(e) => onChange({ score_max: e.target.value })}
                   />
                 </Field>
-                <Field label="Skill" htmlFor="popover-skill">
+                <Field label="Location" htmlFor="popover-location">
                   <Input
-                    id="popover-skill"
-                    placeholder="e.g. Python"
-                    value={value.skill}
-                    onChange={(e) => onChange({ skill: e.target.value })}
+                    id="popover-location"
+                    placeholder="e.g. Bangalore"
+                    value={value.location}
+                    onChange={(e) => onChange({ location: e.target.value })}
                   />
+                </Field>
+                <Field label="Status" htmlFor="popover-status">
+                  <Select
+                    id="popover-status"
+                    value={value.status}
+                    onChange={(e) => onChange({ status: e.target.value })}
+                  >
+                    <option value="">Any status</option>
+                    {(Object.keys(APPLICATION_STATUS_LABELS) as ApplicationStatus[]).map((s) => (
+                      <option key={s} value={s}>
+                        {APPLICATION_STATUS_LABELS[s]}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Exp min (years)" htmlFor="popover-exp-min">
+                  <Input
+                    id="popover-exp-min"
+                    type="number"
+                    min={0}
+                    max={60}
+                    step={0.5}
+                    placeholder="0"
+                    value={value.experience_min}
+                    onChange={(e) => onChange({ experience_min: e.target.value })}
+                  />
+                </Field>
+                <Field label="Exp max (years)" htmlFor="popover-exp-max">
+                  <Input
+                    id="popover-exp-max"
+                    type="number"
+                    min={0}
+                    max={60}
+                    step={0.5}
+                    placeholder="20"
+                    value={value.experience_max}
+                    onChange={(e) => onChange({ experience_max: e.target.value })}
+                  />
+                </Field>
+                <Field label="Notice min (days)" htmlFor="popover-notice-min">
+                  <Input
+                    id="popover-notice-min"
+                    type="number"
+                    min={0}
+                    max={730}
+                    placeholder="0"
+                    value={value.notice_min_days}
+                    onChange={(e) => onChange({ notice_min_days: e.target.value })}
+                  />
+                </Field>
+                <Field label="Notice max (days)" htmlFor="popover-notice-max">
+                  <Input
+                    id="popover-notice-max"
+                    type="number"
+                    min={0}
+                    max={730}
+                    placeholder="90"
+                    value={value.notice_max_days}
+                    onChange={(e) => onChange({ notice_max_days: e.target.value })}
+                  />
+                </Field>
+                <Field label="Expected CTC min" htmlFor="popover-ctc-min">
+                  <Input
+                    id="popover-ctc-min"
+                    type="number"
+                    min={0}
+                    placeholder="Amount"
+                    value={value.expected_ctc_min}
+                    onChange={(e) => onChange({ expected_ctc_min: e.target.value })}
+                  />
+                </Field>
+                <Field label="Expected CTC max" htmlFor="popover-ctc-max">
+                  <Input
+                    id="popover-ctc-max"
+                    type="number"
+                    min={0}
+                    placeholder="Amount"
+                    value={value.expected_ctc_max}
+                    onChange={(e) => onChange({ expected_ctc_max: e.target.value })}
+                  />
+                </Field>
+                <Field label="CTC currency" htmlFor="popover-ctc-currency">
+                  <Select
+                    id="popover-ctc-currency"
+                    value={value.expected_ctc_currency}
+                    onChange={(e) => onChange({ expected_ctc_currency: e.target.value })}
+                  >
+                    <option value="">Any</option>
+                    <option value="INR">INR</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                  </Select>
+                </Field>
+                <Field label="CTC unit" htmlFor="popover-ctc-unit">
+                  <Select
+                    id="popover-ctc-unit"
+                    value={value.expected_ctc_unit}
+                    onChange={(e) => onChange({ expected_ctc_unit: e.target.value })}
+                  >
+                    <option value="">Any</option>
+                    <option value="pa">Per annum</option>
+                    <option value="pm">Per month</option>
+                  </Select>
+                </Field>
+                <Field label="ATS min" htmlFor="popover-ats-min">
+                  <Input
+                    id="popover-ats-min"
+                    type="number"
+                    min={0}
+                    max={100}
+                    placeholder="0"
+                    value={value.ats_score_min}
+                    onChange={(e) => onChange({ ats_score_min: e.target.value })}
+                  />
+                </Field>
+                <Field label="ATS max" htmlFor="popover-ats-max">
+                  <Input
+                    id="popover-ats-max"
+                    type="number"
+                    min={0}
+                    max={100}
+                    placeholder="100"
+                    value={value.ats_score_max}
+                    onChange={(e) => onChange({ ats_score_max: e.target.value })}
+                  />
+                </Field>
+                <Field label="Interview rating min" htmlFor="popover-rating-min">
+                  <Input
+                    id="popover-rating-min"
+                    type="number"
+                    min={1}
+                    max={5}
+                    step={0.1}
+                    placeholder="1"
+                    value={value.rating_min}
+                    onChange={(e) => onChange({ rating_min: e.target.value })}
+                  />
+                </Field>
+                <Field label="Interview rating max" htmlFor="popover-rating-max">
+                  <Input
+                    id="popover-rating-max"
+                    type="number"
+                    min={1}
+                    max={5}
+                    step={0.1}
+                    placeholder="5"
+                    value={value.rating_max}
+                    onChange={(e) => onChange({ rating_max: e.target.value })}
+                  />
+                </Field>
+                <Field label="Skills (comma-separated)" htmlFor="popover-skills">
+                  <Input
+                    id="popover-skills"
+                    placeholder="Python, Kotlin"
+                    value={value.skills || value.skill}
+                    onChange={(e) =>
+                      onChange({
+                        skills: e.target.value,
+                        skill: "",
+                        skills_mode: value.skills_mode || DEFAULT_SKILLS_MODE,
+                      })
+                    }
+                  />
+                </Field>
+                <Field label="Skills match" htmlFor="popover-skills-mode">
+                  <Select
+                    id="popover-skills-mode"
+                    value={value.skills_mode || DEFAULT_SKILLS_MODE}
+                    onChange={(e) => onChange({ skills_mode: e.target.value })}
+                    disabled={!value.skills && !value.skill}
+                  >
+                    <option value="any">Match any</option>
+                    <option value="all">Match all</option>
+                  </Select>
                 </Field>
                 <Field label="Tag" htmlFor="popover-tag">
                   <Input

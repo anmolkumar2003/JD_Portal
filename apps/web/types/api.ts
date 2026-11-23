@@ -418,8 +418,24 @@ export interface ApplicationListParams {
   score_min?: number;
   score_max?: number;
   skill?: string;
+  skills?: string[];
+  skills_mode?: "any" | "all";
   tag?: string;
   is_shortlisted?: boolean;
+  location?: string;
+  experience_min?: number;
+  experience_max?: number;
+  notice_min_days?: number;
+  notice_max_days?: number;
+  expected_ctc_min?: number;
+  expected_ctc_max?: number;
+  expected_ctc_currency?: string;
+  expected_ctc_unit?: SalaryUnit;
+  ats_score_min?: number;
+  ats_score_max?: number;
+  rating_min?: number;
+  rating_max?: number;
+  status?: ApplicationStatus;
 }
 
 export interface SavedFilterOut {

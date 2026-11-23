@@ -213,12 +213,19 @@ export function refreshSession(): Promise<TokenResponse | null> {
   return refreshInFlight;
 }
 
-type QueryValue = string | number | undefined | null;
+type QueryValue = string | number | boolean | undefined | null | Array<string | number>;
 
 export function withQuery(path: string, params: object): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params) as [string, QueryValue][]) {
-    if (value !== undefined && value !== null && value !== "") search.set(key, String(value));
+    if (value === undefined || value === null || value === "") continue;
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (item !== undefined && item !== null && item !== "") search.append(key, String(item));
+      }
+      continue;
+    }
+    search.set(key, String(value));
   }
   const query = search.toString();
   return query ? `${path}?${query}` : path;

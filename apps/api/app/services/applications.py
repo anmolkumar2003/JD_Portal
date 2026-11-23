@@ -7,7 +7,7 @@ from typing import Any
 
 from fastapi import status
 from redis.asyncio import Redis
-from sqlalchemy import Select, cast, func, or_, select, update
+from sqlalchemy import Select, and_, cast, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import String
@@ -20,10 +20,12 @@ from app.core.rate_limit import enforce_rate_limit
 from app.models import (
     ActivityLog,
     Application,
+    AtsCheck,
     Candidate,
     Document,
     Job,
     MatchResult,
+    Note,
     ParsedProfile,
     PipelineStage,
     User,
@@ -269,6 +271,32 @@ def _score_subquery() -> Any:
     )
 
 
+def _ats_score_subquery() -> Any:
+    """Latest ATS score for the candidate (via their documents)."""
+    return (
+        select(AtsCheck.score)
+        .join(Document, Document.id == AtsCheck.document_id)
+        .where(Document.candidate_id == Candidate.id)
+        .order_by(AtsCheck.created_at.desc())
+        .limit(1)
+        .correlate(Candidate)
+        .scalar_subquery()
+        .label("ats_score")
+    )
+
+
+def _skill_profile_exists(term: str) -> Any:
+    return (
+        select(ParsedProfile.id)
+        .where(
+            ParsedProfile.candidate_id == Candidate.id,
+            cast(ParsedProfile.data, String).icontains(term, autoescape=True),
+        )
+        .correlate(Candidate)
+        .exists()
+    )
+
+
 def _scope_app_query(user: User, stmt: Select[Any]) -> Select[Any]:
     return scope_jobs_query(user, stmt)
 
@@ -340,35 +368,103 @@ async def list_applications(
         stmt = stmt.where(score.is_not(None), score >= filters.score_min)
     if filters.score_max is not None:
         stmt = stmt.where(score.is_not(None), score <= filters.score_max)
-    if filters.skill and filters.skill.strip():
-        skill_q = filters.skill.strip()
-        skill_filter = (
-            select(ParsedProfile.id)
-            .where(
-                ParsedProfile.candidate_id == Candidate.id,
-                cast(ParsedProfile.data, String).icontains(skill_q, autoescape=True),
-            )
-            .correlate(Candidate)
-            .exists()
-        )
-        stmt = stmt.where(skill_filter)
+
+    skill_terms = [s.strip() for s in filters.skills if s and s.strip()]
+    if not skill_terms and filters.skill and filters.skill.strip():
+        skill_terms = [filters.skill.strip()]
+    if skill_terms:
+        skill_clauses = [_skill_profile_exists(term) for term in skill_terms]
+        if filters.skills_mode == "all":
+            stmt = stmt.where(and_(*skill_clauses))
+        else:
+            stmt = stmt.where(or_(*skill_clauses))
+
     if filters.tag and filters.tag.strip():
         tag = filters.tag.strip()
         stmt = stmt.where(Candidate.tags.contains([tag]))
     if filters.is_shortlisted is not None:
         stmt = stmt.where(Application.is_shortlisted.is_(filters.is_shortlisted))
+    if filters.location and filters.location.strip():
+        stmt = stmt.where(
+            Candidate.current_location.icontains(filters.location.strip(), autoescape=True)
+        )
+    if filters.experience_min is not None:
+        stmt = stmt.where(
+            Candidate.total_experience_years.is_not(None),
+            Candidate.total_experience_years >= filters.experience_min,
+        )
+    if filters.experience_max is not None:
+        stmt = stmt.where(
+            Candidate.total_experience_years.is_not(None),
+            Candidate.total_experience_years <= filters.experience_max,
+        )
+    if filters.notice_min_days is not None:
+        stmt = stmt.where(
+            Candidate.notice_period_days.is_not(None),
+            Candidate.notice_period_days >= filters.notice_min_days,
+        )
+    if filters.notice_max_days is not None:
+        stmt = stmt.where(
+            Candidate.notice_period_days.is_not(None),
+            Candidate.notice_period_days <= filters.notice_max_days,
+        )
+    if filters.expected_ctc_currency is not None:
+        stmt = stmt.where(Candidate.expected_ctc_currency == filters.expected_ctc_currency)
+    if filters.expected_ctc_unit is not None:
+        stmt = stmt.where(Candidate.expected_ctc_unit == filters.expected_ctc_unit)
+    if filters.expected_ctc_min is not None:
+        stmt = stmt.where(
+            Candidate.expected_ctc.is_not(None),
+            Candidate.expected_ctc >= filters.expected_ctc_min,
+        )
+    if filters.expected_ctc_max is not None:
+        stmt = stmt.where(
+            Candidate.expected_ctc.is_not(None),
+            Candidate.expected_ctc <= filters.expected_ctc_max,
+        )
+
+    ats_score = _ats_score_subquery()
+    if filters.ats_score_min is not None:
+        stmt = stmt.where(ats_score.is_not(None), ats_score >= filters.ats_score_min)
+    if filters.ats_score_max is not None:
+        stmt = stmt.where(ats_score.is_not(None), ats_score <= filters.ats_score_max)
+
+    if filters.rating_min is not None:
+        stmt = stmt.where(
+            Application.overall_rating.is_not(None),
+            Application.overall_rating >= filters.rating_min,
+        )
+    if filters.rating_max is not None:
+        stmt = stmt.where(
+            Application.overall_rating.is_not(None),
+            Application.overall_rating <= filters.rating_max,
+        )
+    if filters.status is not None:
+        stmt = stmt.where(Application.status == filters.status)
+
     if filters.q and filters.q.strip():
         q = filters.q.strip()
-        # Trigram similarity (pg_trgm indexes on first/last name) plus email / skill ILIKE.
-        skill_match = (
+        skill_match = _skill_profile_exists(q)
+        cv_text_match = (
             select(ParsedProfile.id)
             .where(
                 ParsedProfile.candidate_id == Candidate.id,
-                cast(ParsedProfile.data, String).icontains(q, autoescape=True),
+                ParsedProfile.raw_text.is_not(None),
+                ParsedProfile.raw_text.icontains(q, autoescape=True),
             )
             .correlate(Candidate)
             .exists()
         )
+        notes_match = (
+            select(Note.id)
+            .where(
+                Note.candidate_id == Candidate.id,
+                Note.body.icontains(q, autoescape=True),
+            )
+            .correlate(Candidate)
+            .exists()
+        )
+        tags_match = func.array_to_string(Candidate.tags, " ").icontains(q, autoescape=True)
         similarity = func.greatest(
             func.similarity(Candidate.first_name, q),
             func.similarity(Candidate.last_name, q),
@@ -381,7 +477,12 @@ async def list_applications(
                 Candidate.last_name.icontains(q, autoescape=True),
                 Candidate.email.icontains(q, autoescape=True),
                 Candidate.phone.icontains(q, autoescape=True),
+                Candidate.current_company.icontains(q, autoescape=True),
+                Candidate.current_title.icontains(q, autoescape=True),
+                tags_match,
+                notes_match,
                 skill_match,
+                cv_text_match,
             )
         )
 

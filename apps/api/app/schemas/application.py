@@ -19,6 +19,7 @@ from app.models.enums import (
     CandidateSource,
     DocumentType,
     ParseStatus,
+    SalaryUnit,
     StageType,
 )
 from app.schemas.job import NamedRef
@@ -109,8 +110,25 @@ class ApplicationFilters(BaseModel):
     score_min: Annotated[int, Field(ge=0, le=100)] | None = None
     score_max: Annotated[int, Field(ge=0, le=100)] | None = None
     skill: str | None = Field(default=None, max_length=100)
+    # Multi-select skills; when set, overrides single `skill` for filtering.
+    skills: list[str] = Field(default_factory=list)
+    skills_mode: Annotated[str, Field(pattern="^(any|all)$")] = "any"
     tag: str | None = Field(default=None, max_length=50)
     is_shortlisted: bool | None = None
+    location: str | None = Field(default=None, max_length=200)
+    experience_min: Annotated[float, Field(ge=0, le=60)] | None = None
+    experience_max: Annotated[float, Field(ge=0, le=60)] | None = None
+    notice_min_days: Annotated[int, Field(ge=0, le=730)] | None = None
+    notice_max_days: Annotated[int, Field(ge=0, le=730)] | None = None
+    expected_ctc_min: Annotated[Decimal, Field(ge=0)] | None = None
+    expected_ctc_max: Annotated[Decimal, Field(ge=0)] | None = None
+    expected_ctc_currency: Annotated[str, Field(min_length=3, max_length=3)] | None = None
+    expected_ctc_unit: SalaryUnit | None = None
+    ats_score_min: Annotated[int, Field(ge=0, le=100)] | None = None
+    ats_score_max: Annotated[int, Field(ge=0, le=100)] | None = None
+    rating_min: Annotated[float, Field(ge=1, le=5)] | None = None
+    rating_max: Annotated[float, Field(ge=1, le=5)] | None = None
+    status: ApplicationStatus | None = None
 
 
 class StageRef(BaseModel):

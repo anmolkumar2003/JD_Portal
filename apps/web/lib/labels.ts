@@ -1,4 +1,5 @@
 import type {
+  ApplicationStatus,
   CandidateSource,
   EmploymentType,
   InterviewRecommendation,
@@ -68,6 +69,13 @@ export const CANDIDATE_SOURCE_LABELS: Record<CandidateSource, string> = {
   linkedin: "LinkedIn",
   agency: "Agency",
   manual: "Manual",
+};
+
+export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
+  active: "Active",
+  rejected: "Rejected",
+  withdrawn: "Withdrawn",
+  hired: "Hired",
 };
 
 export function daysInStage(stageEnteredAt: string): number {

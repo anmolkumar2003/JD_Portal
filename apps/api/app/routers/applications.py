@@ -1,5 +1,6 @@
 import uuid
 from datetime import date
+from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -9,7 +10,7 @@ from app.core.db import get_db
 from app.core.deps import CurrentUser, require_roles
 from app.core.pagination import Page, PageParams, page_params
 from app.models import User
-from app.models.enums import CandidateSource, UserRole
+from app.models.enums import ApplicationStatus, CandidateSource, SalaryUnit, UserRole
 from app.schemas.application import (
     AnalysisOut,
     ApplicationFilters,
@@ -49,9 +50,26 @@ def application_filters(
     score_min: Annotated[int | None, Query(ge=0, le=100)] = None,
     score_max: Annotated[int | None, Query(ge=0, le=100)] = None,
     skill: Annotated[str | None, Query(max_length=100)] = None,
+    skills: Annotated[list[str] | None, Query()] = None,
+    skills_mode: Annotated[str, Query(pattern="^(any|all)$")] = "any",
     tag: Annotated[str | None, Query(max_length=50)] = None,
     is_shortlisted: bool | None = None,
+    location: Annotated[str | None, Query(max_length=200)] = None,
+    experience_min: Annotated[float | None, Query(ge=0, le=60)] = None,
+    experience_max: Annotated[float | None, Query(ge=0, le=60)] = None,
+    notice_min_days: Annotated[int | None, Query(ge=0, le=730)] = None,
+    notice_max_days: Annotated[int | None, Query(ge=0, le=730)] = None,
+    expected_ctc_min: Decimal | None = None,
+    expected_ctc_max: Decimal | None = None,
+    expected_ctc_currency: Annotated[str | None, Query(min_length=3, max_length=3)] = None,
+    expected_ctc_unit: SalaryUnit | None = None,
+    ats_score_min: Annotated[int | None, Query(ge=0, le=100)] = None,
+    ats_score_max: Annotated[int | None, Query(ge=0, le=100)] = None,
+    rating_min: Annotated[float | None, Query(ge=1, le=5)] = None,
+    rating_max: Annotated[float | None, Query(ge=1, le=5)] = None,
+    status: ApplicationStatus | None = None,
 ) -> ApplicationFilters:
+    skill_list = [s.strip() for s in (skills or []) if s and s.strip()]
     return ApplicationFilters(
         job_id=job_id,
         stage_id=stage_id,
@@ -64,8 +82,24 @@ def application_filters(
         score_min=score_min,
         score_max=score_max,
         skill=skill,
+        skills=skill_list,
+        skills_mode=skills_mode,
         tag=tag,
         is_shortlisted=is_shortlisted,
+        location=location,
+        experience_min=experience_min,
+        experience_max=experience_max,
+        notice_min_days=notice_min_days,
+        notice_max_days=notice_max_days,
+        expected_ctc_min=expected_ctc_min,
+        expected_ctc_max=expected_ctc_max,
+        expected_ctc_currency=expected_ctc_currency.upper() if expected_ctc_currency else None,
+        expected_ctc_unit=expected_ctc_unit,
+        ats_score_min=ats_score_min,
+        ats_score_max=ats_score_max,
+        rating_min=rating_min,
+        rating_max=rating_max,
+        status=status,
     )
 
 
