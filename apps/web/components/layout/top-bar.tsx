@@ -52,7 +52,7 @@ export function TopBar({ onOpenNav }: TopBarProps) {
   const unread = (notifications.data ?? []).filter((n) => !n.read_at).length;
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-end gap-1 border-b bg-card px-3 sm:gap-2 sm:px-6">
+    <header className="glass relative z-10 mb-2 flex h-14 shrink-0 items-center justify-end gap-1 rounded-2xl border-0 px-3 sm:gap-2 sm:px-5">
       {onOpenNav && (
         <Button
           type="button"
@@ -71,7 +71,7 @@ export function TopBar({ onOpenNav }: TopBarProps) {
           <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
             <Bell className="h-5 w-5" aria-hidden />
             {unread > 0 && (
-              <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+              <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-gradient-brand px-1 text-[10px] font-semibold text-primary-foreground shadow-glow-sm">
                 {unread > 9 ? "9+" : unread}
               </span>
             )}
@@ -125,9 +125,9 @@ export function TopBar({ onOpenNav }: TopBarProps) {
       </DropdownMenu>
 
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <DropdownMenuTrigger className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <span
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-brand text-xs font-semibold text-primary-foreground shadow-glow-sm"
             aria-hidden
           >
             {initials(user.full_name)}

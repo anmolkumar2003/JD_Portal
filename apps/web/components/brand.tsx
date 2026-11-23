@@ -21,7 +21,7 @@ interface BrandProps {
 export function Brand({ name, logoUrl, showName = true, className }: BrandProps) {
   return (
     <span
-      className={cn("flex min-w-0 items-center gap-2.5 font-semibold", className)}
+      className={cn("flex min-w-0 items-center gap-2.5 font-semibold tracking-tight", className)}
       title={name}
     >
       {logoUrl ? (
@@ -35,7 +35,7 @@ export function Brand({ name, logoUrl, showName = true, className }: BrandProps)
         />
       ) : (
         <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary text-sm text-primary-foreground"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-brand text-sm text-primary-foreground shadow-glow-sm"
           aria-hidden
         >
           {initials(name)}

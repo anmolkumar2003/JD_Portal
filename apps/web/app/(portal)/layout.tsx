@@ -68,21 +68,25 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen gap-0 overflow-hidden p-0 md:gap-3 md:p-3">
       <CommandPalette />
-      <AppSidebar collapsed={collapsed} onToggle={toggleSidebar} className="hidden md:flex" />
+      <AppSidebar
+        collapsed={collapsed}
+        onToggle={toggleSidebar}
+        className="hidden rounded-2xl md:flex"
+      />
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <SheetContent side="left" className="w-[min(100vw,16rem)] gap-0 p-0 sm:max-w-xs">
-          <div className="flex h-14 items-center border-b px-4">
+          <div className="flex h-14 items-center border-b border-border/50 px-4">
             <Brand name={org_name} logoUrl={logo_data_url} />
           </div>
           <SidebarNav onNavigate={() => setMobileNavOpen(false)} className="p-3" />
         </SheetContent>
       </Sheet>
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
         <TopBar onOpenNav={() => setMobileNavOpen(true)} />
         <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">{children}</div>
+          <div className="page-enter mx-auto max-w-6xl p-4 sm:p-5 lg:p-6">{children}</div>
         </main>
       </div>
     </div>

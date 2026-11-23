@@ -213,7 +213,7 @@ function UsersAdmin() {
         <EmptyState icon={Users} title="No users yet" />
       ) : (
         <>
-          <div className="hidden rounded-lg border bg-card md:block">
+          <div className="glass hidden rounded-xl md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -253,7 +253,7 @@ function UsersAdmin() {
           </div>
           <ul className="space-y-3 md:hidden">
             {users.data.items.map((user) => (
-              <li key={user.id} className="flex items-start gap-3 rounded-lg border bg-card p-4">
+              <li key={user.id} className="glass flex items-start gap-3 rounded-xl p-4">
                 <div className="min-w-0 flex-1 space-y-1">
                   <p className="font-medium">{user.full_name}</p>
                   <p className="break-all text-sm text-muted-foreground">{user.email}</p>

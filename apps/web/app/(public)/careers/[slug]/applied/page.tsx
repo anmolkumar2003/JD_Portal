@@ -34,7 +34,7 @@ export default function AppliedPage({ searchParams }: Props) {
             </p>
           </div>
           {reference && (
-            <div className="rounded-lg border bg-muted/50 p-4">
+            <div className="glass rounded-xl p-4">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 Your reference number
               </p>

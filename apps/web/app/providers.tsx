@@ -26,10 +26,17 @@ export function Providers({ children }: { children: ReactNode }) {
     document.documentElement.dataset.hydrated = "true";
   }, []);
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>{children}</AuthProvider>
-        <Toaster position="bottom-right" richColors closeButton />
+        <Toaster
+          position="bottom-right"
+          richColors
+          closeButton
+          toastOptions={{
+            className: "glass-strong !border-border/50",
+          }}
+        />
       </QueryClientProvider>
     </ThemeProvider>
   );

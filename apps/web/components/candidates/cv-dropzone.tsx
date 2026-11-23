@@ -100,7 +100,7 @@ export function MultiCvDropzone({ items, onChange }: MultiCvDropzoneProps) {
             <li
               key={item.id}
               className={cn(
-                "flex items-center gap-3 rounded-lg border bg-card p-3",
+                "glass flex items-center gap-3 rounded-xl p-3",
                 item.status === "error" && "border-destructive",
               )}
             >

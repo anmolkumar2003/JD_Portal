@@ -27,10 +27,13 @@ export default async function CareersPage({ searchParams }: { searchParams: Sear
 
   return (
     <>
-      <section className="border-b bg-gradient-to-b from-accent to-background">
-        <div className="container space-y-8 py-14 sm:py-20">
+      <section className="relative overflow-hidden border-b border-border/40">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-mesh" aria-hidden />
+        <div className="pointer-events-none absolute -right-20 top-0 h-64 w-64 rounded-full bg-primary/15 blur-3xl" aria-hidden />
+        <div className="pointer-events-none absolute -left-16 bottom-0 h-48 w-48 rounded-full bg-violet/15 blur-3xl" aria-hidden />
+        <div className="container relative space-y-8 py-14 sm:py-20">
           <div className="max-w-2xl space-y-3">
-            <p className="text-sm font-semibold uppercase tracking-wide text-primary">
+            <p className="text-sm font-semibold uppercase tracking-wider text-primary">
               Careers at {config.org_name}
             </p>
             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">

@@ -97,7 +97,7 @@ export function BulkActionsBar({ selectedIds, rows, onClear }: BulkActionsBarPro
   return (
     <>
       <div
-        className="sticky bottom-4 z-20 mx-auto flex max-w-4xl flex-wrap items-center gap-3 rounded-lg border bg-card p-3 shadow-lg"
+        className="glass-strong sticky bottom-4 z-20 mx-auto flex max-w-4xl flex-wrap items-center gap-3 rounded-xl p-3 shadow-glow-sm"
         role="toolbar"
         aria-label="Bulk actions"
       >

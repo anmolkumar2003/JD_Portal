@@ -55,14 +55,20 @@ export function SidebarNav({ collapsed = false, onNavigate, className }: Sidebar
             aria-current={active ? "page" : undefined}
             onClick={() => onNavigate?.()}
             className={cn(
-              "flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "group flex min-h-11 items-center gap-3 rounded-2xl px-3 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               active
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                ? "bg-primary/15 text-primary shadow-sm"
+                : "text-muted-foreground hover:bg-white/40 hover:text-foreground dark:hover:bg-white/5",
               collapsed && "justify-center px-0",
             )}
           >
-            <Icon className="h-4 w-4 shrink-0" aria-hidden />
+            <Icon
+              className={cn(
+                "h-4 w-4 shrink-0 transition-colors",
+                active ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
+              )}
+              aria-hidden
+            />
             {collapsed ? <span className="sr-only">{label}</span> : label}
           </Link>
         );

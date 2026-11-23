@@ -72,7 +72,7 @@ function LoginForm() {
   });
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="glass-strong w-full max-w-sm shadow-glass-lg">
       <CardHeader>
         <CardTitle>Sign in</CardTitle>
         <CardDescription>

@@ -1,15 +1,25 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Download, Loader2 } from "lucide-react";
+import {
+  Briefcase,
+  CalendarDays,
+  Download,
+  Loader2,
+  Sparkles,
+  TrendingUp,
+  UserCheck,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
-  Line,
-  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -28,14 +38,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/lib/api";
 import { ROLE_LABELS } from "@/lib/labels";
+import { cn } from "@/lib/utils";
 
 const CHART_COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--warning))",
-  "hsl(var(--success))",
-  "hsl(var(--destructive))",
-  "hsl(215 16% 47%)",
-  "hsl(234 89% 74%)",
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
+  "hsl(var(--chart-6))",
 ];
 
 function toIsoDate(d: Date): string {
@@ -49,13 +60,56 @@ function daysBetweenInclusive(start: string, end: string): number {
   return Math.min(365, Math.max(7, diff));
 }
 
-function StatCard({ label, value }: { label: string; value: number | string }) {
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  accent,
+}: {
+  label: string;
+  value: number | string;
+  icon: LucideIcon;
+  accent?: "primary" | "violet" | "cyan" | "success" | "warning";
+}) {
+  const accentClass =
+    accent === "violet"
+      ? "text-violet"
+      : accent === "cyan"
+        ? "text-cyan"
+        : accent === "success"
+          ? "text-success"
+          : accent === "warning"
+            ? "text-warning"
+            : "text-primary";
+
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardDescription>{label}</CardDescription>
-        <CardTitle className="text-2xl tabular-nums sm:text-3xl">{value}</CardTitle>
+    <Card className="ambient-glow group overflow-hidden">
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+        <div className="space-y-1.5">
+          <CardDescription className="text-xs font-medium uppercase tracking-wider">
+            {label}
+          </CardDescription>
+          <CardTitle className="text-2xl tabular-nums tracking-tight sm:text-3xl">{value}</CardTitle>
+        </div>
+        <div className={cn("kpi-icon transition-transform duration-250 group-hover:scale-105", accentClass)}>
+          <Icon className="h-5 w-5" aria-hidden />
+        </div>
       </CardHeader>
+      <div
+        className="h-1 w-full opacity-80"
+        style={{
+          background:
+            accent === "violet"
+              ? "linear-gradient(90deg, hsl(var(--violet) / 0.5), transparent)"
+              : accent === "cyan"
+                ? "linear-gradient(90deg, hsl(var(--cyan) / 0.5), transparent)"
+                : accent === "success"
+                  ? "linear-gradient(90deg, hsl(var(--success) / 0.5), transparent)"
+                  : accent === "warning"
+                    ? "linear-gradient(90deg, hsl(var(--warning) / 0.5), transparent)"
+                    : "linear-gradient(90deg, hsl(var(--primary) / 0.5), transparent)",
+        }}
+      />
     </Card>
   );
 }
@@ -71,7 +125,7 @@ function ChartTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-md border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-md">
+    <div className="glass-strong rounded-lg px-3 py-2 text-sm text-popover-foreground">
       {label && <p className="mb-1 text-muted-foreground">{label}</p>}
       <p className="font-medium tabular-nums">{payload[0]?.value}</p>
     </div>
@@ -135,29 +189,37 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 space-y-1">
-          <Breadcrumbs items={[{ label: "Dashboard" }]} />
-          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            Welcome, {user.full_name} · {ROLE_LABELS[user.role]}
-          </p>
+      <div className="glass relative overflow-hidden rounded-2xl p-6 sm:p-8">
+        <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-cyan/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-10 left-1/3 h-32 w-32 rounded-full bg-primary/15 blur-3xl" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 space-y-2">
+            <Breadcrumbs items={[{ label: "Dashboard" }]} />
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" aria-hidden />
+              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Dashboard</h1>
+            </div>
+            <p className="max-w-xl text-sm text-muted-foreground">
+              Welcome back, {user.full_name}. Here&apos;s your recruitment pulse ·{" "}
+              {ROLE_LABELS[user.role]}
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="shrink-0 self-start"
+            disabled={exporting}
+            onClick={() => void handleExport()}
+          >
+            {exporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <Download className="h-4 w-4" aria-hidden />
+            )}
+            Export CSV
+          </Button>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="shrink-0 self-start"
-          disabled={exporting}
-          onClick={() => void handleExport()}
-        >
-          {exporting ? (
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          ) : (
-            <Download className="h-4 w-4" aria-hidden />
-          )}
-          Export CSV
-        </Button>
       </div>
 
       <Card>
@@ -193,24 +255,55 @@ export default function DashboardPage() {
       {overview.isPending ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-24" />
+            <Skeleton key={i} className="h-28" />
           ))}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <StatCard label="Open jobs" value={Number(kpi.open_jobs ?? 0)} />
-          <StatCard label="Total applicants" value={Number(kpi.total_applicants ?? 0)} />
-          <StatCard label="New this week" value={Number(kpi.new_this_week ?? 0)} />
-          <StatCard label="Interviews today" value={Number(kpi.interviews_today ?? 0)} />
-          <StatCard label="Offers pending" value={Number(kpi.offers_pending ?? 0)} />
-          <StatCard label="Hires this month" value={Number(kpi.hires_this_month ?? 0)} />
+          <StatCard
+            label="Open jobs"
+            value={Number(kpi.open_jobs ?? 0)}
+            icon={Briefcase}
+            accent="primary"
+          />
+          <StatCard
+            label="Total applicants"
+            value={Number(kpi.total_applicants ?? 0)}
+            icon={Users}
+            accent="violet"
+          />
+          <StatCard
+            label="New this week"
+            value={Number(kpi.new_this_week ?? 0)}
+            icon={TrendingUp}
+            accent="cyan"
+          />
+          <StatCard
+            label="Interviews today"
+            value={Number(kpi.interviews_today ?? 0)}
+            icon={CalendarDays}
+            accent="warning"
+          />
+          <StatCard
+            label="Offers pending"
+            value={Number(kpi.offers_pending ?? 0)}
+            icon={Sparkles}
+            accent="violet"
+          />
+          <StatCard
+            label="Hires this month"
+            value={Number(kpi.hires_this_month ?? 0)}
+            icon={UserCheck}
+            accent="success"
+          />
         </div>
       )}
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Funnel by stage</CardTitle>
+            <CardTitle className="text-base">Hiring funnel</CardTitle>
+            <CardDescription>Candidates by pipeline stage</CardDescription>
           </CardHeader>
           <CardContent className="h-[280px] sm:h-[320px]">
             {funnel.isPending ? (
@@ -224,6 +317,12 @@ export default function DashboardPage() {
                   layout="vertical"
                   margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
                 >
+                  <defs>
+                    <linearGradient id="funnelBar" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" />
+                      <stop offset="100%" stopColor="hsl(var(--violet))" />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid
                     strokeDasharray="3 3"
                     className="stroke-border"
@@ -242,8 +341,8 @@ export default function DashboardPage() {
                   <Tooltip content={<ChartTooltip />} />
                   <Bar
                     dataKey="count"
-                    fill="hsl(var(--primary))"
-                    radius={[0, 4, 4, 0]}
+                    fill="url(#funnelBar)"
+                    radius={[0, 6, 6, 0]}
                     maxBarSize={28}
                   />
                 </BarChart>
@@ -255,6 +354,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Source breakdown</CardTitle>
+            <CardDescription>Where candidates come from</CardDescription>
           </CardHeader>
           <CardContent className="h-[280px] sm:h-[320px]">
             {sources.isPending ? (
@@ -270,9 +370,9 @@ export default function DashboardPage() {
                     nameKey="label"
                     cx="50%"
                     cy="50%"
-                    innerRadius={48}
-                    outerRadius={88}
-                    paddingAngle={2}
+                    innerRadius={56}
+                    outerRadius={92}
+                    paddingAngle={3}
                     label={(props) => {
                       const name = String(props.name ?? "");
                       const pct = props.percent ?? 0;
@@ -281,7 +381,7 @@ export default function DashboardPage() {
                     labelLine={false}
                   >
                     {sourceRows.map((_, i) => (
-                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} stroke="none" />
                     ))}
                   </Pie>
                   <Tooltip content={<ChartTooltip />} />
@@ -304,7 +404,13 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground">No applications in this window.</p>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trend.data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+              <AreaChart data={trend.data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                 <XAxis
                   dataKey="date"
@@ -317,15 +423,16 @@ export default function DashboardPage() {
                   width={32}
                 />
                 <Tooltip content={<ChartTooltip />} labelFormatter={(v) => String(v)} />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="count"
                   stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={{ r: 3, fill: "hsl(var(--primary))" }}
-                  activeDot={{ r: 5 }}
+                  strokeWidth={2.5}
+                  fill="url(#trendFill)"
+                  dot={{ r: 3, fill: "hsl(var(--primary))", strokeWidth: 0 }}
+                  activeDot={{ r: 5, strokeWidth: 0 }}
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           )}
         </CardContent>

@@ -8,27 +8,29 @@ export function JobCard({ job }: { job: PublicJobListItem }) {
   return (
     <Link
       href={`/careers/${job.slug}`}
-      className="group flex flex-col gap-4 rounded-lg border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="glass ambient-glow group flex flex-col gap-4 rounded-xl p-5 transition-all duration-250 hover:border-primary/40 hover:shadow-glow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="space-y-1">
-        <h3 className="font-semibold group-hover:text-primary">{job.title}</h3>
+        <h3 className="font-semibold tracking-tight transition-colors group-hover:text-primary">
+          {job.title}
+        </h3>
         {job.level && <p className="text-sm text-muted-foreground">{job.level}</p>}
       </div>
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
         {job.department && (
           <li className="flex items-center gap-1.5">
-            <Building2 className="h-4 w-4" aria-hidden />
+            <Building2 className="h-4 w-4 text-primary/70" aria-hidden />
             {job.department.name}
           </li>
         )}
         {job.location && (
           <li className="flex items-center gap-1.5">
-            <MapPin className="h-4 w-4" aria-hidden />
+            <MapPin className="h-4 w-4 text-primary/70" aria-hidden />
             {job.location.name}
           </li>
         )}
         <li className="flex items-center gap-1.5">
-          <Briefcase className="h-4 w-4" aria-hidden />
+          <Briefcase className="h-4 w-4 text-primary/70" aria-hidden />
           {WORK_MODE_LABELS[job.work_mode]} · {EMPLOYMENT_TYPE_LABELS[job.employment_type]}
         </li>
       </ul>

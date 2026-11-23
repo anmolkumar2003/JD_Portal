@@ -67,9 +67,9 @@ export function PipelineCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "rounded-md border bg-card p-3 shadow-sm",
-        isDragging && "ring-2 ring-ring",
-        isOver && "ring-2 ring-primary/30",
+        "glass rounded-xl p-3 transition-shadow duration-200 hover:shadow-glow-sm",
+        isDragging && "ring-2 ring-ring opacity-80",
+        isOver && "ring-2 ring-primary/40",
       )}
     >
       <div className="flex items-start justify-between gap-2">

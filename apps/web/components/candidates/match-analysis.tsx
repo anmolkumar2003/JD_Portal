@@ -46,9 +46,16 @@ function ComponentBar({ label, value }: { label: string; value: number }) {
         <span className="capitalize text-muted-foreground">{label}</span>
         <span className="font-mono tabular-nums">{value}</span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-muted">
+      <div className="h-2 overflow-hidden rounded-full bg-muted/80">
         <div
-          className={cn("h-full rounded-full transition-all", tone)}
+          className={cn(
+            "h-full rounded-full transition-all",
+            value >= 80
+              ? "bg-gradient-to-r from-success to-cyan"
+              : value >= 60
+                ? "bg-gradient-to-r from-warning to-primary"
+                : tone,
+          )}
           style={{ width: `${value}%` }}
         />
       </div>

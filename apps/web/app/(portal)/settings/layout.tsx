@@ -25,7 +25,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
       <nav aria-label="Settings sections" className="-mx-1 overflow-x-auto">
-        <ul className="flex min-w-max gap-1 border-b px-1">
+        <ul className="glass flex min-w-max gap-1 rounded-xl border border-border/50 p-1">
           {sections.map(({ href, label }) => {
             const active = pathname === href || pathname.startsWith(`${href}/`);
             return (
@@ -34,10 +34,10 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
                   href={href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "-mb-px flex h-11 items-center border-b-2 px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    "flex h-11 items-center rounded-lg px-3 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     active
-                      ? "border-primary text-foreground"
-                      : "border-transparent text-muted-foreground hover:text-foreground",
+                      ? "bg-background/80 text-foreground shadow-sm ring-1 ring-border/60"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {label}

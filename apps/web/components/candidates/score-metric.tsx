@@ -15,7 +15,7 @@ export function ScoreMetric({ label, percentScore, scaleValue, className }: Scor
   return (
     <div
       className={cn(
-        "flex flex-col items-center gap-1 rounded-md border bg-card px-3 py-2",
+        "glass flex flex-col items-center gap-1 rounded-xl px-3 py-2",
         className,
       )}
     >
