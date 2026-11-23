@@ -16,16 +16,24 @@ export function useInterviewRatings(applicationId: string | null) {
   });
 }
 
+function invalidateRatingSurfaces(
+  queryClient: ReturnType<typeof useQueryClient>,
+  applicationId: string,
+) {
+  void queryClient.invalidateQueries({ queryKey: ratingsKey(applicationId) });
+  void queryClient.invalidateQueries({
+    queryKey: ["applications", "final-score", applicationId],
+  });
+  void queryClient.invalidateQueries({ queryKey: applicationKeys.detail(applicationId) });
+  void queryClient.invalidateQueries({ queryKey: ["applications", "list"] });
+  void queryClient.invalidateQueries({ queryKey: ["jobs", "board"] });
+}
+
 export function useCreateRating(applicationId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: InterviewRatingIn) => api.applications.createRating(applicationId, body),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ratingsKey(applicationId) });
-      void queryClient.invalidateQueries({
-        queryKey: ["applications", "final-score", applicationId],
-      });
-    },
+    onSuccess: () => invalidateRatingSurfaces(queryClient, applicationId),
   });
 }
 
@@ -34,12 +42,7 @@ export function useUpdateRating(applicationId: string) {
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: InterviewRatingIn }) =>
       api.ratings.update(id, body),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ratingsKey(applicationId) });
-      void queryClient.invalidateQueries({
-        queryKey: ["applications", "final-score", applicationId],
-      });
-    },
+    onSuccess: () => invalidateRatingSurfaces(queryClient, applicationId),
   });
 }
 
@@ -47,12 +50,6 @@ export function useDeleteRating(applicationId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.ratings.delete(id),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ratingsKey(applicationId) });
-      void queryClient.invalidateQueries({
-        queryKey: ["applications", "final-score", applicationId],
-      });
-      void queryClient.invalidateQueries({ queryKey: applicationKeys.detail(applicationId) });
-    },
+    onSuccess: () => invalidateRatingSurfaces(queryClient, applicationId),
   });
 }

@@ -395,6 +395,7 @@ export interface ApplicationListItem {
   job: NamedRef;
   stage: StageRef;
   overall_score: number | null;
+  overall_rating: number | null;
   is_shortlisted: boolean;
   tags: string[];
   expected_ctc: string | null;
@@ -576,6 +577,7 @@ export interface BoardCard {
   last_name: string;
   current_title: string | null;
   overall_score: number | null;
+  overall_rating: number | null;
   stage_entered_at: string;
   applied_at: string;
   reference_no: string;

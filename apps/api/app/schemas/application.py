@@ -152,6 +152,7 @@ class ApplicationListItem(BaseModel):
     job: NamedRef
     stage: StageRef
     overall_score: int | None
+    overall_rating: Decimal | None = None
     is_shortlisted: bool = False
     tags: list[str] = Field(default_factory=list)
     expected_ctc: Decimal | None = None
@@ -354,6 +355,7 @@ class BoardCard(BaseModel):
     last_name: str
     current_title: str | None
     overall_score: int | None
+    overall_rating: Decimal | None = None
     stage_entered_at: datetime
     applied_at: datetime
     reference_no: str

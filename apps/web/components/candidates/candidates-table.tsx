@@ -44,9 +44,21 @@ const COLUMNS: Column<ApplicationListItem>[] = [
   },
   {
     id: "score",
-    header: "Score",
+    header: "Match",
     sortKey: "overall_score",
     cell: (row) => <ScoreRing score={row.overall_score} />,
+  },
+  {
+    id: "interview",
+    header: "Interview",
+    cell: (row) =>
+      row.overall_rating != null ? (
+        <span className="text-sm font-medium tabular-nums">
+          {Number(row.overall_rating).toFixed(1)}/5
+        </span>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      ),
   },
   {
     id: "source",

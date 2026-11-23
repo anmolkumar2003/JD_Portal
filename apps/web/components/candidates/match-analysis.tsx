@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, Loader2, RefreshCw, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { ScoreMetric } from "@/components/candidates/score-metric";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { ScoreRing } from "@/components/score-ring";
@@ -13,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useApplicationFinalScore } from "@/hooks/use-applications";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -64,6 +66,7 @@ export function MatchAnalysis({ applicationId }: MatchAnalysisProps) {
     queryKey: ["applications", "analysis", applicationId],
     queryFn: () => api.applications.analysis(applicationId),
   });
+  const finalScore = useApplicationFinalScore(applicationId);
 
   const [editJson, setEditJson] = useState<string | null>(null);
   const [useJsonEditor, setUseJsonEditor] = useState(false);
@@ -218,6 +221,9 @@ export function MatchAnalysis({ applicationId }: MatchAnalysisProps) {
 
   const match = data.match_result;
   const ats = data.ats_check;
+  const fs = finalScore.data;
+  const interviewLabel =
+    fs?.interview_avg != null ? `${Number(fs.interview_avg).toFixed(1)} / 5` : "—";
   const explanation = (match?.explanation ?? {}) as {
     summary?: string;
     strengths?: string[];
@@ -235,6 +241,15 @@ export function MatchAnalysis({ applicationId }: MatchAnalysisProps) {
           {explanation.score_version ?? match?.engine_version ?? "—"}
         </span>
       </p>
+
+      <div className="grid grid-cols-3 gap-3 sm:gap-4">
+        <ScoreMetric
+          label="CV match"
+          percentScore={match?.overall_score ?? fs?.match_score ?? null}
+        />
+        <ScoreMetric label="ATS" percentScore={ats?.score ?? fs?.ats_score ?? null} />
+        <ScoreMetric label="Interview avg" scaleValue={interviewLabel} />
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[auto_1fr]">
         <Card>

@@ -89,7 +89,14 @@ export function PipelineCard({
             {card.current_title ?? "No current title"}
           </p>
         </button>
-        <ScoreRing score={card.overall_score} size={32} />
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <ScoreRing score={card.overall_score} size={32} />
+          <span className="text-[10px] tabular-nums text-muted-foreground">
+            {card.overall_rating != null
+              ? `Int ${Number(card.overall_rating).toFixed(1)}/5`
+              : "Int —"}
+          </span>
+        </div>
       </div>
       <div className="mt-2 flex items-center justify-between gap-2">
         <DaysInStageBadge stageEnteredAt={card.stage_entered_at} />
