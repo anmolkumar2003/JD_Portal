@@ -1,0 +1,20 @@
+Jane Unusual
+jane.unusual@example.com | +91 99999 88877
+Bengaluru, India
+
+Summary
+Engineer with hands-on Shopify and Python experience across product teams.
+
+Experience
+Engineer
+Shopify Labs
+01/15/2019 - current
+Python tooling and Shopify apps for merchants.
+
+Junior Engineer
+Beta Inc
+Jan'19 - Dec 2020
+Supporting Kotlin mobile experiments.
+
+Skills
+Python, Shopify, Kotlin

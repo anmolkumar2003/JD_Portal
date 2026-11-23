@@ -89,6 +89,46 @@ def test_name_does_not_include_email_line() -> None:
     assert "@" not in (parsed.full_name or "")
 
 
+def test_unusual_date_formats_yield_experience_years() -> None:
+    from app.cv_engine.parser import DATE_RANGE_RE, _parse_month_year
+
+    assert _parse_month_year("01/15/2019") == date(2019, 1, 1)
+    assert _parse_month_year("Jan'19") == date(2019, 1, 1)
+    assert _parse_month_year("2019") == date(2019, 1, 1)
+    assert _parse_month_year("Present") == date.today()
+    assert DATE_RANGE_RE.search("01/15/2019 - current")
+    assert DATE_RANGE_RE.search("Jan'19 – Present")
+    assert DATE_RANGE_RE.search("2019-Present")
+
+    text = """
+Jane Unusual
+jane.unusual@example.com | +91 99999 88877
+
+Experience
+Software Engineer
+Acme Corp
+01/15/2019 - current
+Built Shopify tooling and Python scripts.
+
+Junior Engineer
+Beta Inc
+Jan'19 - Dec'20
+Legacy overlap role.
+
+Intern
+Gamma LLC
+2019-Present
+Side consulting.
+
+Skills
+Python, Shopify, Kotlin
+"""
+    parsed = RuleBasedParser().parse(text)
+    assert parsed.full_name == "Jane Unusual"
+    assert parsed.total_experience_years is not None
+    assert parsed.total_experience_years >= 5
+
+
 def test_extract_pdf_from_generated_sample() -> None:
     from pathlib import Path
 

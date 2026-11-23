@@ -1,0 +1,25 @@
+Meera Iyer
+meera.iyer@example.com | +91 98100 11105
+Bengaluru, India
+
+Summary
+iOS Engineer with 6 years of experience in Swift and SwiftUI product features.
+
+Experience
+iOS Engineer
+Pixel Works
+Jan 2020 - Present
+Delivered Swift and SwiftUI product features for production teams.
+
+Associate iOS Engineer
+Bright Labs
+Jun 2017 - Dec 2019
+Supported launches and documentation.
+
+Education
+B.A. / B.Tech
+Example University
+2013 - 2017
+
+Skills
+Swift, SwiftUI, UIKit, iOS, Xcode

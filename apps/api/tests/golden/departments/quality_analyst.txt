@@ -1,0 +1,25 @@
+Sana Rahman
+sana.rahman@example.com | +91 98100 11107
+Bengaluru, India
+
+Summary
+Quality Analyst with 6 years of experience in Selenium and Cypress test automation.
+
+Experience
+Quality Analyst
+Pixel Works
+Jan 2020 - Present
+Delivered Selenium and Cypress test automation for production teams.
+
+Associate Quality Analyst
+Bright Labs
+Jun 2017 - Dec 2019
+Supported launches and documentation.
+
+Education
+B.A. / B.Tech
+Example University
+2013 - 2017
+
+Skills
+QA, Selenium, Cypress, Appium, Jira

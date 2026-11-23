@@ -1,0 +1,25 @@
+Rohan Mehta
+rohan.mehta@example.com | +91 98100 11102
+Bengaluru, India
+
+Summary
+Shopify Developer with 6 years of experience in Shopify Plus themes and checkout extensions.
+
+Experience
+Shopify Developer
+Pixel Works
+Jan 2020 - Present
+Delivered Shopify Plus themes and checkout extensions for production teams.
+
+Associate Shopify Developer
+Bright Labs
+Jun 2017 - Dec 2019
+Supported launches and documentation.
+
+Education
+B.A. / B.Tech
+Example University
+2013 - 2017
+
+Skills
+Shopify, Shopify Themes, Liquid, JavaScript, CSS

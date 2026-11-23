@@ -1,0 +1,25 @@
+Kabir Singh
+kabir.singh@example.com | +91 98100 11106
+Bengaluru, India
+
+Summary
+Flutter Developer with 6 years of experience in Flutter mobile apps in Dart.
+
+Experience
+Flutter Developer
+Pixel Works
+Jan 2020 - Present
+Delivered Flutter mobile apps in Dart for production teams.
+
+Associate Flutter Developer
+Bright Labs
+Jun 2017 - Dec 2019
+Supported launches and documentation.
+
+Education
+B.A. / B.Tech
+Example University
+2013 - 2017
+
+Skills
+Flutter, Dart, Firebase, REST, Git

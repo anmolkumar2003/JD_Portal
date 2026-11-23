@@ -1263,6 +1263,7 @@
     "name": "QA",
     "category": "testing",
     "synonyms": [
+      "qa engineer",
       "qa testing",
       "quality analyst",
       "quality assurance",
@@ -1781,10 +1782,12 @@
     "name": "Google Analytics",
     "category": "marketing",
     "synonyms": [
+      "analytics",
       "ga",
       "ga4",
       "google analytics 4",
-      "universal analytics"
+      "universal analytics",
+      "web analytics"
     ]
   },
   {
@@ -2376,6 +2379,7 @@
     "category": "operations",
     "synonyms": [
       "delivery management",
+      "project manager",
       "project planning"
     ]
   },
@@ -2975,6 +2979,7 @@
     "category": "content_writing",
     "synonyms": [
       "blog writing",
+      "content creation",
       "content writer",
       "web content writing"
     ]

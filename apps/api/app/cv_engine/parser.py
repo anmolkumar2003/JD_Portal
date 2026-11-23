@@ -20,16 +20,23 @@ from app.cv_engine.types import (
 
 logger = logging.getLogger(__name__)
 
-PARSER_VERSION = "rule-1.0"
+PARSER_VERSION = "rule-1.1"
 
 EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 # Broad candidate; digit-count validated in _extract_phone (10–15 digits).
 PHONE_RE = re.compile(r"(?:\+\d{1,3}[\s\-.]*)?(?:\(?\d{1,5}\)?[\s\-.]*){1,5}\d{2,}")
 URL_RE = re.compile(r"https?://[^\s)>\]]+|www\.[^\s)>\]]+|linkedin\.com/[^\s)>\]]+", re.I)
+_MONTH_NAME = (
+    r"Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|"
+    r"Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?"
+)
+# Jan'19, Jan 2019, 01/15/2019, 01/2019, 2019, Present/Current/Now
 DATE_TOKEN = (
-    r"(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|"
-    r"Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|"
-    r"\d{1,2})[/\-\s.]*(?:\d{2,4})|Present|Current|Now"  # noqa: S105
+    rf"(?:Present|Current|Now|"
+    rf"(?:{_MONTH_NAME})[\s/\-.'’]*\d{{2,4}}|"
+    rf"\d{{1,2}}[/\-.]\d{{1,2}}[/\-.]\d{{2,4}}|"
+    rf"\d{{1,2}}[/\-.]\d{{2,4}}|"
+    rf"\d{{4}})"
 )
 # Include en/em dashes, ASCII hyphen, middle dot (common in PDF extract), and "to".
 DATE_RANGE_RE = re.compile(
@@ -88,27 +95,50 @@ class CVParser(ABC):
         raise NotImplementedError
 
 
-def _parse_month_year(token: str) -> date | None:
-    raw = token.strip()
-    if re.match(r"(?i)present|current|now", raw):
+def _normalize_year(year: int) -> int:
+    if year < 100:
+        return year + 2000 if year < 50 else year + 1900
+    return year
+
+
+def _parse_month_year(token: str) -> date | None:  # noqa: C901, PLR0911
+    raw = token.strip().strip(".,;")
+    if re.match(r"(?i)^(?:present|current|now)$", raw):
         return date.today()
-    m = re.match(r"(?i)([A-Za-z]+)\s*[/\-.]?\s*(\d{2,4})", raw)
+    # Jan'19 / Jan 2019 / January-19
+    m = re.match(rf"(?i)^({_MONTH_NAME})[\s/\-.'’]*(\d{{2,4}})$", raw)
     if m:
-        month = MONTH_MAP.get(m.group(1).lower())
-        year = int(m.group(2))
-        if year < 100:
-            year += 2000 if year < 50 else 1900
+        key = m.group(1).lower()
+        month = MONTH_MAP.get(key) or MONTH_MAP.get(key[:3])
+        year = _normalize_year(int(m.group(2)))
         if month:
             return date(year, month, 1)
-    m2 = re.match(r"(\d{1,2})[/\-.](\d{2,4})", raw)
+    # 01/15/2019 or 15/01/2019 (day/month/year vs month/day/year)
+    m_full = re.match(r"^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})$", raw)
+    if m_full:
+        a, b, year = (
+            int(m_full.group(1)),
+            int(m_full.group(2)),
+            _normalize_year(int(m_full.group(3))),
+        )
+        if a > 12 and 1 <= b <= 12:
+            month = b
+        elif b > 12 and 1 <= a <= 12:
+            month = a
+        elif 1 <= a <= 12:
+            # Prefer month-first (US) when ambiguous — matches 01/15/2019.
+            month = a
+        else:
+            return None
+        return date(year, month, 1)
+    # 01/2019
+    m2 = re.match(r"^(\d{1,2})[/\-.](\d{2,4})$", raw)
     if m2:
         month = int(m2.group(1))
-        year = int(m2.group(2))
-        if year < 100:
-            year += 2000 if year < 50 else 1900
+        year = _normalize_year(int(m2.group(2)))
         if 1 <= month <= 12:
             return date(year, month, 1)
-    m3 = re.match(r"(\d{4})", raw)
+    m3 = re.match(r"^(\d{4})$", raw)
     if m3:
         return date(int(m3.group(1)), 1, 1)
     return None
@@ -201,12 +231,25 @@ def _load_nlp() -> Any | None:
 
 
 def _first_person_name(nlp: Any, text: str) -> str | None:
+    """Prefer multi-token PERSON entities so 'Jane Unusual' is not truncated to 'Jane'."""
     doc = nlp(text[:2000])
+    best: str | None = None
+    best_tokens = 0
     for ent in doc.ents:
-        if ent.label_ == "PERSON" and 1 <= len(ent.text.split()) <= 4:
-            name = str(ent.text).strip()
-            return name or None
-    return None
+        if ent.label_ != "PERSON":
+            continue
+        parts = [p for p in ent.text.split() if p]
+        if not (1 <= len(parts) <= 4):
+            continue
+        name = str(ent.text).strip()
+        if not name:
+            continue
+        if len(parts) > best_tokens:
+            best = name
+            best_tokens = len(parts)
+            if best_tokens >= 2:
+                break
+    return best
 
 
 def _orgs_and_locations(nlp: Any, text: str) -> tuple[list[str], list[str]]:
@@ -294,7 +337,9 @@ def _parse_certs(block: str) -> list[CertificationEntry]:
 
 
 class RuleBasedParser(CVParser):
-    def parse(self, text: str, *, file_meta: ExtractResult | None = None) -> ParsedCV:
+    def parse(  # noqa: C901, PLR0912
+        self, text: str, *, file_meta: ExtractResult | None = None
+    ) -> ParsedCV:
         sections = segment_sections(text)
         email_m = EMAIL_RE.search(text)
         phone = _extract_phone(text)
@@ -304,8 +349,9 @@ class RuleBasedParser(CVParser):
         full_name = None
         orgs: list[str] = []
         locs: list[str] = []
+        preamble = sections.get("_preamble", text[:500])
         if nlp is not None:
-            full_name = _clean_name(_first_person_name(nlp, sections.get("_preamble", text[:500])))
+            full_name = _clean_name(_first_person_name(nlp, preamble))
             orgs, locs = _orgs_and_locations(nlp, text)
 
         skills_text = sections.get("skills", "") or text
@@ -341,13 +387,24 @@ class RuleBasedParser(CVParser):
             # Prefer the larger of timeline merge vs explicit "N years" claim.
             years = mentioned if years is None else max(years, mentioned)
 
+        # Prefer a multi-token preamble name over a single-token NER hit ("Jane").
+        preamble_name: str | None = None
+        for line in (preamble or text).splitlines():
+            cleaned = _clean_name(line)
+            if cleaned and len(cleaned.split()) >= 2:
+                preamble_name = cleaned
+                break
         if not full_name:
-            # First non-empty preamble line that looks like a person name (2–4 tokens).
-            for line in (sections.get("_preamble") or text).splitlines():
-                cleaned = _clean_name(line)
-                if cleaned:
-                    full_name = cleaned
-                    break
+            full_name = preamble_name or next(
+                (
+                    cleaned
+                    for line in (preamble or text).splitlines()
+                    if (cleaned := _clean_name(line))
+                ),
+                None,
+            )
+        elif preamble_name and len(full_name.split()) < 2:
+            full_name = preamble_name
 
         found_sections = [k for k in SECTION_ALIASES if sections.get(k)]
         confidence: dict[str, float] = {

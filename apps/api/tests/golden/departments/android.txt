@@ -1,0 +1,25 @@
+Arjun Patel
+arjun.patel@example.com | +91 98100 11104
+Bengaluru, India
+
+Summary
+Android Engineer with 6 years of experience in Kotlin apps with Jetpack Compose.
+
+Experience
+Android Engineer
+Pixel Works
+Jan 2020 - Present
+Delivered Kotlin apps with Jetpack Compose for production teams.
+
+Associate Android Engineer
+Bright Labs
+Jun 2017 - Dec 2019
+Supported launches and documentation.
+
+Education
+B.A. / B.Tech
+Example University
+2013 - 2017
+
+Skills
+Kotlin, Jetpack Compose, Android SDK, Java, Firebase
