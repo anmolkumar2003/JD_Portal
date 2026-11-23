@@ -111,8 +111,13 @@ async def anonymize_candidate(
 async def list_audit_logs(
     session: AsyncSession, user: User, limit: int = 100
 ) -> list[dict[str, Any]]:
+    """Return recent audit rows for actors in the caller's org only."""
     rows = await session.scalars(
-        select(AuditLog).order_by(AuditLog.occurred_at.desc()).limit(limit)
+        select(AuditLog)
+        .join(User, User.id == AuditLog.actor_id)
+        .where(User.org_id == user.org_id)
+        .order_by(AuditLog.occurred_at.desc())
+        .limit(limit)
     )
     return [
         {

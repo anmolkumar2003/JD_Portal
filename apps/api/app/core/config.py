@@ -1,10 +1,38 @@
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import SecretStr
+from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 FeatureFlag = Literal["public_careers", "interviews", "offers", "requisitions", "audit_ui"]
+
+# Rejected when APP_ENV=production (exact match after strip, case-sensitive for secrets).
+_WEAK_JWT_SECRETS = frozenset(
+    {
+        "",
+        "change-me",
+        "secret",
+        "jwt-secret",
+        "replace-with-a-long-random-string",
+        "REPLACE_WITH_LONG_RANDOM_STRING",
+        "test-only-secret",
+        "dev-secret",
+    }
+)
+_WEAK_PLACEHOLDERS = frozenset(
+    {
+        "",
+        "change-me",
+        "change-me-minio",
+        "minioadmin",
+        "password",
+        "REPLACE_WITH_STRONG_PASSWORD",
+        "REPLACE_WITH_MINIO_USER",
+        "REPLACE_WITH_MINIO_PASSWORD",
+        "REPLACE_WITH_SMTP_USER",
+        "REPLACE_WITH_SMTP_PASSWORD",
+    }
+)
 
 
 class Settings(BaseSettings):
@@ -47,7 +75,11 @@ class Settings(BaseSettings):
     max_failed_logins: int = 5
     lockout_minutes: int = 15
     # Set true behind HTTPS so the refresh cookie is never sent over plain HTTP.
+    # Forced on automatically when app_env is production.
     cookie_secure: bool = False
+    # When true (default), CV download URLs go through the API so MinIO stays private.
+    # Set false only if browsers can reach S3_PUBLIC_ENDPOINT_URL (local MinIO).
+    cv_download_via_api: bool = True
 
     # Optional ClamAV (clamd TCP). Unset in development to skip virus scanning.
     clamav_host: str | None = None
@@ -70,6 +102,33 @@ class Settings(BaseSettings):
     smtp_use_tls: bool = False
     smtp_from_email: str = "no-reply@hr-portal.local"
     smtp_from_name: str = "HR Portal"
+
+    @model_validator(mode="after")
+    def _harden_production(self) -> Self:
+        if self.app_env == "production":
+            object.__setattr__(self, "cookie_secure", True)
+            secret = self.jwt_secret.get_secret_value().strip()
+            if secret in _WEAK_JWT_SECRETS or len(secret) < 32:
+                raise ValueError(
+                    "JWT_SECRET must be a strong random value (at least 32 characters) "
+                    "when APP_ENV=production. Run scripts/generate-secrets.sh."
+                )
+            if "localhost" in self.cors_origins.lower() or "*" in self.cors_origins:
+                raise ValueError(
+                    "CORS_ORIGINS must not include localhost or '*' when APP_ENV=production."
+                )
+            access_key = self.s3_access_key_id.get_secret_value().strip()
+            access_secret = self.s3_secret_access_key.get_secret_value().strip()
+            if access_key in _WEAK_PLACEHOLDERS or access_secret in _WEAK_PLACEHOLDERS:
+                raise ValueError(
+                    "S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY must not use placeholder values "
+                    "when APP_ENV=production."
+                )
+            if self.web_base_url.startswith("http://") and "localhost" not in self.web_base_url:
+                # Allow http only for temporary Quick Tunnel testing docs; warn via strict check
+                # when COOKIE_SECURE is already forced true (HTTPS expected for real go-live).
+                pass
+        return self
 
     def feature_enabled(self, flag: FeatureFlag) -> bool:
         enabled: bool = getattr(self, f"enable_{flag}")

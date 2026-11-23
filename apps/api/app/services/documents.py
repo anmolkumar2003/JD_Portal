@@ -1,14 +1,17 @@
 import hashlib
 import logging
 import uuid
+from urllib.parse import quote
 
 from fastapi import status
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import storage
+from app.core.config import get_settings
 from app.core.deps import ORG_WIDE_JOB_ROLES, can_access_job
 from app.core.errors import AppError
+from app.core.security import InvalidTokenError, create_download_token, decode_token
 from app.models import ActivityLog, Application, Candidate, Document, ParsedProfile, User
 from app.models.enums import DocumentType
 from app.schemas.application import DocumentOut, DownloadUrlOut
@@ -21,10 +24,10 @@ logger = logging.getLogger(__name__)
 DOWNLOAD_URL_TTL_SECONDS = 300
 
 
-async def get_download_url(
+async def _load_accessible_document(
     session: AsyncSession, user: User, document_id: uuid.UUID
-) -> DownloadUrlOut:
-    """Signed, short-lived link; 404 for documents outside the user's org or job access."""
+) -> Document:
+    """Return the document or raise 404 when outside the user's org / job scope."""
     row = (
         await session.execute(
             select(Document, Candidate.org_id, Application.job_id)
@@ -44,13 +47,61 @@ async def get_download_url(
             raise not_found
     elif not await can_access_job(session, user, job_id):
         raise not_found
+    return document
 
-    url = storage.presigned_download_url(
-        document.storage_key, document.file_name, DOWNLOAD_URL_TTL_SECONDS
-    )
+
+async def get_download_url(
+    session: AsyncSession, user: User, document_id: uuid.UUID
+) -> DownloadUrlOut:
+    """Short-lived link; 404 for documents outside the user's org or job access.
+
+    By default returns a same-origin API URL with a download JWT so MinIO never needs
+    to be reachable from the browser (production / Cloudflare Tunnel). Set
+    CV_DOWNLOAD_VIA_API=false to use MinIO/S3 presigned URLs instead.
+    """
+    document = await _load_accessible_document(session, user, document_id)
+    settings = get_settings()
+    if settings.cv_download_via_api:
+        token = create_download_token(user.id, document.id, expires_in=DOWNLOAD_URL_TTL_SECONDS)
+        url = f"/api/v1/documents/{document.id}/content?token={quote(token, safe='')}"
+    else:
+        url = storage.presigned_download_url(
+            document.storage_key, document.file_name, DOWNLOAD_URL_TTL_SECONDS
+        )
     return DownloadUrlOut(
         url=url, expires_in=DOWNLOAD_URL_TTL_SECONDS, file_name=document.file_name
     )
+
+
+async def get_document_content(
+    session: AsyncSession,
+    *,
+    document_id: uuid.UUID,
+    user: User | None = None,
+    download_token: str | None = None,
+) -> tuple[bytes, str, str]:
+    """Return (bytes, mime_type, file_name) after Bearer or download-token authz."""
+    not_found = AppError(status.HTTP_404_NOT_FOUND, "not_found", "Document not found")
+    actor: User | None = user
+    if actor is None:
+        if not download_token:
+            raise AppError(status.HTTP_401_UNAUTHORIZED, "unauthorized", "Not authenticated")
+        try:
+            payload = decode_token(download_token, "download")
+            if payload.get("doc") != str(document_id):
+                raise not_found
+            actor = await session.get(User, uuid.UUID(payload["sub"]))
+        except (InvalidTokenError, ValueError, KeyError) as exc:
+            raise AppError(
+                status.HTTP_401_UNAUTHORIZED, "unauthorized", "Invalid or expired download token"
+            ) from exc
+        if actor is None or not actor.is_active:
+            raise AppError(status.HTTP_401_UNAUTHORIZED, "unauthorized", "Not authenticated")
+
+    document = await _load_accessible_document(session, actor, document_id)
+    data = await storage.get_object(document.storage_key)
+    mime = document.mime_type or "application/octet-stream"
+    return data, mime, document.file_name
 
 
 async def upload_candidate_document(

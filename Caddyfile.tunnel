@@ -1,0 +1,35 @@
+# HTTP-only origin for Cloudflare Quick Tunnel (cloudflared → http://localhost:80).
+# Do NOT use this for a public DNS hostname with Let's Encrypt — use Caddyfile instead.
+#
+#   DOMAIN is unused here; the file listens on :80 only.
+#   docker compose -f docker-compose.prod.yml run is not required — bind-mount this file:
+#     In docker-compose.prod.yml, temporarily set:
+#       - ./Caddyfile.tunnel:/etc/caddy/Caddyfile:ro
+#     Or:  CADDY_CONFIG=Caddyfile.tunnel  with an override (see docs/CLOUDFLARE-TUNNEL-SETUP.md).
+#
+# Quick Tunnel is temporary testing only — not suitable for confidential HR data
+# without company security approval. URLs change every restart.
+
+:80 {
+	encode gzip zstd
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	handle /api/v1/* {
+		reverse_proxy api:8000
+	}
+
+	handle /health {
+		reverse_proxy api:8000
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}

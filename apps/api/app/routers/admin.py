@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
-from app.core.deps import AdminUser, CurrentUser
+from app.core.deps import AdminUser
 from app.core.features import feature_required
 from app.services import compliance as compliance_service
 
@@ -19,8 +19,9 @@ Session = Annotated[AsyncSession, Depends(get_db)]
 
 @router.get("/candidates/{candidate_id}/export")
 async def export_candidate(
-    candidate_id: uuid.UUID, user: CurrentUser, session: Session
+    candidate_id: uuid.UUID, user: AdminUser, session: Session
 ) -> dict[str, Any]:
+    """GDPR/DPDP-style subject export — HR/Super Admin only (ADM-01)."""
     return await compliance_service.export_candidate(session, user, candidate_id)
 
 

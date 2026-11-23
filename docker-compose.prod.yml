@@ -36,12 +36,14 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      # 443 only needed for direct HTTPS / Let's Encrypt. Quick Tunnel uses :80 only.
       - "443:443"
     environment:
       DOMAIN: ${DOMAIN:?set DOMAIN in .env}
       ACME_EMAIL: ${ACME_EMAIL:-}
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Use Caddyfile.tunnel for Cloudflare Quick Tunnel (HTTP :80, no ACME).
+      - ./${CADDYFILE:-Caddyfile}:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
@@ -121,7 +123,8 @@ services:
 
   worker:
     <<: *api-common
-    command: ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=INFO", "--concurrency=2", "-n", "worker@%h"]
+    # concurrency=1 keeps RSS lower on 8 GB Apple Silicon hosts; raise to 2 on larger machines.
+    command: ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=INFO", "--concurrency=1", "-n", "worker@%h"]
     healthcheck:
       test: ["CMD-SHELL", "celery -A app.workers.celery_app inspect ping -d worker@$$HOSTNAME --timeout 5"]
       interval: 30s

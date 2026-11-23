@@ -165,10 +165,14 @@ def _no_real_storage(monkeypatch: pytest.MonkeyPatch) -> None:
     async def put_object(key: str, data: bytes, content_type: str) -> None:
         return None
 
+    async def get_object(key: str) -> bytes:
+        raise FileNotFoundError(key)
+
     async def delete_object(key: str) -> None:
         return None
 
     monkeypatch.setattr("app.core.storage.put_object", put_object)
+    monkeypatch.setattr("app.core.storage.get_object", get_object)
     monkeypatch.setattr("app.core.storage.delete_object", delete_object)
 
 
@@ -194,10 +198,16 @@ def stored_objects(monkeypatch: pytest.MonkeyPatch) -> dict[str, bytes]:
     async def put_object(key: str, data: bytes, content_type: str) -> None:
         objects[key] = data
 
+    async def get_object(key: str) -> bytes:
+        if key not in objects:
+            raise FileNotFoundError(key)
+        return objects[key]
+
     async def delete_object(key: str) -> None:
         objects.pop(key, None)
 
     monkeypatch.setattr("app.core.storage.put_object", put_object)
+    monkeypatch.setattr("app.core.storage.get_object", get_object)
     monkeypatch.setattr("app.core.storage.delete_object", delete_object)
     return objects
 

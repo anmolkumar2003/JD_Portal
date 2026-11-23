@@ -11,7 +11,7 @@ from argon2.exceptions import InvalidHashError, VerificationError
 
 from app.core.config import get_settings
 
-TokenType = Literal["access", "refresh", "reset"]
+TokenType = Literal["access", "refresh", "reset", "download"]
 
 _hasher = PasswordHasher()
 
@@ -122,6 +122,14 @@ def create_reset_token(user_id: uuid.UUID, password_hash: str) -> str:
     minutes = get_settings().password_reset_expire_minutes
     claims = {"sub": str(user_id), "pwd": password_fingerprint(password_hash)}
     return _encode(claims, "reset", timedelta(minutes=minutes))
+
+
+def create_download_token(
+    user_id: uuid.UUID, document_id: uuid.UUID, *, expires_in: int
+) -> str:
+    """Short-lived token so iframes/new-tabs can fetch a CV without a Bearer header."""
+    claims = {"sub": str(user_id), "doc": str(document_id)}
+    return _encode(claims, "download", timedelta(seconds=expires_in))
 
 
 def decode_token(token: str, expected_type: TokenType) -> dict[str, Any]:

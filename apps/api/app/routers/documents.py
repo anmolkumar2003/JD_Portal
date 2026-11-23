@@ -1,12 +1,13 @@
 import uuid
 from typing import Annotated
+from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from pydantic import BaseModel, StringConstraints
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
-from app.core.deps import CurrentUser, require_roles
+from app.core.deps import CurrentUser, OptionalUser, require_roles
 from app.models import User
 from app.models.enums import UserRole
 from app.schemas.application import DocumentOut, DownloadUrlOut, ReprocessOut
@@ -41,6 +42,33 @@ async def get_download_url(
     document_id: uuid.UUID, user: CurrentUser, session: Session
 ) -> DownloadUrlOut:
     return await documents_service.get_download_url(session, user, document_id)
+
+
+@router.get("/{document_id}/content")
+async def get_document_content(
+    document_id: uuid.UUID,
+    session: Session,
+    user: OptionalUser,
+    token: Annotated[str | None, Query()] = None,
+) -> Response:
+    """Stream a CV/document. Accepts Bearer auth or a short-lived ?token= download JWT."""
+    data, mime, file_name = await documents_service.get_document_content(
+        session,
+        document_id=document_id,
+        user=user if token is None else None,
+        download_token=token,
+    )
+    safe = file_name.replace('"', "")
+    disposition = f'inline; filename="{safe}"; filename*=UTF-8\'\'{quote(safe)}'
+    return Response(
+        content=data,
+        media_type=mime,
+        headers={
+            "Content-Disposition": disposition,
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.post("/{document_id}/reprocess", response_model=ReprocessOut)

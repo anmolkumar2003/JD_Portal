@@ -68,6 +68,10 @@ async def put_object(key: str, data: bytes, content_type: str) -> None:
     await to_thread.run_sync(lambda: put_object_sync(key, data, content_type))
 
 
+async def get_object(key: str) -> bytes:
+    return await to_thread.run_sync(lambda: get_object_sync(key))
+
+
 async def delete_object(key: str) -> None:
     await to_thread.run_sync(lambda: delete_object_sync(key))
 

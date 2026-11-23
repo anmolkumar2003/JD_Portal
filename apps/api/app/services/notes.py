@@ -9,9 +9,9 @@ from fastapi import status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import can_access_job
+from app.core.deps import ORG_WIDE_JOB_ROLES, scope_jobs_query
 from app.core.errors import AppError
-from app.models import ActivityLog, Application, Candidate, Note, Notification, User
+from app.models import ActivityLog, Application, Candidate, Job, Note, Notification, User
 from app.schemas.comms import NoteCreate, NoteOut
 
 MENTION_RE = re.compile(r"@\[([0-9a-fA-F-]{36})\]")
@@ -20,13 +20,22 @@ MENTION_RE = re.compile(r"@\[([0-9a-fA-F-]{36})\]")
 async def _ensure_candidate_access(
     session: AsyncSession, user: User, candidate_id: uuid.UUID
 ) -> Candidate:
+    """Org-wide roles see any candidate; others need at least one accessible application."""
     candidate = await session.get(Candidate, candidate_id)
     if candidate is None or candidate.deleted_at is not None or candidate.org_id != user.org_id:
         raise AppError(status.HTTP_404_NOT_FOUND, "not_found", "Candidate not found")
-    app = await session.scalar(
-        select(Application).where(Application.candidate_id == candidate_id).limit(1)
+    if user.role in ORG_WIDE_JOB_ROLES:
+        return candidate
+    accessible = await session.scalar(
+        scope_jobs_query(
+            user,
+            select(Application.id)
+            .join(Job, Job.id == Application.job_id)
+            .where(Application.candidate_id == candidate_id)
+            .limit(1),
+        )
     )
-    if app is not None and not await can_access_job(session, user, app.job_id):
+    if accessible is None:
         raise AppError(status.HTTP_404_NOT_FOUND, "not_found", "Candidate not found")
     return candidate
 

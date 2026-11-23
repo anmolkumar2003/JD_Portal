@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -446,7 +447,13 @@ export function AddCandidateForm({ sharedJobId, sharedDepartmentId }: AddCandida
               <ul className="mt-1 list-disc pl-5 text-muted-foreground">
                 {duplicateWarning.map((m) => (
                   <li key={m.id}>
-                    {m.first_name} {m.last_name} ({m.email})
+                    <Link
+                      href={`/candidates/${m.id}`}
+                      className="font-medium text-foreground underline underline-offset-2 hover:text-primary"
+                    >
+                      {m.first_name} {m.last_name}
+                    </Link>{" "}
+                    ({m.email})
                     {m.matched_on.length > 0 && ` — matched on ${m.matched_on.join(", ")}`}
                   </li>
                 ))}

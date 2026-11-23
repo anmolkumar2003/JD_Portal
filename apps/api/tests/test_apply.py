@@ -161,9 +161,22 @@ async def test_download_url_is_signed_and_scoped(
     sent_emails: list[dict[str, Any]],
     stored_objects: dict[str, bytes],
 ) -> None:
-    assert (await _apply(client, SHOPIFY)).status_code == 201
+    created = await _apply(client, SHOPIFY, data=_form("download-scope@example.com"))
+    assert created.status_code == 201, created.text
+    reference = created.json()["reference_no"]
     async with db() as session:
-        document_id = await session.scalar(select(Document.id))
+        application = await session.scalar(
+            select(Application).where(Application.reference_no == reference)
+        )
+        assert application is not None
+        document = await session.scalar(
+            select(Document).where(Document.application_id == application.id)
+        )
+        assert document is not None
+        document_id = document.id
+        storage_key = document.storage_key
+
+    assert stored_objects[storage_key] == PDF
 
     recruiter = await login(client, "recruiter")
     ok = await client.get(
@@ -172,7 +185,13 @@ async def test_download_url_is_signed_and_scoped(
     )
     assert ok.status_code == 200, ok.text
     body = ok.json()
-    assert "X-Amz-Signature=" in body["url"] and body["expires_in"] == 300
+    # Default: same-origin API proxy with a short-lived download JWT (MinIO stays private).
+    assert body["url"].startswith(f"/api/v1/documents/{document_id}/content?token=")
+    assert body["expires_in"] == 300
+
+    content = await client.get(body["url"])
+    assert content.status_code == 200, content.text
+    assert content.content == PDF
 
     # The interviewer is not on the Shopify job's team.
     interviewer = await login(client, "interviewer")

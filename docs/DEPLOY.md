@@ -1,5 +1,7 @@
 # Production deployment
 
+> Prefer the newer focused guides: [PRODUCTION-DEPLOYMENT.md](./PRODUCTION-DEPLOYMENT.md), [CLOUDFLARE-TUNNEL-SETUP.md](./CLOUDFLARE-TUNNEL-SETUP.md), [SECURITY-CHECKLIST.md](./SECURITY-CHECKLIST.md), [BACKUP-RESTORE.md](./BACKUP-RESTORE.md), [GO-LIVE-CHECKLIST.md](./GO-LIVE-CHECKLIST.md).
+
 This guide covers a small-footprint go-live using **only free/open-source** components. Two common patterns:
 
 1. **Oracle Cloud Always Free** — a single VM with public IPv4, ports 80/443 open to the internet, Caddy obtains Let's Encrypt certificates.

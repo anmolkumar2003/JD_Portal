@@ -42,6 +42,19 @@ async def get_authenticated_user(
     return user
 
 
+async def get_optional_user(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> User | None:
+    """Like get_authenticated_user, but returns None when no Bearer header is sent.
+
+    Invalid/expired Bearer tokens still raise 401 so callers cannot silently downgrade.
+    """
+    if credentials is None:
+        return None
+    return await get_authenticated_user(credentials, session)
+
+
 async def get_current_user(user: Annotated[User, Depends(get_authenticated_user)]) -> User:
     if user.must_change_password:
         raise AppError(
@@ -54,6 +67,7 @@ async def get_current_user(user: Annotated[User, Depends(get_authenticated_user)
 
 AuthenticatedUser = Annotated[User, Depends(get_authenticated_user)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
+OptionalUser = Annotated[User | None, Depends(get_optional_user)]
 
 
 def require_roles(*roles: UserRole) -> Callable[[User], Awaitable[User]]:

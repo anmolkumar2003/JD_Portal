@@ -34,6 +34,11 @@ RedisClient = Annotated[Redis, Depends(get_redis)]
 RefreshCookie = Annotated[str | None, Cookie(alias=REFRESH_COOKIE)]
 
 
+def _cookie_secure() -> bool:
+    settings = get_settings()
+    return bool(settings.cookie_secure or settings.app_env == "production")
+
+
 def _set_refresh_cookie(response: Response, token: str) -> None:
     settings = get_settings()
     response.set_cookie(
@@ -41,9 +46,19 @@ def _set_refresh_cookie(response: Response, token: str) -> None:
         token,
         max_age=settings.refresh_token_expire_days * 24 * 3600,
         httponly=True,
-        secure=settings.cookie_secure,
+        secure=_cookie_secure(),
         samesite="lax",
         path=REFRESH_COOKIE_PATH,
+    )
+
+
+def _clear_refresh_cookie(response: Response) -> None:
+    response.delete_cookie(
+        REFRESH_COOKIE,
+        path=REFRESH_COOKIE_PATH,
+        httponly=True,
+        secure=_cookie_secure(),
+        samesite="lax",
     )
 
 
@@ -87,7 +102,7 @@ async def refresh(
 async def logout(redis: RedisClient, refresh_token: RefreshCookie = None) -> Response:
     await auth_service.logout(redis, refresh_token)
     response = Response(status_code=status.HTTP_204_NO_CONTENT)
-    response.delete_cookie(REFRESH_COOKIE, path=REFRESH_COOKIE_PATH)
+    _clear_refresh_cookie(response)
     return response
 
 
