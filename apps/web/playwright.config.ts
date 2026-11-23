@@ -12,7 +12,6 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: "list",
-  testIgnore: /screenshots\.spec\.ts$/,
   timeout: 90_000,
   expect: { timeout: 10_000 },
   use: {
