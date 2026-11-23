@@ -15,12 +15,14 @@ from pydantic import (
 
 from app.models.enums import (
     ApplicationStatus,
+    BudgetStatus,
     CandidateSource,
     DocumentType,
     ParseStatus,
     StageType,
 )
 from app.schemas.job import NamedRef
+from app.schemas.salary import SalaryIn, SalaryOut
 
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
 ShortText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)]
@@ -132,6 +134,8 @@ class ApplicationListItem(BaseModel):
     overall_score: int | None
     is_shortlisted: bool = False
     tags: list[str] = Field(default_factory=list)
+    expected_ctc: Decimal | None = None
+    budget_status: BudgetStatus = BudgetStatus.UNKNOWN
     applied_at: datetime
     stage_entered_at: datetime
 
@@ -211,9 +215,16 @@ class ManualCandidateCreate(BaseModel):
     linkedin_url: (
         Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] | None
     ) = None
+    portfolio_url: (
+        Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] | None
+    ) = None
+    department_id: UUID | None = None
     job_id: UUID | None = None
     source: CandidateSource = CandidateSource.MANUAL
     tags: list[str] = Field(default_factory=list)
+    current_ctc: SalaryIn | None = None
+    expected_ctc: SalaryIn | None = None
+    offered_ctc: SalaryIn | None = None
 
 
 class ManualCandidateResult(BaseModel):
@@ -221,6 +232,38 @@ class ManualCandidateResult(BaseModel):
     application_id: UUID | None = None
     document_id: UUID | None = None
     reference_no: str | None = None
+    reused: bool = False
+    budget_status: BudgetStatus = BudgetStatus.UNKNOWN
+
+
+class CvParseOut(BaseModel):
+    """Fields extracted from a CV for form autofill. Nothing is saved."""
+
+    file_name: str
+    first_name: str | None = None
+    last_name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    current_location: str | None = None
+    current_company: str | None = None
+    current_title: str | None = None
+    total_experience_years: float | None = None
+    linkedin_url: str | None = None
+    skills: list[str] = Field(default_factory=list)
+    confidence: dict[str, float] = Field(default_factory=dict)
+
+
+class DuplicateMatch(BaseModel):
+    id: UUID
+    first_name: str
+    last_name: str
+    email: str
+    phone: str | None
+    matched_on: list[str]
+
+
+class DuplicateCheckOut(BaseModel):
+    matches: list[DuplicateMatch]
 
 
 class ReprocessOut(BaseModel):
@@ -244,8 +287,13 @@ class CandidateSummary(BaseModel):
     current_title: str | None
     total_experience_years: Decimal | None
     expected_ctc: Decimal | None
+    current_salary: SalaryOut | None = None
+    expected_salary: SalaryOut | None = None
+    offered_salary: SalaryOut | None = None
     notice_period_days: int | None
     linkedin_url: str | None
+    portfolio_url: str | None = None
+    department_id: UUID | None = None
     source: CandidateSource
     tags: list[str]
 
@@ -265,6 +313,10 @@ class ApplicationOut(BaseModel):
     documents: list[DocumentOut]
     parsed_profile: ParsedProfileOut | None
     match_result: MatchResultOut | None
+    budget_status: BudgetStatus = BudgetStatus.UNKNOWN
+    job_salary_min: Decimal | None = None
+    job_salary_max: Decimal | None = None
+    job_salary_currency: str | None = None
 
 
 ReasonText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
@@ -285,6 +337,7 @@ class BoardCard(BaseModel):
     stage_entered_at: datetime
     applied_at: datetime
     reference_no: str
+    budget_status: BudgetStatus = BudgetStatus.UNKNOWN
 
 
 class BoardColumn(BaseModel):

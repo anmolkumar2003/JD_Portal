@@ -50,6 +50,12 @@ from app.schemas.application import (
 from app.schemas.job import NamedRef
 from app.services.cv_validation import validate_cv
 from app.services.jobs import public_job_conditions
+from app.services.salary import (
+    candidate_budget,
+    current_salary,
+    expected_salary,
+    offered_salary,
+)
 from app.workers.tasks import process_document, send_email
 
 logger = logging.getLogger(__name__)
@@ -294,6 +300,8 @@ def _list_item(
         overall_score=score,
         is_shortlisted=application.is_shortlisted,
         tags=list(candidate.tags or []),
+        expected_ctc=candidate.expected_ctc,
+        budget_status=candidate_budget(candidate, job.salary_max, job.salary_min),
         applied_at=application.applied_at,
         stage_entered_at=application.stage_entered_at,
     )
@@ -457,14 +465,23 @@ async def get_application(
             current_title=candidate.current_title,
             total_experience_years=candidate.total_experience_years,
             expected_ctc=candidate.expected_ctc,
+            current_salary=current_salary(candidate),
+            expected_salary=expected_salary(candidate),
+            offered_salary=offered_salary(candidate),
             notice_period_days=candidate.notice_period_days,
             linkedin_url=candidate.linkedin_url,
+            portfolio_url=candidate.portfolio_url,
+            department_id=candidate.department_id,
             source=candidate.source,
             tags=list(candidate.tags or []),
         ),
         job=NamedRef(id=job.id, name=job.title),
         stage=_stage_ref(stage),
         documents=[DocumentOut.model_validate(doc) for doc in documents],
+        budget_status=candidate_budget(candidate, job.salary_max, job.salary_min),
+        job_salary_min=job.salary_min,
+        job_salary_max=job.salary_max,
+        job_salary_currency=job.salary_currency,
         parsed_profile=(
             ParsedProfileOut(
                 id=profile.id,
@@ -536,6 +553,7 @@ async def get_board(session: AsyncSession, user: User, job_id: uuid.UUID) -> Boa
             stage_entered_at=application.stage_entered_at,
             applied_at=application.applied_at,
             reference_no=application.reference_no,
+            budget_status=candidate_budget(candidate, job.salary_max, job.salary_min),
         )
         by_stage.setdefault(application.stage_id, []).append(card)
 

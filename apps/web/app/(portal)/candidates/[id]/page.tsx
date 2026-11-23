@@ -12,6 +12,7 @@ import { MatchAnalysis } from "@/components/candidates/match-analysis";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { BudgetBadge } from "@/components/candidates/budget-badge";
 import { ScoreRing } from "@/components/score-ring";
 import { StageBadge } from "@/components/stage-badge";
 import { Button } from "@/components/ui/button";
@@ -108,6 +109,7 @@ function CandidateProfileContent() {
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-semibold tracking-tight">{name}</h1>
               <StageBadge stage={data.stage} />
+              <BudgetBadge status={data.budget_status} />
               <ScoreRing score={data.match_result?.overall_score ?? null} />
             </div>
             <p className="text-sm text-muted-foreground">

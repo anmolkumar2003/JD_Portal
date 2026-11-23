@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import status
-from sqlalchemy import select, update
+from sqlalchemy import or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import storage
@@ -31,6 +31,8 @@ from app.models.enums import ApplicationStatus, CandidateSource, DocumentType, P
 from app.schemas.application import (
     AnalysisOut,
     AtsCheckOut,
+    CvParseOut,
+    DuplicateCheckOut,
     ManualCandidateCreate,
     ManualCandidateResult,
     MatchResultOut,
@@ -268,6 +270,8 @@ async def create_manual_candidate(
             Candidate.deleted_at.is_(None),
         )
     )
+    from app.services.salary import apply_salary, candidate_budget
+
     candidate = existing or Candidate(org_id=user.org_id, email=email)
     candidate.first_name = body.first_name
     candidate.last_name = body.last_name
@@ -285,16 +289,35 @@ async def create_manual_candidate(
         candidate.notice_period_days = body.notice_period_days
     if body.linkedin_url:
         candidate.linkedin_url = body.linkedin_url
+    if body.portfolio_url:
+        candidate.portfolio_url = body.portfolio_url
+    if body.department_id is not None:
+        candidate.department_id = body.department_id
+    apply_salary(candidate, "current", body.current_ctc)
+    apply_salary(candidate, "expected", body.expected_ctc)
+    apply_salary(candidate, "offered", body.offered_ctc)
     candidate.source = body.source or CandidateSource.MANUAL
     if body.tags:
         candidate.tags = list(dict.fromkeys([*(candidate.tags or []), *body.tags]))
     if existing is None:
         session.add(candidate)
     await session.flush()
+    session.add(
+        ActivityLog(
+            candidate_id=candidate.id,
+            actor_id=user.id,
+            action="candidate.created_manual" if existing is None else "candidate.updated_manual",
+            meta={
+                "source": body.source.value if body.source else "manual",
+                "reused": existing is not None,
+            },
+        )
+    )
 
     application_id = None
     reference_no = None
     document_id = None
+    job_for_budget: Job | None = None
 
     if body.job_id is not None:
         if not await can_access_job(session, user, body.job_id):
@@ -302,6 +325,7 @@ async def create_manual_candidate(
         job = await session.get(Job, body.job_id)
         if job is None or job.deleted_at is not None:
             raise _not_found("Job")
+        job_for_budget = job
         dup = await session.scalar(
             select(Application.id).where(
                 Application.candidate_id == candidate.id, Application.job_id == job.id
@@ -329,6 +353,15 @@ async def create_manual_candidate(
             session.add(application)
             await session.flush()
             application_id = application.id
+            session.add(
+                ActivityLog(
+                    candidate_id=candidate.id,
+                    application_id=application_id,
+                    actor_id=user.id,
+                    action="application.created",
+                    meta={"job_id": str(job.id), "reference_no": reference_no},
+                )
+            )
 
     if cv_bytes:
         validated = validate_cv(cv_bytes)
@@ -358,8 +391,8 @@ async def create_manual_candidate(
                     candidate_id=candidate.id,
                     application_id=application_id,
                     actor_id=user.id,
-                    action="candidate.created_manual",
-                    meta={"source": "manual"},
+                    action="document.uploaded",
+                    meta={"type": "cv", "file_name": cv_file_name},
                 ),
             ]
         )
@@ -377,4 +410,113 @@ async def create_manual_candidate(
         application_id=application_id,
         document_id=document_id,
         reference_no=reference_no,
+        reused=existing is not None,
+        budget_status=(
+            candidate_budget(candidate, job_for_budget.salary_max, job_for_budget.salary_min)
+            if job_for_budget is not None
+            else candidate_budget(candidate, None)
+        ),
     )
+
+
+async def parse_cv_preview(cv_bytes: bytes, file_name: str | None) -> CvParseOut:
+    """Extract autofill fields from a CV without saving anything."""
+    from app.cv_engine import RuleBasedParser, extract_text
+
+    validated = validate_cv(cv_bytes)
+    extracted = extract_text(cv_bytes, validated.mime_type)
+    parsed = RuleBasedParser().parse(extracted.text, file_meta=extracted)
+    first_name = None
+    last_name = None
+    if parsed.full_name:
+        parts = parsed.full_name.split()
+        first_name = parts[0]
+        last_name = " ".join(parts[1:]) if len(parts) > 1 else None
+    linkedin = next((u for u in parsed.links if "linkedin.com" in u.lower()), None)
+    title = parsed.experience[0].title if parsed.experience else None
+    company = parsed.experience[0].company if parsed.experience else None
+    return CvParseOut(
+        file_name=file_name or f"cv.{validated.extension}",
+        first_name=first_name,
+        last_name=last_name,
+        email=parsed.email,
+        phone=parsed.phone,
+        current_location=parsed.location,
+        current_company=company,
+        current_title=title,
+        total_experience_years=parsed.total_experience_years,
+        linkedin_url=linkedin,
+        skills=list(parsed.skills[:40]),
+        confidence=dict(parsed.confidence),
+    )
+
+
+async def find_duplicates(
+    session: AsyncSession, user: User, *, email: str | None, phone: str | None
+) -> DuplicateCheckOut:
+    from app.schemas.application import DuplicateMatch
+
+    if not email and not phone:
+        return DuplicateCheckOut(matches=[])
+
+    by_id: dict[uuid.UUID, Candidate] = {}
+    if email:
+        row = await session.scalar(
+            select(Candidate).where(
+                Candidate.org_id == user.org_id,
+                Candidate.email == email.lower(),
+                Candidate.deleted_at.is_(None),
+            )
+        )
+        if row is not None:
+            by_id[row.id] = row
+
+    phone_digits = "".join(c for c in (phone or "") if c.isdigit())
+    if phone_digits:
+        # Narrow in SQL, then compare last 10 digits in Python (phones are free-form).
+        suffix = phone_digits[-10:]
+        phone_rows = list(
+            await session.scalars(
+                select(Candidate)
+                .where(
+                    Candidate.org_id == user.org_id,
+                    Candidate.deleted_at.is_(None),
+                    Candidate.phone.is_not(None),
+                    or_(
+                        Candidate.phone.contains(suffix),
+                        Candidate.phone.contains(phone_digits),
+                    ),
+                )
+                .limit(50)
+            )
+        )
+        for row in phone_rows:
+            row_digits = "".join(c for c in (row.phone or "") if c.isdigit())
+            if row_digits.endswith(suffix) or phone_digits.endswith(row_digits[-10:]):
+                by_id[row.id] = row
+
+    matches: list[DuplicateMatch] = []
+    for row in by_id.values():
+        matched_on: list[str] = []
+        if email and row.email.lower() == email.lower():
+            matched_on.append("email")
+        row_digits = "".join(c for c in (row.phone or "") if c.isdigit())
+        if (
+            phone_digits
+            and row_digits
+            and (row_digits.endswith(phone_digits[-10:]) or phone_digits.endswith(row_digits[-10:]))
+        ):
+            matched_on.append("phone")
+        if not matched_on:
+            continue
+        matches.append(
+            DuplicateMatch(
+                id=row.id,
+                first_name=row.first_name,
+                last_name=row.last_name,
+                email=row.email,
+                phone=row.phone,
+                matched_on=matched_on,
+            )
+        )
+    return DuplicateCheckOut(matches=matches)

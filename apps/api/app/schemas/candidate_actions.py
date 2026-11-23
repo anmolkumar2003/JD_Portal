@@ -1,17 +1,28 @@
-"""Schemas for notes, tags, shortlist and bulk actions (CAND-05, CAND-06)."""
+"""Schemas for notes, tags, shortlist, bulk actions and full candidate edits."""
 
 import enum
 from datetime import datetime
+from decimal import Decimal
 from typing import Annotated, Self
 from uuid import UUID
 
-from pydantic import BaseModel, Field, StringConstraints, model_validator
+from pydantic import BaseModel, EmailStr, Field, StringConstraints, model_validator
 
-from app.models.enums import UserRole
+from app.models.enums import CandidateSource, UserRole
 from app.schemas.application import ReasonText
+from app.schemas.salary import SalaryIn, SalaryOut
 
 Tag = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=50)]
 NoteBody = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=5000)]
+Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+ShortText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)]
+Phone = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True, min_length=6, max_length=40, pattern=r"^\+?[0-9 ()\-.]+$"
+    ),
+]
+Url = Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)]
 
 MAX_TAGS = 20
 MAX_BULK_IDS = 100
@@ -42,9 +53,46 @@ class NoteOut(BaseModel):
 
 
 class CandidatePatch(BaseModel):
-    """Editable candidate fields. Only tags for now (CAND-05)."""
+    """Full editable candidate profile. Omit a field to leave it unchanged."""
 
-    tags: list[Tag] = Field(max_length=MAX_TAGS)
+    first_name: Name | None = None
+    last_name: Name | None = None
+    email: EmailStr | None = None
+    phone: Phone | None = None
+    current_location: ShortText | None = None
+    current_company: ShortText | None = None
+    current_title: ShortText | None = None
+    total_experience_years: Annotated[Decimal, Field(ge=0, le=50, decimal_places=1)] | None = None
+    notice_period_days: Annotated[int, Field(ge=0, le=365)] | None = None
+    linkedin_url: Url | None = None
+    portfolio_url: Url | None = None
+    department_id: UUID | None = None
+    source: CandidateSource | None = None
+    tags: list[Tag] | None = Field(default=None, max_length=MAX_TAGS)
+    current_ctc: SalaryIn | None = None
+    expected_ctc: SalaryIn | None = None
+    offered_ctc: SalaryIn | None = None
+
+
+class CandidateOut(BaseModel):
+    id: UUID
+    first_name: str
+    last_name: str
+    email: str
+    phone: str | None
+    current_location: str | None
+    current_company: str | None
+    current_title: str | None
+    total_experience_years: Decimal | None
+    notice_period_days: int | None
+    linkedin_url: str | None
+    portfolio_url: str | None
+    department_id: UUID | None
+    source: CandidateSource
+    tags: list[str]
+    current_salary: SalaryOut
+    expected_salary: SalaryOut
+    offered_salary: SalaryOut
 
 
 class CandidateTagsOut(BaseModel):

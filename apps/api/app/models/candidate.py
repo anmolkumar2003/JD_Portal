@@ -25,6 +25,7 @@ from app.models.enums import (
     ApplicationStatus,
     CandidateSource,
     DocumentType,
+    SalaryUnit,
     VirusScanStatus,
     pg_enum,
 )
@@ -61,7 +62,41 @@ class Candidate(BaseModel, SoftDeleteMixin):
     current_title: Mapped[str | None] = mapped_column(String(200))
     total_experience_years: Mapped[Decimal | None] = mapped_column(Numeric(4, 1))
     current_ctc: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    current_ctc_currency: Mapped[str] = mapped_column(
+        String(3), default="INR", server_default="INR"
+    )
+    current_ctc_unit: Mapped[SalaryUnit] = mapped_column(
+        pg_enum(SalaryUnit, "salary_unit"),
+        default=SalaryUnit.PA,
+        server_default=SalaryUnit.PA.value,
+    )
+    current_ctc_negotiable: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false"
+    )
     expected_ctc: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    expected_ctc_currency: Mapped[str] = mapped_column(
+        String(3), default="INR", server_default="INR"
+    )
+    expected_ctc_unit: Mapped[SalaryUnit] = mapped_column(
+        pg_enum(SalaryUnit, "salary_unit", create_type=False),
+        default=SalaryUnit.PA,
+        server_default=SalaryUnit.PA.value,
+    )
+    expected_ctc_negotiable: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false"
+    )
+    offered_ctc: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    offered_ctc_currency: Mapped[str] = mapped_column(
+        String(3), default="INR", server_default="INR"
+    )
+    offered_ctc_unit: Mapped[SalaryUnit] = mapped_column(
+        pg_enum(SalaryUnit, "salary_unit", create_type=False),
+        default=SalaryUnit.PA,
+        server_default=SalaryUnit.PA.value,
+    )
+    offered_ctc_negotiable: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false"
+    )
     notice_period_days: Mapped[int | None] = mapped_column(Integer)
     linkedin_url: Mapped[str | None] = mapped_column(String(500))
     portfolio_url: Mapped[str | None] = mapped_column(String(500))

@@ -59,6 +59,21 @@ class CandidateSource(enum.StrEnum):
     MANUAL = "manual"
 
 
+class SalaryUnit(enum.StrEnum):
+    """Per annum or per month. Job salary bands are always annual."""
+
+    PA = "pa"
+    PM = "pm"
+
+
+class BudgetStatus(enum.StrEnum):
+    """Expected CTC vs the job's annual band. Advisory only — never auto-rejects."""
+
+    ABOVE = "above"
+    WITHIN = "within"
+    UNKNOWN = "unknown"
+
+
 class ApplicationStatus(enum.StrEnum):
     ACTIVE = "active"
     REJECTED = "rejected"
@@ -87,10 +102,11 @@ class ParseStatus(enum.StrEnum):
     FAILED = "failed"
 
 
-def pg_enum(enum_cls: type[E], name: str) -> SAEnum:
+def pg_enum(enum_cls: type[E], name: str, *, create_type: bool = True) -> SAEnum:
     """Postgres enum that stores the lowercase values rather than the member names."""
     return SAEnum(
         enum_cls,
         name=name,
         values_callable=lambda cls: [member.value for member in cls],
+        create_type=create_type,
     )

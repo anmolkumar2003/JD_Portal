@@ -29,6 +29,7 @@ export function useJob(id: string) {
   return useQuery({
     queryKey: jobKeys.detail(id),
     queryFn: () => api.jobs.get(id),
+    enabled: Boolean(id),
     retry: (count, error) => count < 1 && !("status" in error && error.status === 404),
   });
 }

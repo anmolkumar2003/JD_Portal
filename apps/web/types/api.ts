@@ -274,6 +274,102 @@ export type ApplicationStatus = "active" | "rejected" | "withdrawn" | "hired";
 
 export type CandidateSource = "career_site" | "referral" | "linkedin" | "agency" | "manual";
 
+export type SalaryUnit = "pa" | "pm";
+
+export type BudgetStatus = "above" | "within" | "unknown";
+
+export interface SalaryIn {
+  amount: number | null;
+  currency: string;
+  unit: SalaryUnit;
+  negotiable: boolean;
+}
+
+export interface SalaryOut {
+  amount: string | null;
+  currency: string;
+  unit: SalaryUnit;
+  negotiable: boolean;
+}
+
+export interface CvParseOut {
+  file_name: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  phone: string | null;
+  current_location: string | null;
+  current_company: string | null;
+  current_title: string | null;
+  total_experience_years: number | null;
+  linkedin_url: string | null;
+  skills: string[];
+  confidence: Record<string, number>;
+}
+
+export interface DuplicateMatch {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string | null;
+  matched_on: string[];
+}
+
+export interface DuplicateCheckOut {
+  matches: DuplicateMatch[];
+}
+
+export interface ManualCandidateResult {
+  candidate_id: string;
+  application_id: string | null;
+  document_id: string | null;
+  reference_no: string | null;
+  reused: boolean;
+  budget_status: BudgetStatus;
+}
+
+export interface CandidateOut {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string | null;
+  current_location: string | null;
+  current_company: string | null;
+  current_title: string | null;
+  total_experience_years: string | null;
+  notice_period_days: number | null;
+  linkedin_url: string | null;
+  portfolio_url: string | null;
+  department_id: string | null;
+  source: CandidateSource;
+  tags: string[];
+  current_salary: SalaryOut;
+  expected_salary: SalaryOut;
+  offered_salary: SalaryOut;
+}
+
+export interface CandidatePatchInput {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string | null;
+  current_location?: string | null;
+  current_company?: string | null;
+  current_title?: string | null;
+  total_experience_years?: number | null;
+  notice_period_days?: number | null;
+  linkedin_url?: string | null;
+  portfolio_url?: string | null;
+  department_id?: string | null;
+  source?: CandidateSource;
+  tags?: string[];
+  current_ctc?: SalaryIn | null;
+  expected_ctc?: SalaryIn | null;
+  offered_ctc?: SalaryIn | null;
+}
+
 export type DocumentType = "cv" | "cover_letter" | "offer" | "other";
 
 export type ParseStatus = "pending" | "processing" | "done" | "failed";
@@ -301,6 +397,8 @@ export interface ApplicationListItem {
   overall_score: number | null;
   is_shortlisted: boolean;
   tags: string[];
+  expected_ctc: string | null;
+  budget_status: BudgetStatus;
   applied_at: string;
   stage_entered_at: string;
 }
@@ -390,8 +488,13 @@ export interface CandidateSummary {
   current_title: string | null;
   total_experience_years: string | null;
   expected_ctc: string | null;
+  current_salary: SalaryOut | null;
+  expected_salary: SalaryOut | null;
+  offered_salary: SalaryOut | null;
   notice_period_days: number | null;
   linkedin_url: string | null;
+  portfolio_url: string | null;
+  department_id: string | null;
   source: CandidateSource;
   tags: string[];
 }
@@ -411,6 +514,10 @@ export interface ApplicationDetail {
   documents: DocumentOut[];
   parsed_profile: ParsedProfileOut | null;
   match_result: MatchResultOut | null;
+  budget_status: BudgetStatus;
+  job_salary_min: string | null;
+  job_salary_max: string | null;
+  job_salary_currency: string | null;
 }
 
 export interface StagePatchInput {
@@ -428,6 +535,7 @@ export interface BoardCard {
   stage_entered_at: string;
   applied_at: string;
   reference_no: string;
+  budget_status: BudgetStatus;
 }
 
 export interface BoardColumn {

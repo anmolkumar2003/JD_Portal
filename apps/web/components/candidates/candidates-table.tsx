@@ -5,6 +5,7 @@ import { Users } from "lucide-react";
 import { DataTable, type Column } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { ScoreRing } from "@/components/score-ring";
+import { BudgetBadge } from "@/components/candidates/budget-badge";
 import { StageBadge } from "@/components/stage-badge";
 import { CANDIDATE_SOURCE_LABELS, formatDate } from "@/lib/labels";
 import type { ApplicationListItem } from "@/types/api";
@@ -16,9 +17,12 @@ const COLUMNS: Column<ApplicationListItem>[] = [
     sortKey: "last_name",
     cell: (row) => (
       <div className="min-w-[160px]">
-        <p className="font-medium">
-          {row.first_name} {row.last_name}
-        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="font-medium">
+            {row.first_name} {row.last_name}
+          </p>
+          <BudgetBadge status={row.budget_status} />
+        </div>
         <p className="text-xs text-muted-foreground">{row.email}</p>
       </div>
     ),

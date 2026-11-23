@@ -1,6 +1,7 @@
 "use client";
 
-import { SearchX } from "lucide-react";
+import { Plus, SearchX } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useMemo } from "react";
 
@@ -13,7 +14,10 @@ import { CandidatesTable } from "@/components/candidates/candidates-table";
 import { EmptyState } from "@/components/empty-state";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { useApplications } from "@/hooks/use-applications";
+import { useAuth } from "@/hooks/use-auth";
+import { canManageJobs } from "@/lib/permissions";
 import type { ApplicationListParams, CandidateSource } from "@/types/api";
 
 const PAGE_SIZE = 20;
@@ -30,6 +34,7 @@ const FILTER_KEYS = [
 ] as const;
 
 function CandidatesPageContent() {
+  const { user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -106,9 +111,19 @@ function CandidatesPageContent() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <Breadcrumbs items={[{ label: "Candidates" }]} />
-        <h1 className="text-2xl font-semibold tracking-tight">Candidates</h1>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-1">
+          <Breadcrumbs items={[{ label: "Candidates" }]} />
+          <h1 className="text-2xl font-semibold tracking-tight">Candidates</h1>
+        </div>
+        {canManageJobs(user?.role) && (
+          <Button asChild>
+            <Link href="/candidates/new">
+              <Plus className="mr-2 h-4 w-4" aria-hidden />
+              Add candidate
+            </Link>
+          </Button>
+        )}
       </div>
 
       <CandidateFilters value={filters} onChange={onFiltersChange} />

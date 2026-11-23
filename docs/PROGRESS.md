@@ -40,10 +40,12 @@ Legend: `[x]` done · `[~]` partial · `[ ]` pending · `[-]` skipped
 - [x] `make test-e2e` runs in an isolated throwaway stack; it does not touch the development
       containers or `.env`
 
-### Phase 2: Add Candidate
+### Phase 2: Add Candidate — committed `phase 2: add candidate`
 
-- [ ] Manual form with salary fields, multi-CV drop zone, drafts, CV autofill, budget badge,
-      editable profile and documents
+- [x] Manual form with salary fields (current/expected/offered × amount, currency, pa/pm,
+      negotiable), multi-CV drop zone, localStorage draft autosave, CV autofill with
+      "from CV" badges, duplicate email/phone warning, budget badge, editable profile and
+      document upload; APIs: parse-cv, duplicates, expanded create/patch
 
 ### Phase 3: review, notes, interview rating
 

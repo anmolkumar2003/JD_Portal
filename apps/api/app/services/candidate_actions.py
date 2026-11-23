@@ -9,7 +9,7 @@ from fastapi import status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import scope_jobs_query
+from app.core.deps import ORG_WIDE_JOB_ROLES, scope_jobs_query
 from app.core.errors import AppError
 from app.models import ActivityLog, Application, Candidate, Job, Note, PipelineStage, User
 from app.models.enums import StageType
@@ -20,6 +20,8 @@ from app.schemas.candidate_actions import (
     BulkActionResult,
     BulkActionType,
     BulkFailure,
+    CandidateOut,
+    CandidatePatch,
     CandidateTagsOut,
     NoteCreate,
     NoteOut,
@@ -27,6 +29,12 @@ from app.schemas.candidate_actions import (
     UserRef,
 )
 from app.services.applications import _get_scoped_application, apply_stage_change
+from app.services.salary import (
+    apply_salary,
+    current_salary,
+    expected_salary,
+    offered_salary,
+)
 
 
 def _candidate_not_found() -> AppError:
@@ -52,10 +60,12 @@ def normalize_tags(tags: Iterable[str]) -> list[str]:
 async def _accessible_candidate(
     session: AsyncSession, user: User, candidate_id: uuid.UUID
 ) -> Candidate:
-    """Record-level access: the user must be able to see one of the candidate's applications."""
+    """Org-wide roles see any candidate; others need at least one accessible application."""
     candidate = await session.get(Candidate, candidate_id)
     if candidate is None or candidate.deleted_at is not None or candidate.org_id != user.org_id:
         raise _candidate_not_found()
+    if user.role in ORG_WIDE_JOB_ROLES:
+        return candidate
     accessible = await session.scalar(
         scope_jobs_query(
             user,
@@ -183,6 +193,29 @@ def _check_tag_count(tags: list[str]) -> None:
         )
 
 
+def _candidate_out(candidate: Candidate) -> CandidateOut:
+    return CandidateOut(
+        id=candidate.id,
+        first_name=candidate.first_name,
+        last_name=candidate.last_name,
+        email=candidate.email,
+        phone=candidate.phone,
+        current_location=candidate.current_location,
+        current_company=candidate.current_company,
+        current_title=candidate.current_title,
+        total_experience_years=candidate.total_experience_years,
+        notice_period_days=candidate.notice_period_days,
+        linkedin_url=candidate.linkedin_url,
+        portfolio_url=candidate.portfolio_url,
+        department_id=candidate.department_id,
+        source=candidate.source,
+        tags=list(candidate.tags or []),
+        current_salary=current_salary(candidate),
+        expected_salary=expected_salary(candidate),
+        offered_salary=offered_salary(candidate),
+    )
+
+
 async def set_candidate_tags(
     session: AsyncSession, user: User, candidate_id: uuid.UUID, tags: list[str]
 ) -> CandidateTagsOut:
@@ -205,6 +238,95 @@ async def set_candidate_tags(
         )
         await session.commit()
     return CandidateTagsOut(id=candidate.id, tags=new_tags)
+
+
+async def update_candidate(
+    session: AsyncSession, user: User, candidate_id: uuid.UUID, body: CandidatePatch
+) -> CandidateOut:
+    """Full profile edit. Only provided fields change; each change is logged."""
+    candidate = await _accessible_candidate(session, user, candidate_id)
+    changes: dict[str, object] = {}
+
+    scalar_fields = (
+        "first_name",
+        "last_name",
+        "phone",
+        "current_location",
+        "current_company",
+        "current_title",
+        "total_experience_years",
+        "notice_period_days",
+        "linkedin_url",
+        "portfolio_url",
+        "department_id",
+        "source",
+    )
+    for field in scalar_fields:
+        value = getattr(body, field)
+        if value is not None and getattr(candidate, field) != value:
+            changes[field] = str(value)
+            setattr(candidate, field, value)
+
+    if body.email is not None:
+        email = body.email.lower()
+        if email != candidate.email:
+            clash = await session.scalar(
+                select(Candidate.id).where(
+                    Candidate.org_id == user.org_id,
+                    Candidate.email == email,
+                    Candidate.id != candidate.id,
+                    Candidate.deleted_at.is_(None),
+                )
+            )
+            if clash is not None:
+                raise AppError(
+                    status.HTTP_409_CONFLICT,
+                    "duplicate_email",
+                    "Another candidate already uses this email",
+                )
+            changes["email"] = email
+            candidate.email = email
+
+    old_tags = list(candidate.tags or [])
+    tags_changed: list[str] | None = None
+    if body.tags is not None:
+        new_tags = normalize_tags(body.tags)
+        _check_tag_count(new_tags)
+        if new_tags != old_tags:
+            tags_changed = new_tags
+            changes["tags"] = new_tags
+            candidate.tags = new_tags
+
+    for prefix, salary in (
+        ("current", body.current_ctc),
+        ("expected", body.expected_ctc),
+        ("offered", body.offered_ctc),
+    ):
+        if salary is not None:
+            apply_salary(candidate, prefix, salary)
+            changes[f"{prefix}_ctc"] = str(salary.amount) if salary.amount is not None else None
+
+    if changes:
+        action = "candidate.tags_updated" if set(changes) == {"tags"} else "candidate.updated"
+        meta: dict[str, object]
+        if action == "candidate.tags_updated" and tags_changed is not None:
+            meta = {
+                "added": [t for t in tags_changed if t not in old_tags],
+                "removed": [t for t in old_tags if t not in tags_changed],
+            }
+        else:
+            meta = {"fields": sorted(changes.keys())}
+        session.add(
+            ActivityLog(
+                candidate_id=candidate.id,
+                actor_id=user.id,
+                action=action,
+                meta=meta,
+            )
+        )
+        await session.commit()
+        await session.refresh(candidate)
+    return _candidate_out(candidate)
 
 
 # --- Shortlist (CAND-05) ----------------------------------------------------------------------

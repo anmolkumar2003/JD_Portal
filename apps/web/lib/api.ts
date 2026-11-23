@@ -8,9 +8,15 @@ import type {
   BulkActionInput,
   BulkActionResult,
   BoardOut,
+  CandidateOut,
+  CandidatePatchInput,
   CandidateTagsOut,
+  CvParseOut,
+  DuplicateCheckOut,
+  ManualCandidateResult,
   ChangePasswordInput,
   Department,
+  DocumentOut,
   DownloadUrl,
   HealthResponse,
   Job,
@@ -280,6 +286,25 @@ export const api = {
       request<BulkActionResult>("/api/v1/applications/bulk-action", { method: "POST", body }),
   },
   candidates: {
+    parseCv: (file: File) => {
+      const form = new FormData();
+      form.append("cv", file);
+      return request<CvParseOut>("/api/v1/candidates/parse-cv", { method: "POST", body: form });
+    },
+    duplicates: (params: { email?: string; phone?: string }) =>
+      request<DuplicateCheckOut>(withQuery("/api/v1/candidates/duplicates", params)),
+    create: (form: FormData) =>
+      request<ManualCandidateResult>("/api/v1/candidates", { method: "POST", body: form }),
+    update: (id: string, body: CandidatePatchInput) =>
+      request<CandidateOut>(`/api/v1/candidates/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body,
+      }),
+    uploadDocument: (id: string, form: FormData) =>
+      request<DocumentOut>(`/api/v1/candidates/${encodeURIComponent(id)}/documents`, {
+        method: "POST",
+        body: form,
+      }),
     timeline: (id: string) =>
       request<TimelineEntry[]>(`/api/v1/candidates/${encodeURIComponent(id)}/timeline`),
     notes: (id: string) => request<NoteOut[]>(`/api/v1/candidates/${encodeURIComponent(id)}/notes`),
