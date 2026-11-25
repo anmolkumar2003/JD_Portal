@@ -9,6 +9,7 @@ import { ActivityTimeline } from "@/components/candidates/activity-timeline";
 import { CandidateOverview } from "@/components/candidates/candidate-overview";
 import { CandidateProfileHeader } from "@/components/candidates/candidate-profile-header";
 import { CvViewer } from "@/components/candidates/cv-viewer";
+import { AnonymizeCandidateDialog } from "@/components/candidates/anonymize-candidate-dialog";
 import { DeleteCandidateDialog } from "@/components/candidates/delete-candidate-dialog";
 import { EmailComposer } from "@/components/candidates/email-composer";
 import { InterviewRatings } from "@/components/candidates/interview-ratings";
@@ -44,6 +45,7 @@ function CandidateProfileContent() {
   const canEmail = canManageJobs(user?.role);
   const [emailOpen, setEmailOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [anonymizeOpen, setAnonymizeOpen] = useState(false);
 
   const list = useApplications({
     candidate_id: id,
@@ -117,6 +119,7 @@ function CandidateProfileContent() {
         application={data}
         onEmail={openEmail}
         onDeleteRequest={() => setDeleteOpen(true)}
+        onAnonymizeRequest={() => setAnonymizeOpen(true)}
       />
 
       <Tabs defaultValue="overview">
@@ -156,6 +159,15 @@ function CandidateProfileContent() {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         mode="single"
+        candidateName={name}
+        onConfirm={() => {
+          /* wired in A6 */
+        }}
+      />
+
+      <AnonymizeCandidateDialog
+        open={anonymizeOpen}
+        onOpenChange={setAnonymizeOpen}
         candidateName={name}
         onConfirm={() => {
           /* wired in A6 */

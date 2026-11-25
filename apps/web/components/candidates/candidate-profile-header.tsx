@@ -1,6 +1,15 @@
 "use client";
 
-import { ChevronDown, FileDown, Loader2, Mail, MoreHorizontal, Star, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  FileDown,
+  Loader2,
+  Mail,
+  MoreHorizontal,
+  ShieldOff,
+  Star,
+  Trash2,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { CandidateTagsEditor } from "@/components/candidates/candidate-tags-editor";
@@ -15,6 +24,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -33,12 +43,15 @@ interface CandidateProfileHeaderProps {
   onEmail?: () => void;
   /** Opens the permanent-delete confirmation (admin only). */
   onDeleteRequest?: () => void;
+  /** Opens the softer anonymize confirmation (admin only). */
+  onAnonymizeRequest?: () => void;
 }
 
 export function CandidateProfileHeader({
   application,
   onEmail,
   onDeleteRequest,
+  onAnonymizeRequest,
 }: CandidateProfileHeaderProps) {
   const { user } = useAuth();
   const canEdit = canMoveStages(user?.role);
@@ -187,6 +200,14 @@ export function CandidateProfileHeader({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    data-testid="anonymize-candidate-action"
+                    onSelect={() => onAnonymizeRequest?.()}
+                  >
+                    <ShieldOff className="h-4 w-4" aria-hidden />
+                    Anonymize
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                     data-testid="delete-candidate-action"
