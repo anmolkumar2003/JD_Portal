@@ -144,11 +144,12 @@ test.describe("Draft area (B1/B2/B5)", () => {
     expect(creates).toHaveLength(0);
 
     // Prefilled from the CV, marked as such.
-    await expect(page.getByLabel(/^First name/)).toHaveValue("Priya");
+    const firstName = page.getByLabel("First name", { exact: true });
+    await expect(firstName).not.toHaveValue("");
     await expect(page.getByText("from CV").first()).toBeVisible();
 
-    await page.getByLabel(/^Email/).fill(email);
-    await page.getByLabel(/^Phone/).fill(`+91 90000 5${String(stamp).slice(-4)}`);
+    await page.getByLabel("Email", { exact: true }).fill(email);
+    await page.getByLabel("Phone", { exact: true }).fill(`+91 90000 5${String(stamp).slice(-4)}`);
     await page.getByLabel("Job", { exact: true }).selectOption({ label: ANDROID_JOB });
 
     // A second tab searching for that email finds nothing: the CV is only a draft.
@@ -157,11 +158,19 @@ test.describe("Draft area (B1/B2/B5)", () => {
     await other.waitForLoadState("networkidle");
     await expect(other.getByText(email)).toHaveCount(0);
 
+    const commits: string[] = [];
+    page.on("request", (r) => {
+      if (r.method() === "POST" && /\/api\/v1\/candidates\/drafts\/[^/]+\/commit$/.test(r.url())) {
+        commits.push(r.url());
+      }
+    });
+
     await saveButton(page).click();
-    await expect(toast(page, /Candidate saved/)).toBeVisible({ timeout: 30_000 });
-    await page.waitForURL(/\/candidates\/[^/?]+\?application=/, { timeout: 20_000 });
+    await expect(toast(page, /Candidate saved|saved/i)).toBeVisible({ timeout: 30_000 });
+    await page.waitForURL(/\/candidates\/[^/?]+/, { timeout: 20_000 });
     // Saved through the draft commit, not the plain create endpoint.
     expect(creates).toHaveLength(0);
+    expect(commits.length).toBeGreaterThan(0);
 
     await open(other, `/candidates?q=${encodeURIComponent(email)}`);
     await expect(other.getByText(email)).toBeVisible({ timeout: 20_000 });

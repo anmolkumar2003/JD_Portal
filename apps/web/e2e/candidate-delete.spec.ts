@@ -13,9 +13,11 @@ test.describe("Permanent candidate delete", () => {
     const row = page.getByRole("row").nth(1);
     await expect(row).toBeVisible({ timeout: 20_000 });
     await row.click();
-    await page.waitForURL(/\/candidates\//, { timeout: 20_000 });
+    await page.getByRole("link", { name: /Full profile/i }).click();
+    await page.waitForURL(/\/candidates\/[^/?]+/, { timeout: 20_000 });
     await expect(page.getByTestId("candidate-actions-menu")).toHaveCount(0);
     await expect(page.getByTestId("delete-candidate-action")).toHaveCount(0);
+    await expect(page.getByTestId("bulk-delete-candidates")).toHaveCount(0);
   });
 
   test("hr_admin permanently deletes a candidate end to end", async ({ page }) => {
