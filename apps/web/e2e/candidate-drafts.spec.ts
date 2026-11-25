@@ -143,14 +143,15 @@ test.describe("Draft area (B1/B2/B5)", () => {
     expect(draftUploads).toHaveLength(1);
     expect(creates).toHaveLength(0);
 
-    // Prefilled from the CV, marked as such.
-    const firstName = page.getByLabel("First name", { exact: true });
+    // Prefilled from the CV, marked as such (badge makes the accessible name include "from CV").
+    const firstName = page.getByLabel(/First name/);
+    await expect(firstName).toBeVisible();
     await expect(firstName).not.toHaveValue("");
     await expect(page.getByText("from CV").first()).toBeVisible();
 
-    await page.getByLabel("Email", { exact: true }).fill(email);
-    await page.getByLabel("Phone", { exact: true }).fill(`+91 90000 5${String(stamp).slice(-4)}`);
-    await page.getByLabel("Job", { exact: true }).selectOption({ label: ANDROID_JOB });
+    await page.getByLabel(/^Email/).fill(email);
+    await page.getByLabel(/^Phone/).fill(`+91 90000 5${String(stamp).slice(-4)}`);
+    await page.getByLabel(/^Job$/).selectOption({ label: ANDROID_JOB });
 
     // A second tab searching for that email finds nothing: the CV is only a draft.
     const other = await context.newPage();
