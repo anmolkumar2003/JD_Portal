@@ -57,14 +57,14 @@ function StageColumn({
   return (
     <section
       ref={setNodeRef}
-      className={`glass flex w-72 shrink-0 flex-col rounded-xl transition-shadow ${
+      className={`glass-strong flex w-72 shrink-0 flex-col rounded-[var(--radius)] transition-shadow duration-180 ${
         isOver ? "ring-2 ring-primary/40 shadow-glow-sm" : ""
       }`}
       aria-label={`${stage.name}, ${cards.length} candidates`}
     >
       <header className="flex items-center justify-between border-b border-border/50 px-3 py-2.5">
         <h3 className="text-sm font-semibold">{stage.name}</h3>
-        <span className="rounded-full bg-gradient-brand-soft px-2.5 py-0.5 text-xs font-medium tabular-nums text-primary ring-1 ring-primary/15">
+        <span className="rounded-pill bg-primary/12 px-2.5 py-0.5 text-xs font-medium tabular-nums text-primary">
           {cards.length}
         </span>
       </header>
@@ -254,7 +254,7 @@ export function PipelineBoard({ jobId }: PipelineBoardProps) {
           </div>
           <DragOverlay>
             {activeCard ? (
-              <div className="glass-strong w-72 rounded-xl p-3 shadow-glow">
+              <div className="w-72 rounded-control border border-border/60 bg-background p-3 shadow-lg">
                 <p className="font-medium">
                   {activeCard.first_name} {activeCard.last_name}
                 </p>

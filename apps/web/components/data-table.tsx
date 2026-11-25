@@ -105,7 +105,7 @@ export function DataTable<T>({
   const someSelected = rowIds.some((id) => selection?.selectedIds.has(id));
 
   return (
-    <div className="glass overflow-hidden rounded-2xl">
+    <div className="glass-strong overflow-hidden rounded-[var(--radius)]">
       <Table aria-busy={isLoading}>
         <caption className="sr-only">{caption}</caption>
         <TableHeader>

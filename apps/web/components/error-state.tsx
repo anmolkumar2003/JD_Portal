@@ -24,7 +24,7 @@ export function ErrorState({
     <div
       role="alert"
       className={cn(
-        "glass flex flex-col items-center justify-center rounded-xl border-destructive/30 bg-destructive/5 px-6 py-12 text-center",
+        "glass-strong flex flex-col items-center justify-center rounded-[var(--radius)] border-destructive/30 bg-destructive/5 px-6 py-12 text-center",
         className,
       )}
     >

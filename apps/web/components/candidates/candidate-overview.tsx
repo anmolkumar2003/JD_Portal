@@ -191,7 +191,7 @@ export function CandidateOverview({ application, onEmail }: CandidateOverviewPro
         )}
       </div>
 
-      <aside className="glass space-y-4 rounded-xl p-4">
+      <aside className="glass-strong space-y-4 rounded-[var(--radius)] p-4">
         <div className="flex items-center justify-between gap-3">
           <StageBadge stage={application.stage} />
           <ScoreRing score={application.match_result?.overall_score ?? null} />

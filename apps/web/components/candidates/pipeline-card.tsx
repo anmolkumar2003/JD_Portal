@@ -67,7 +67,7 @@ export function PipelineCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "glass rounded-xl p-3 transition-shadow duration-200 hover:shadow-glow-sm",
+        "rounded-control border border-border/60 bg-background p-3 shadow-sm transition-shadow duration-180 hover:shadow-md",
         isDragging && "ring-2 ring-ring opacity-80",
         isOver && "ring-2 ring-primary/40",
       )}

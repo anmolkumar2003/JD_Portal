@@ -78,7 +78,7 @@ export function CvViewer({ documents, applicationId }: CvViewerProps) {
 
   if (download.isPending) {
     return (
-      <div className="glass flex h-[70vh] items-center justify-center rounded-xl" aria-busy="true">
+      <div className="glass-strong flex h-[70vh] items-center justify-center rounded-[var(--radius)]" aria-busy="true">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-label="Loading CV" />
       </div>
     );
@@ -149,7 +149,7 @@ export function CvViewer({ documents, applicationId }: CvViewerProps) {
         <iframe
           title={`CV: ${cv.file_name}`}
           src={download.data.url}
-          className="glass h-[70vh] w-full rounded-xl bg-muted/20"
+          className="glass-strong h-[70vh] w-full rounded-[var(--radius)] bg-muted/20"
         />
       ) : (
         <EmptyState

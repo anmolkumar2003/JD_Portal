@@ -8,7 +8,7 @@ export function JobCard({ job }: { job: PublicJobListItem }) {
   return (
     <Link
       href={`/careers/${job.slug}`}
-      className="glass ambient-glow group flex flex-col gap-4 rounded-xl p-5 transition-all duration-250 hover:border-primary/40 hover:shadow-glow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="glass-strong group flex flex-col gap-4 rounded-[var(--radius)] p-5 transition-all duration-180 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="space-y-1">
         <h3 className="font-semibold tracking-tight transition-colors group-hover:text-primary">
