@@ -86,7 +86,7 @@ test-e2e: ## Playwright e2e (excludes screenshot projects) in an isolated stack
 	$(E2E) exec -T api alembic upgrade head; \
 	$(E2E) exec -T -e DEMO_PASSWORD="$$E2E_PASSWORD" api python -m app.seed_demo >/dev/null; \
 	$(E2E) --profile runner run --rm -e E2E_PASSWORD playwright \
-		bash -c 'npm ci --no-audit --no-fund --loglevel=error && npx playwright test --project=chromium'
+		bash -c 'npm ci --legacy-peer-deps --no-audit --no-fund --loglevel=error && npx playwright test --project=chromium'
 
 test-e2e-screenshots: ## Playwright screenshot projects only (longer timeout)
 	@set -e; \
@@ -97,7 +97,7 @@ test-e2e-screenshots: ## Playwright screenshot projects only (longer timeout)
 	$(E2E) exec -T -e DEMO_PASSWORD="$$E2E_PASSWORD" api python -m app.seed_demo >/dev/null; \
 	$(E2E) --profile runner run --rm -e E2E_PASSWORD \
 		-v "$(CURDIR)/docs:/work/docs" playwright \
-		bash -c 'npm ci --no-audit --no-fund --loglevel=error && npx playwright test --project=screenshots'
+		bash -c 'npm ci --legacy-peer-deps --no-audit --no-fund --loglevel=error && npx playwright test --project=screenshots'
 
 lint: lint-api lint-web ## Run all linters
 

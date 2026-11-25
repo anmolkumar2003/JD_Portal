@@ -8,6 +8,7 @@ Create Date: 2026-11-25 12:00:00.000000
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "20261125_0011"
@@ -28,10 +29,16 @@ def upgrade() -> None:
         sa.Column("last_error", sa.String(length=200), nullable=True),
         sa.Column("last_attempt_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column(
-            "created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
         ),
         sa.Column(
-            "updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_orphan_storage_objects")),
         sa.UniqueConstraint("storage_key", name=op.f("uq_orphan_storage_objects_storage_key")),
