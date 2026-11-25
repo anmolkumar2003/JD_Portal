@@ -191,9 +191,13 @@ def _no_real_storage(monkeypatch: pytest.MonkeyPatch) -> None:
     async def delete_object(key: str) -> None:
         return None
 
+    async def list_prefix(prefix: str) -> list[str]:
+        return []
+
     monkeypatch.setattr("app.core.storage.put_object", put_object)
     monkeypatch.setattr("app.core.storage.get_object", get_object)
     monkeypatch.setattr("app.core.storage.delete_object", delete_object)
+    monkeypatch.setattr("app.core.storage.list_prefix", list_prefix)
 
 
 @pytest.fixture(autouse=True)
@@ -236,9 +240,13 @@ def stored_objects(monkeypatch: pytest.MonkeyPatch) -> dict[str, bytes]:
     async def delete_object(key: str) -> None:
         objects.pop(key, None)
 
+    async def list_prefix(prefix: str) -> list[str]:
+        return [key for key in objects if key.startswith(prefix)]
+
     monkeypatch.setattr("app.core.storage.put_object", put_object)
     monkeypatch.setattr("app.core.storage.get_object", get_object)
     monkeypatch.setattr("app.core.storage.delete_object", delete_object)
+    monkeypatch.setattr("app.core.storage.list_prefix", list_prefix)
     return objects
 
 
