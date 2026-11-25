@@ -57,7 +57,7 @@ function StageColumn({
   return (
     <section
       ref={setNodeRef}
-      className={`glass-strong flex w-72 shrink-0 flex-col rounded-[var(--radius)] transition-shadow duration-180 ${
+      className={`glass-strong flex w-72 shrink-0 snap-start flex-col rounded-[var(--radius)] transition-shadow duration-180 ${
         isOver ? "ring-2 ring-primary/40 shadow-glow-sm" : ""
       }`}
       aria-label={`${stage.name}, ${cards.length} candidates`}
@@ -238,7 +238,7 @@ export function PipelineBoard({ jobId }: PipelineBoardProps) {
           onDragEnd={onDragEnd}
           onDragCancel={() => setActiveId(null)}
         >
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:thin]">
             {data.stages.map((col) => (
               <StageColumn
                 key={col.stage.id}

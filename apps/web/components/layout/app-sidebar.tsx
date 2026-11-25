@@ -19,7 +19,7 @@ export function AppSidebar({ collapsed, onToggle, className }: AppSidebarProps) 
   return (
     <aside
       className={cn(
-        "glass relative z-20 flex h-full shrink-0 flex-col border-0 transition-[width] duration-300 ease-out",
+        "glass relative z-20 flex h-full shrink-0 flex-col rounded-[var(--radius)] transition-[width] duration-200 ease-out",
         collapsed ? "w-16" : "w-64",
         className,
       )}
@@ -42,7 +42,7 @@ export function AppSidebar({ collapsed, onToggle, className }: AppSidebarProps) 
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           aria-expanded={!collapsed}
           className={cn(
-            "flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "flex h-10 w-full items-center gap-3 rounded-pill px-3 text-sm text-muted-foreground transition-colors duration-180 hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             collapsed && "justify-center px-0",
           )}
         >

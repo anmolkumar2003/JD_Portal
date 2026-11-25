@@ -73,7 +73,7 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
       <AppSidebar
         collapsed={collapsed}
         onToggle={toggleSidebar}
-        className="hidden rounded-2xl md:flex"
+        className="hidden rounded-[var(--radius)] md:flex"
       />
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <SheetContent side="left" className="w-[min(100vw,16rem)] gap-0 p-0 sm:max-w-xs">
