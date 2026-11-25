@@ -47,6 +47,7 @@ test.describe("Feature coverage", () => {
       .getByLabel(/Location/i)
       .first()
       .fill("Bengaluru");
+    await page.getByLabel("Job", { exact: true }).selectOption({ index: 1 });
     await page.locator("#current_ctc\\.amount").fill("900000");
     await page.locator("#expected_ctc\\.amount").fill("1200000");
     await page.locator("#notice_period_days").fill("30");

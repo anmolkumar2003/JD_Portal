@@ -78,6 +78,7 @@ async def test_parse_cv_and_create_with_salary(client: AsyncClient) -> None:
             "last_name": "Sharma",
             "email": "riya.sharma@example.com",
             "phone": "+91 98765 43210",
+            "job_id": job_id,
         },
     )
     assert again.status_code == 201
@@ -88,6 +89,8 @@ async def test_parse_cv_and_create_with_salary(client: AsyncClient) -> None:
 async def test_duplicates_and_profile_edit(client: AsyncClient) -> None:
     token = await login(client, "hradmin")
     headers = _auth(token)
+    jobs = await client.get("/api/v1/jobs", headers=headers)
+    job_id = jobs.json()["items"][0]["id"]
 
     created = await client.post(
         "/api/v1/candidates",
@@ -97,6 +100,7 @@ async def test_duplicates_and_profile_edit(client: AsyncClient) -> None:
             "last_name": "Gupta",
             "email": "aman.gupta@example.com",
             "phone": "+919811122233",
+            "job_id": job_id,
         },
     )
     assert created.status_code == 201

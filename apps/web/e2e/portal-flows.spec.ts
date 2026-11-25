@@ -179,6 +179,16 @@ test.describe("CV dropzone", () => {
     await emailOf("cv01_backend_copy.pdf").fill(dupEmail);
     await emailOf("cv02_frontend.pdf").fill(`rahul.${stamp}@example.com`);
 
+    // Phone and job are required on every row (B3).
+    await page.getByLabel("Job for all rows").selectOption({ label: ANDROID_JOB });
+    for (const [n, file] of [
+      "cv01_backend.pdf",
+      "cv02_frontend.pdf",
+      "cv01_backend_copy.pdf",
+    ].entries()) {
+      await page.getByLabel(`Phone for ${file}`).fill(`+91 90000 3${n}${String(stamp).slice(-3)}`);
+    }
+
     await page.getByRole("button", { name: "Save all" }).click();
     await expect(toast(page, /Saved 3 candidates/)).toBeVisible({ timeout: 45_000 });
   });
@@ -233,6 +243,7 @@ test.describe("CV candidate lifecycle", () => {
     await expect(page.getByText("from CV").first()).toBeVisible();
 
     await page.getByLabel(/^Email/).fill(`priya.${stamp}@example.com`);
+    await page.getByLabel(/^Phone/).fill(`+91 90000 4${String(stamp).slice(-4)}`);
     await page.getByLabel("Job", { exact: true }).selectOption({ label: ANDROID_JOB });
     await page.getByRole("group", { name: "Expected CTC" }).getByLabel("Amount").fill("1800000");
     await page.getByRole("button", { name: "Save candidate" }).click();

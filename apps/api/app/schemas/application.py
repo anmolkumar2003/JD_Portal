@@ -231,7 +231,7 @@ class ManualCandidateCreate(BaseModel):
     first_name: Name
     last_name: Name
     email: EmailStr
-    phone: Phone | None = None
+    phone: Phone
     current_location: ShortText | None = None
     current_company: ShortText | None = None
     current_title: ShortText | None = None
@@ -243,13 +243,22 @@ class ManualCandidateCreate(BaseModel):
     portfolio_url: (
         Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] | None
     ) = None
+    # Department is taken from the job; this is only a fallback when the job has none.
     department_id: UUID | None = None
-    job_id: UUID | None = None
+    job_id: UUID
     source: CandidateSource = CandidateSource.MANUAL
     tags: list[str] = Field(default_factory=list)
     current_ctc: SalaryIn | None = None
     expected_ctc: SalaryIn | None = None
     offered_ctc: SalaryIn | None = None
+
+    @field_validator("first_name", "last_name", "email", "phone", "job_id", mode="before")
+    @classmethod
+    def _required(cls, value: object) -> object:
+        """B3: blank and missing give the same clear message as a missing field."""
+        if value is None or (isinstance(value, str) and not value.strip()):
+            raise ValueError("This field is required")
+        return value
 
     @field_validator("linkedin_url", mode="before")
     @classmethod

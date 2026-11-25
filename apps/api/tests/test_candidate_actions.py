@@ -102,6 +102,7 @@ async def test_linkedin_url_patch_persists(
 ) -> None:
     """Create via authenticated API (works even when public careers is off)."""
     token = await login(client, "recruiter")
+    jobs = await client.get("/api/v1/jobs", headers=_auth(token))
     created = await client.post(
         "/api/v1/candidates",
         headers=_auth(token),
@@ -110,6 +111,7 @@ async def test_linkedin_url_patch_persists(
             "last_name": "Kumar",
             "email": "linkedin-save@example.com",
             "phone": "+91 90000 11111",
+            "job_id": jobs.json()["items"][0]["id"],
             "source": "manual",
         },
     )
