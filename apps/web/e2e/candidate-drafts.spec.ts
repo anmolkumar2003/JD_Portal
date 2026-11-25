@@ -153,11 +153,12 @@ test.describe("Draft area (B1/B2/B5)", () => {
     await page.getByLabel(/^Phone/).fill(`+91 90000 5${String(stamp).slice(-4)}`);
     await page.getByLabel(/^Job$/).selectOption({ label: ANDROID_JOB });
 
-    // A second tab searching for that email finds nothing: the CV is only a draft.
+    // A second tab searching for that email finds no table rows: the CV is only a draft.
+    // (Avoid getByText(email) alone — the search input itself contains the query.)
     const other = await context.newPage();
     await open(other, `/candidates?q=${encodeURIComponent(email)}`);
     await other.waitForLoadState("networkidle");
-    await expect(other.getByText(email)).toHaveCount(0);
+    await expect(other.getByRole("row").filter({ hasText: email })).toHaveCount(0);
 
     const commits: string[] = [];
     page.on("request", (r) => {
@@ -174,7 +175,9 @@ test.describe("Draft area (B1/B2/B5)", () => {
     expect(commits.length).toBeGreaterThan(0);
 
     await open(other, `/candidates?q=${encodeURIComponent(email)}`);
-    await expect(other.getByText(email)).toBeVisible({ timeout: 20_000 });
+    await expect(other.getByRole("row").filter({ hasText: email })).toBeVisible({
+      timeout: 20_000,
+    });
     await other.close();
   });
 
