@@ -125,7 +125,7 @@ function ChartTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="glass-strong rounded-lg px-3 py-2 text-sm text-popover-foreground">
+    <div className="glass-strong rounded-control px-3 py-2 text-sm text-popover-foreground shadow-md">
       {label && <p className="mb-1 text-muted-foreground">{label}</p>}
       <p className="font-medium tabular-nums">{payload[0]?.value}</p>
     </div>

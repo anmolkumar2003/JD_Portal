@@ -33,7 +33,7 @@ export function SalaryFields({ title, prefix, description }: SalaryFieldsProps) 
   const negotiable = useWatch({ name: `${prefix}.negotiable` }) as boolean;
 
   return (
-    <fieldset className="glass space-y-3 rounded-xl p-4">
+    <fieldset className="glass-strong space-y-3 rounded-[var(--radius)] p-4">
       <legend className="px-1 text-sm font-medium">{title}</legend>
       {description && <p className="text-xs text-muted-foreground">{description}</p>}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

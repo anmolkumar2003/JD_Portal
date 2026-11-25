@@ -24,7 +24,7 @@ function ChangePassword() {
   if (!user) return <div className="h-80 w-full max-w-sm animate-pulse rounded-lg bg-muted" />;
 
   return (
-    <Card className="glass-strong w-full max-w-sm shadow-glass-lg">
+    <Card surface="glass" className="w-full max-w-sm shadow-glass-lg">
       <CardHeader>
         <CardTitle>Set your own password</CardTitle>
         <CardDescription>

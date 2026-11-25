@@ -80,7 +80,7 @@ function ResetForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Card className="glass-strong w-full max-w-sm shadow-glass-lg">
+    <Card surface="glass" className="w-full max-w-sm shadow-glass-lg">
       <CardHeader>
         <CardTitle>Choose a new password</CardTitle>
         <CardDescription>You will sign in with it from now on.</CardDescription>

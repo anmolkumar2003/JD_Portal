@@ -51,7 +51,7 @@ export function CvDropzone({ value, onChange, error }: CvDropzoneProps) {
       {value ? (
         <div
           className={cn(
-            "glass flex items-center gap-3 rounded-xl p-4",
+            "glass-strong flex items-center gap-3 rounded-control p-4",
             error && "border-destructive",
           )}
         >

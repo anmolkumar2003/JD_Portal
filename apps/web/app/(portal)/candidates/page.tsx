@@ -14,7 +14,7 @@ import {
 import { BulkActionsBar } from "@/components/candidates/bulk-actions-bar";
 import { CandidatesTable } from "@/components/candidates/candidates-table";
 import { EmptyState } from "@/components/empty-state";
-import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { PageHeader } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useApplications } from "@/hooks/use-applications";
@@ -110,37 +110,38 @@ function CandidatesPageContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-1">
-          <Breadcrumbs items={[{ label: "Candidates" }]} />
-          <h1 className="text-2xl font-semibold tracking-tight">Candidates</h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {canExport && (
-            <Button
-              type="button"
-              variant="outline"
-              disabled={excelBusy}
-              onClick={() => void onExportExcel()}
-            >
-              {excelBusy ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-              ) : (
-                <Download className="mr-2 h-4 w-4" aria-hidden />
-              )}
-              Export Excel
-            </Button>
-          )}
-          {canManageJobs(user?.role) && (
-            <Button asChild>
-              <Link href="/candidates/new">
-                <Plus className="mr-2 h-4 w-4" aria-hidden />
-                Add candidate
-              </Link>
-            </Button>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        breadcrumbs={[{ label: "Candidates" }]}
+        title="Candidates"
+        subtitle="Search, filter, and manage applications"
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            {canExport && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={excelBusy}
+                onClick={() => void onExportExcel()}
+              >
+                {excelBusy ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <Download className="mr-2 h-4 w-4" aria-hidden />
+                )}
+                Export Excel
+              </Button>
+            )}
+            {canManageJobs(user?.role) && (
+              <Button asChild>
+                <Link href="/candidates/new">
+                  <Plus className="mr-2 h-4 w-4" aria-hidden />
+                  Add candidate
+                </Link>
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       <CandidateFilters value={filters} onChange={onFiltersChange} />
 

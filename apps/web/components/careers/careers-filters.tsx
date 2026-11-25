@@ -42,7 +42,7 @@ export function CareersFilters({ options, initial }: CareersFiltersProps) {
     <form
       role="search"
       onSubmit={onSubmit}
-      className="glass grid gap-3 rounded-xl p-3 sm:grid-cols-2 lg:grid-cols-[1fr_200px_200px_auto]"
+      className="glass-strong grid gap-3 rounded-[var(--radius)] p-3 sm:grid-cols-2 lg:grid-cols-[1fr_200px_200px_auto]"
       aria-busy={pending}
     >
       <div className="relative sm:col-span-2 lg:col-span-1">

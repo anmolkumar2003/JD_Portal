@@ -8,7 +8,7 @@ import { Suspense, useCallback, useMemo } from "react";
 import { DataTable, type Column } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { JobFilters, type JobFilterValues } from "@/components/jobs/job-filters";
-import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { PageHeader } from "@/components/layout/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -162,20 +162,21 @@ function JobsPageContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-1">
-          <Breadcrumbs items={[{ label: "Jobs" }]} />
-          <h1 className="text-2xl font-semibold tracking-tight">Jobs</h1>
-        </div>
-        {canEdit && (
-          <Button asChild>
-            <Link href="/jobs/new">
-              <Plus aria-hidden />
-              Create job
-            </Link>
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        breadcrumbs={[{ label: "Jobs" }]}
+        title="Jobs"
+        subtitle="Open roles, drafts, and pipeline counts"
+        action={
+          canEdit ? (
+            <Button asChild>
+              <Link href="/jobs/new">
+                <Plus aria-hidden />
+                Create job
+              </Link>
+            </Button>
+          ) : undefined
+        }
+      />
 
       <JobFilters value={filters} onChange={onFilterChange} />
 
