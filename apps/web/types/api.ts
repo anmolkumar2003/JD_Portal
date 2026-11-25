@@ -307,6 +307,90 @@ export interface CvParseOut {
   confidence: Record<string, number>;
 }
 
+export interface CandidateDraft {
+  id: string;
+  expires_at: string;
+}
+
+/** Parsed fields (same as CvParseOut) plus the ids needed to commit the draft later. */
+export interface DraftFileUploadOut extends CvParseOut {
+  draft_id: string;
+  draft_file_id: string;
+}
+
+export interface DraftDeleteOut {
+  id: string;
+  deleted: boolean;
+  files_deleted: number;
+}
+
+export type DraftCommitMode = "complete_only" | "all";
+
+export interface DraftCommitRowIn {
+  draft_file_id?: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  phone: string | null;
+  job_id: string | null;
+  department_id?: string | null;
+  current_location?: string | null;
+  current_company?: string | null;
+  current_title?: string | null;
+  total_experience_years?: number | null;
+  notice_period_days?: number | null;
+  linkedin_url?: string | null;
+  portfolio_url?: string | null;
+  source?: CandidateSource;
+  tags?: string[];
+  current_ctc?: SalaryIn | null;
+  expected_ctc?: SalaryIn | null;
+  offered_ctc?: SalaryIn | null;
+}
+
+export interface DraftCommitIn {
+  mode: DraftCommitMode;
+  rows: DraftCommitRowIn[];
+}
+
+export interface RowIssue {
+  field: string;
+  message: string;
+}
+
+export type DraftRowStatus = "saved" | "incomplete" | "failed";
+
+export interface DraftCommitRowOut {
+  index: number;
+  draft_file_id: string | null;
+  status: DraftRowStatus;
+  issues: RowIssue[];
+  candidate_id: string | null;
+  application_id: string | null;
+  document_id: string | null;
+  reference_no: string | null;
+  reused: boolean;
+  budget_status: BudgetStatus | null;
+  /** Frontend path such as `/candidates/<id>?application=<id>`. */
+  link: string | null;
+}
+
+export interface DraftCommitOut {
+  mode: DraftCommitMode;
+  results: DraftCommitRowOut[];
+  saved_count: number;
+  incomplete_count: number;
+  failed_count: number;
+  draft_deleted: boolean;
+}
+
+/** `details` of a 422 from `POST /candidates/drafts/{id}/commit` with mode "all". */
+export interface CommitRowError {
+  row: number;
+  field: string;
+  message: string;
+}
+
 export interface DuplicateMatch {
   id: string;
   first_name: string;

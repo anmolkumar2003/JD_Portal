@@ -6,11 +6,16 @@ import { useId, useRef, useState, type DragEvent } from "react";
 import { CV_ACCEPT, cvFileError, MAX_CV_BYTES } from "@/components/careers/cv-dropzone";
 import { cn } from "@/lib/utils";
 
+/**
+ * One dropped CV. It is uploaded to the draft area (never saved as a candidate); `parsing`
+ * covers upload + parse, and `done` means the draft holds the file as `draftFileId`.
+ */
 export type CvUploadItem = {
   id: string;
   file: File;
   status: "ready" | "parsing" | "done" | "error";
   error?: string;
+  draftFileId?: string;
 };
 
 function formatSize(bytes: number): string {
@@ -61,6 +66,7 @@ export function MultiCvDropzone({ items, onChange }: MultiCvDropzoneProps) {
   return (
     <div className="space-y-3">
       <div
+        data-testid="cv-dropzone"
         onDragOver={(e) => {
           e.preventDefault();
           setDragging(true);
@@ -83,7 +89,9 @@ export function MultiCvDropzone({ items, onChange }: MultiCvDropzoneProps) {
             browse
           </button>
         </p>
-        <p className="text-xs text-muted-foreground">PDF or DOCX, up to 5 MB each</p>
+        <p className="text-xs text-muted-foreground">
+          PDF or DOCX, up to 5 MB each. Files stay in a temporary draft until you save.
+        </p>
       </div>
       <input
         ref={inputRef}
