@@ -83,7 +83,7 @@ function StatCard({
             : "text-primary";
 
   return (
-    <Card className="ambient-glow group overflow-hidden">
+    <Card surface="glass" className="group overflow-hidden">
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div className="space-y-1.5">
           <CardDescription className="text-xs font-medium uppercase tracking-wider">
@@ -189,7 +189,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="glass relative overflow-hidden rounded-2xl p-6 sm:p-8">
+      <div className="glass relative overflow-hidden rounded-[var(--radius)] p-6 sm:p-8">
         <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-cyan/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-10 left-1/3 h-32 w-32 rounded-full bg-primary/15 blur-3xl" />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

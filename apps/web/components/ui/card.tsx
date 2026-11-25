@@ -1,17 +1,31 @@
+import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        "glass rounded-2xl text-card-foreground transition-shadow duration-250 hover:shadow-glass-lg",
-        className,
-      )}
-      {...props}
-    />
+/**
+ * glass — blurred frosted panel (sidebar / top bar / dashboard cards / overlays only).
+ * strong — opaque data surface without blur (default for forms & content cards).
+ */
+const cardVariants = cva("text-card-foreground transition-shadow duration-180", {
+  variants: {
+    surface: {
+      strong: "glass-strong rounded-[var(--radius)]",
+      glass: "glass rounded-[var(--radius)]",
+      plain: "rounded-[var(--radius)] border bg-card",
+    },
+  },
+  defaultVariants: {
+    surface: "strong",
+  },
+});
+
+export interface CardProps
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof cardVariants> {}
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, surface, ...props }, ref) => (
+    <div ref={ref} className={cn(cardVariants({ surface }), className)} {...props} />
   ),
 );
 Card.displayName = "Card";
@@ -55,4 +69,4 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 );
 CardFooter.displayName = "CardFooter";
 
-export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle };
+export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, cardVariants };
