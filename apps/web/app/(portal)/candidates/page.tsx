@@ -13,6 +13,7 @@ import {
 } from "@/components/candidates/candidate-filters";
 import { BulkActionsBar } from "@/components/candidates/bulk-actions-bar";
 import { CandidatesTable } from "@/components/candidates/candidates-table";
+import { DeleteCandidateDialog } from "@/components/candidates/delete-candidate-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,6 +50,7 @@ function CandidatesPageContent() {
   const query = useApplications(params);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [excelBusy, setExcelBusy] = useState(false);
+  const [deleteCandidateIds, setDeleteCandidateIds] = useState<string[]>([]);
   const canExport = isAdmin(user?.role);
 
   const onExportExcel = useCallback(async () => {
@@ -215,8 +217,21 @@ function CandidatesPageContent() {
           selectedIds={[...selectedIds]}
           rows={query.data?.items ?? []}
           onClear={() => setSelectedIds(new Set())}
+          onDeleteRequest={(ids) => setDeleteCandidateIds(ids)}
         />
       )}
+
+      <DeleteCandidateDialog
+        open={deleteCandidateIds.length > 0}
+        onOpenChange={(open) => {
+          if (!open) setDeleteCandidateIds([]);
+        }}
+        mode="bulk"
+        count={deleteCandidateIds.length}
+        onConfirm={() => {
+          /* wired in A6 */
+        }}
+      />
 
       <CandidateDrawer
         applicationId={drawerId}
