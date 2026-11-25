@@ -7,11 +7,18 @@ import type {
   ApplyResult,
   BulkActionInput,
   BulkActionResult,
+  BulkCandidateDeleteOut,
   BoardOut,
+  CandidateDeleteOut,
+  CandidateDraft,
   CandidateOut,
   CandidatePatchInput,
   CandidateTagsOut,
   CvParseOut,
+  DraftCommitIn,
+  DraftCommitOut,
+  DraftDeleteOut,
+  DraftFileUploadOut,
   DuplicateCheckOut,
   ManualCandidateResult,
   ChangePasswordInput,
@@ -417,6 +424,26 @@ export const api = {
       form.append("cv", file);
       return request<CvParseOut>("/api/v1/candidates/parse-cv", { method: "POST", body: form });
     },
+    createDraft: () => request<CandidateDraft>("/api/v1/candidates/drafts", { method: "POST" }),
+    uploadDraftFile: (draftId: string, file: File) => {
+      const form = new FormData();
+      form.append("cv", file);
+      return request<DraftFileUploadOut>(
+        `/api/v1/candidates/drafts/${encodeURIComponent(draftId)}/files`,
+        { method: "POST", body: form },
+      );
+    },
+    /** `keepalive` lets the delete finish while the tab is closing. */
+    deleteDraft: (draftId: string, options: { keepalive?: boolean } = {}) =>
+      request<DraftDeleteOut>(`/api/v1/candidates/drafts/${encodeURIComponent(draftId)}`, {
+        method: "DELETE",
+        keepalive: options.keepalive,
+      }),
+    commitDraft: (draftId: string, body: DraftCommitIn) =>
+      request<DraftCommitOut>(`/api/v1/candidates/drafts/${encodeURIComponent(draftId)}/commit`, {
+        method: "POST",
+        body,
+      }),
     duplicates: (params: { email?: string; phone?: string }) =>
       request<DuplicateCheckOut>(withQuery("/api/v1/candidates/duplicates", params)),
     create: (form: FormData) =>
@@ -426,6 +453,20 @@ export const api = {
         method: "PATCH",
         body,
       }),
+    delete: (id: string) =>
+      request<CandidateDeleteOut>(`/api/v1/candidates/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      }),
+    bulkDelete: (candidate_ids: string[]) =>
+      request<BulkCandidateDeleteOut>("/api/v1/candidates/bulk-delete", {
+        method: "POST",
+        body: { candidate_ids },
+      }),
+    anonymize: (id: string) =>
+      request<{ id: string; status: string }>(
+        `/api/v1/candidates/${encodeURIComponent(id)}/anonymize`,
+        { method: "POST" },
+      ),
     uploadDocument: (id: string, form: FormData) =>
       request<DocumentOut>(`/api/v1/candidates/${encodeURIComponent(id)}/documents`, {
         method: "POST",

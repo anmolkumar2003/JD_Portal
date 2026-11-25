@@ -61,10 +61,11 @@ On **Candidates**, use the search bar and filter popover (skills, score, departm
 ### Add candidate manually
 
 1. **Candidates → Add candidate**.
-2. Fill profile fields; salary fields support currency and per-annum/per-month.
-3. Drop one or more CVs (PDF or DOCX, max 5 MB). Parsed fields show a **from CV** badge when autofill ran.
-4. Fix duplicate email/phone warnings before saving.
-5. Drafts autosave in your browser until you submit.
+2. Drop one or more CVs (PDF or DOCX, max 5 MB). Files go to a temporary draft area (not a candidate record) and are parsed for preview. Parsed fields show a **from CV** badge when autofill ran.
+3. Review and edit the form. Required fields (marked with *): first name, last name, email, phone, and job. Department comes from the job. **Save** stays disabled until every required field is valid.
+4. Fix duplicate email/phone warnings (open the existing candidate, attach the CV there, or cancel) before saving.
+5. On save, draft files move to permanent storage, the candidate and application are created, and parsing / ATS / match scoring are queued. Cancel or leaving the page deletes unused draft files (you get an unsaved-changes warning). Expired drafts are removed after 24 hours.
+6. With multiple CVs, use the review table: incomplete rows cannot be saved with **Save all**; use **Save complete rows** to save only valid ones.
 
 ![Add candidate form](screenshots/add-candidate.png)
 
@@ -82,7 +83,9 @@ Open a candidate to see tabs:
 
 Use **Move to** or **Reject** with an optional reason. **Email** opens the composer with templates.
 
-**HR administrators** (`hr_admin`, `super_admin`) can **Download PDF summary** from the profile header (or from the bulk toolbar for several candidates at once — one PDF each, as a ZIP). A short dialog chooses whether to include contact details (on by default), salary details (off), and HR notes (off). The PDF is one to two A4 pages with organization branding, scores, interview ratings, and a note that scores are advisory. Files are generated on the fly and not stored on the server; the export is written to the audit log without personal data.
+**HR administrators** (`hr_admin`, `super_admin`) can open the actions menu to **Anonymize** (scrub personal details, keep applications and documents) or **Delete candidate** (permanent). Delete asks you to type the candidate’s full name, lists what will be removed, and cannot be undone. The same roles can **Delete** from the bulk toolbar (type `DELETE` to confirm). Recruiters and other roles never see these controls. Deletion is audited with row counts only — never name, email, or phone.
+
+**HR administrators** can also **Download PDF summary** from the profile header (or from the bulk toolbar for several candidates at once — one PDF each, as a ZIP). A short dialog chooses whether to include contact details (on by default), salary details (off), and HR notes (off). The PDF is one to two A4 pages with organization branding, scores, interview ratings, and a note that scores are advisory. Files are generated on the fly and not stored on the server; the export is written to the audit log without personal data.
 
 ![Candidate profile](screenshots/candidate-profile.png)
 
@@ -113,7 +116,8 @@ Match and interview scores are **advisory**. Adjust weights under **Settings →
 
 ## Privacy and data handling
 
-- Super admins can export or anonymize a candidate record for compliance requests (when those APIs are enabled).
+- `hr_admin` and `super_admin` can export, anonymize, or permanently delete a candidate. Permanent delete removes applications, documents, scores, notes, interviews, emails, notifications and related files; audit logs keep who deleted and counts only (no personal data).
+- Draft CV uploads before save never create a candidate; unused draft files expire after 24 hours.
 - PDF summaries and Excel list exports are limited to `hr_admin` and `super_admin`, audited (who exported, how many rows — no emails or notes in the audit payload), and streamed for download only (not kept on the server).
 - Uploaded CVs may be virus-scanned in production; infected files are rejected at upload.
 - Rejected-candidate retention (automatic anonymization after N days) is configured by your technical team and is off by default.

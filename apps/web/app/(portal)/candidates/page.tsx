@@ -13,12 +13,14 @@ import {
 } from "@/components/candidates/candidate-filters";
 import { BulkActionsBar } from "@/components/candidates/bulk-actions-bar";
 import { CandidatesTable } from "@/components/candidates/candidates-table";
+import { DeleteCandidateDialog } from "@/components/candidates/delete-candidate-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useApplications } from "@/hooks/use-applications";
 import { useAuth } from "@/hooks/use-auth";
+import { useBulkDeleteCandidates } from "@/hooks/use-candidates";
 import { api, ApiError, triggerBrowserDownload } from "@/lib/api";
 import {
   CANDIDATE_FILTER_KEYS,
@@ -49,6 +51,8 @@ function CandidatesPageContent() {
   const query = useApplications(params);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [excelBusy, setExcelBusy] = useState(false);
+  const [deleteCandidateIds, setDeleteCandidateIds] = useState<string[]>([]);
+  const bulkDelete = useBulkDeleteCandidates();
   const canExport = isAdmin(user?.role);
 
   const onExportExcel = useCallback(async () => {
@@ -215,8 +219,34 @@ function CandidatesPageContent() {
           selectedIds={[...selectedIds]}
           rows={query.data?.items ?? []}
           onClear={() => setSelectedIds(new Set())}
+          onDeleteRequest={(ids) => setDeleteCandidateIds(ids)}
         />
       )}
+
+      <DeleteCandidateDialog
+        open={deleteCandidateIds.length > 0}
+        onOpenChange={(open) => {
+          if (!open && !bulkDelete.isPending) setDeleteCandidateIds([]);
+        }}
+        mode="bulk"
+        count={deleteCandidateIds.length}
+        busy={bulkDelete.isPending}
+        onConfirm={() => {
+          const ids = [...deleteCandidateIds];
+          bulkDelete.mutate(ids, {
+            onSuccess: (result) => {
+              toast.success(`Deleted ${result.deleted.length} candidate(s)`);
+              if (result.failed.length) {
+                toast.warning(`${result.failed.length} could not be deleted`);
+              }
+              setDeleteCandidateIds([]);
+              setSelectedIds(new Set());
+            },
+            onError: (e) =>
+              toast.error(e instanceof ApiError ? e.message : "Bulk delete failed"),
+          });
+        }}
+      />
 
       <CandidateDrawer
         applicationId={drawerId}

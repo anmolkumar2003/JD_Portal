@@ -1,6 +1,6 @@
 "use client";
 
-import { FileDown, Loader2, X } from "lucide-react";
+import { FileDown, Loader2, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -19,11 +19,19 @@ interface BulkActionsBarProps {
   selectedIds: string[];
   rows: ApplicationListItem[];
   onClear: () => void;
+  /** Opens permanent bulk-delete confirmation (admin only). */
+  onDeleteRequest?: (candidateIds: string[]) => void;
 }
 
-export function BulkActionsBar({ selectedIds, rows, onClear }: BulkActionsBarProps) {
+export function BulkActionsBar({
+  selectedIds,
+  rows,
+  onClear,
+  onDeleteRequest,
+}: BulkActionsBarProps) {
   const { user } = useAuth();
   const canExport = isAdmin(user?.role);
+  const canDelete = isAdmin(user?.role);
   const bulk = useBulkAction();
   const stages = usePipelineStages();
   const [stageId, setStageId] = useState("");
@@ -161,6 +169,28 @@ export function BulkActionsBar({ selectedIds, rows, onClear }: BulkActionsBarPro
           >
             <FileDown className="mr-1 h-4 w-4" aria-hidden />
             Download PDF summary
+          </Button>
+        )}
+        {canDelete && (
+          <Button
+            type="button"
+            size="sm"
+            variant="destructive"
+            data-testid="bulk-delete-candidates"
+            disabled={bulk.isPending}
+            onClick={() => {
+              const candidateIds = Array.from(
+                new Set(selectedRows.map((r) => r.candidate_id).filter(Boolean)),
+              );
+              if (candidateIds.length === 0) {
+                toast.error("No candidates selected.");
+                return;
+              }
+              onDeleteRequest?.(candidateIds);
+            }}
+          >
+            <Trash2 className="mr-1 h-4 w-4" aria-hidden />
+            Delete
           </Button>
         )}
         <Button

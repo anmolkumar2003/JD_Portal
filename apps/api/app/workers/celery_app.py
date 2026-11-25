@@ -29,13 +29,23 @@ celery_app.conf.update(
     broker_connection_retry_on_startup=True,
 )
 
+# Always on: retries MinIO deletes that failed after a candidate hard-delete.
+beat_schedule: dict[str, dict[str, Any]] = {
+    "cleanup-orphan-storage-hourly": {
+        "task": "cleanup_orphan_storage",
+        "schedule": crontab(minute=7),
+    },
+    "cleanup-expired-drafts-hourly": {
+        "task": "cleanup_expired_drafts",
+        "schedule": crontab(minute=22),
+    },
+}
 if settings.retention_rejected_days > 0:
-    celery_app.conf.beat_schedule = {
-        "retention-rejected-daily": {
-            "task": "run_retention_rejected",
-            "schedule": crontab(hour=3, minute=15),
-        },
+    beat_schedule["retention-rejected-daily"] = {
+        "task": "run_retention_rejected",
+        "schedule": crontab(hour=3, minute=15),
     }
+celery_app.conf.beat_schedule = beat_schedule
 
 
 @setup_logging.connect

@@ -4,6 +4,7 @@ import path from "node:path";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { loginAsRecruiter, open } from "./helpers/auth";
+import { FIXTURES_DIR } from "./helpers/paths";
 
 /**
  * Portal flows covered end to end (requirement ids in docs/requirements.md):
@@ -15,10 +16,9 @@ import { loginAsRecruiter, open } from "./helpers/auth";
  * Responsive screenshots are NOT part of this suite (see `make test-e2e-screenshots`).
  */
 
-const FIXTURES = path.resolve(__dirname, "fixtures");
-const CV_BACKEND = path.join(FIXTURES, "cv01_backend.pdf");
-const CV_FRONTEND = path.join(FIXTURES, "cv02_frontend.pdf");
-const WRONG_TYPE = path.join(FIXTURES, "wrong-type.exe"); // starts with "MZ" (Windows executable)
+const CV_BACKEND = path.join(FIXTURES_DIR, "cv01_backend.pdf");
+const CV_FRONTEND = path.join(FIXTURES_DIR, "cv02_frontend.pdf");
+const WRONG_TYPE = path.join(FIXTURES_DIR, "wrong-type.exe"); // starts with "MZ" (Windows executable)
 
 const MAILPIT_URL = process.env.MAILPIT_URL ?? "http://mailpit:8025";
 const MAX_CV_BYTES = 5 * 1024 * 1024;
@@ -179,6 +179,16 @@ test.describe("CV dropzone", () => {
     await emailOf("cv01_backend_copy.pdf").fill(dupEmail);
     await emailOf("cv02_frontend.pdf").fill(`rahul.${stamp}@example.com`);
 
+    // Phone and job are required on every row (B3).
+    await page.getByLabel("Job for all rows").selectOption({ label: ANDROID_JOB });
+    for (const [n, file] of [
+      "cv01_backend.pdf",
+      "cv02_frontend.pdf",
+      "cv01_backend_copy.pdf",
+    ].entries()) {
+      await page.getByLabel(`Phone for ${file}`).fill(`+91 90000 3${n}${String(stamp).slice(-3)}`);
+    }
+
     await page.getByRole("button", { name: "Save all" }).click();
     await expect(toast(page, /Saved 3 candidates/)).toBeVisible({ timeout: 45_000 });
   });
@@ -233,6 +243,7 @@ test.describe("CV candidate lifecycle", () => {
     await expect(page.getByText("from CV").first()).toBeVisible();
 
     await page.getByLabel(/^Email/).fill(`priya.${stamp}@example.com`);
+    await page.getByLabel(/^Phone/).fill(`+91 90000 4${String(stamp).slice(-4)}`);
     await page.getByLabel("Job", { exact: true }).selectOption({ label: ANDROID_JOB });
     await page.getByRole("group", { name: "Expected CTC" }).getByLabel("Amount").fill("1800000");
     await page.getByRole("button", { name: "Save candidate" }).click();

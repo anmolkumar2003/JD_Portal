@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,47 @@ class AppError(Exception):
         self.code = code
         self.message = message
         self.details = details
+
+
+_FRIENDLY_MESSAGES: dict[tuple[str, str], str] = {
+    ("phone", "string_pattern_mismatch"): "Enter a valid phone number (digits, spaces, + ( ) - .)",
+    ("phone", "string_too_short"): "Enter a valid phone number (at least 6 characters)",
+    ("email", "value_error"): "Enter a valid email address",
+    ("job_id", "uuid_parsing"): "Select a job",
+    ("job_id", "uuid_type"): "Select a job",
+}
+
+
+def field_issues(exc: ValidationError) -> list[dict[str, Any]]:
+    """Flatten a pydantic error into `{field, message, type}` items with readable messages.
+
+    Input values are never echoed back, so candidate PII does not end up in error bodies.
+    """
+    issues: list[dict[str, Any]] = []
+    for err in exc.errors(include_url=False, include_context=False, include_input=False):
+        field = ".".join(str(part) for part in err["loc"])
+        err_type = str(err["type"])
+        message = str(err["msg"]).removeprefix("Value error, ")
+        if err_type == "missing":
+            message = "This field is required"
+        elif message != "This field is required":
+            message = _FRIENDLY_MESSAGES.get((field, err_type), message)
+        issues.append({"field": field, "message": message, "type": err_type})
+    return issues
+
+
+def validation_app_error(exc: ValidationError) -> AppError:
+    """Same envelope as request validation: 422 `validation_error` with per-field details."""
+    issues = field_issues(exc)
+    details = [
+        {"loc": ["body", i["field"]], "msg": i["message"], "type": i["type"]} for i in issues
+    ]
+    return AppError(
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        "validation_error",
+        "Request validation failed",
+        details,
+    )
 
 
 def _envelope(

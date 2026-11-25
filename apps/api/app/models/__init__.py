@@ -3,6 +3,7 @@
 from app.models.activity import ActivityLog
 from app.models.base import Base
 from app.models.candidate import Application, Candidate, Document
+from app.models.candidate_draft import CandidateDraft, CandidateDraftFile
 from app.models.comms import EmailLog, EmailTemplate, Note, Notification
 from app.models.compliance import AuditLog, ConsentRecord
 from app.models.cv import AtsCheck, MatchResult, ParsedProfile
@@ -18,6 +19,7 @@ from app.models.org_setup import Department, Location, PipelineStage
 from app.models.organization import Organization
 from app.models.ratings import InterviewRating
 from app.models.saved_filters import SavedFilter
+from app.models.storage_cleanup import OrphanStorageObject
 from app.models.user import User
 
 __all__ = [
@@ -27,6 +29,8 @@ __all__ = [
     "AuditLog",
     "Base",
     "Candidate",
+    "CandidateDraft",
+    "CandidateDraftFile",
     "ConsentRecord",
     "Department",
     "Document",
@@ -44,6 +48,7 @@ __all__ = [
     "Notification",
     "Offer",
     "Organization",
+    "OrphanStorageObject",
     "ParsedProfile",
     "PipelineStage",
     "Requisition",

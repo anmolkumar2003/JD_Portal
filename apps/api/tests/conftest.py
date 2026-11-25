@@ -69,6 +69,8 @@ class FakeRedis:
 
     def __init__(self) -> None:
         self.store: dict[str, str] = {}
+        self.sets: dict[str, set[str]] = {}
+        self.ttls: dict[str, int] = {}
 
     async def set(self, name: str, value: str, ex: int | None = None) -> bool:
         self.store[name] = value
@@ -83,7 +85,25 @@ class FakeRedis:
         return value
 
     async def expire(self, name: str, seconds: int) -> bool:
-        return name in self.store
+        if name in self.store or name in self.sets:
+            self.ttls[name] = seconds
+            return True
+        return False
+
+    async def sadd(self, name: str, *values: str) -> int:
+        members = self.sets.setdefault(name, set())
+        before = len(members)
+        members.update(values)
+        return len(members) - before
+
+    async def srem(self, name: str, *values: str) -> int:
+        members = self.sets.get(name, set())
+        before = len(members)
+        members.difference_update(values)
+        return before - len(members)
+
+    async def sismember(self, name: str, value: str) -> bool:
+        return value in self.sets.get(name, set())
 
     async def ttl(self, name: str) -> int:
         return 3600 if name in self.store else -2
@@ -171,9 +191,23 @@ def _no_real_storage(monkeypatch: pytest.MonkeyPatch) -> None:
     async def delete_object(key: str) -> None:
         return None
 
+    async def list_prefix(prefix: str) -> list[str]:
+        return []
+
     monkeypatch.setattr("app.core.storage.put_object", put_object)
     monkeypatch.setattr("app.core.storage.get_object", get_object)
     monkeypatch.setattr("app.core.storage.delete_object", delete_object)
+    monkeypatch.setattr("app.core.storage.list_prefix", list_prefix)
+
+
+@pytest.fixture(autouse=True)
+def _no_celery_revoke(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Hard-delete tries to revoke queued CV tasks; tests have no broker to ask."""
+
+    async def revoke_cv_tasks(document_ids: list[Any]) -> int:
+        return 0
+
+    monkeypatch.setattr("app.services.candidate_delete.revoke_cv_tasks", revoke_cv_tasks)
 
 
 @pytest.fixture
@@ -206,9 +240,13 @@ def stored_objects(monkeypatch: pytest.MonkeyPatch) -> dict[str, bytes]:
     async def delete_object(key: str) -> None:
         objects.pop(key, None)
 
+    async def list_prefix(prefix: str) -> list[str]:
+        return [key for key in objects if key.startswith(prefix)]
+
     monkeypatch.setattr("app.core.storage.put_object", put_object)
     monkeypatch.setattr("app.core.storage.get_object", get_object)
     monkeypatch.setattr("app.core.storage.delete_object", delete_object)
+    monkeypatch.setattr("app.core.storage.list_prefix", list_prefix)
     return objects
 
 

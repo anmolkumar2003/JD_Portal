@@ -6,11 +6,43 @@ import { applicationKeys } from "@/hooks/use-applications";
 import { api } from "@/lib/api";
 import type { CandidatePatchInput, DocumentOut } from "@/types/api";
 
+function invalidateAfterCandidateRemoval(queryClient: ReturnType<typeof useQueryClient>) {
+  void queryClient.invalidateQueries({ queryKey: applicationKeys.all });
+  void queryClient.invalidateQueries({ queryKey: ["analytics"] });
+  void queryClient.invalidateQueries({ queryKey: ["search"] });
+}
+
 export function useUpdateCandidate() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: CandidatePatchInput }) =>
       api.candidates.update(id, body),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: applicationKeys.all });
+    },
+  });
+}
+
+export function useDeleteCandidate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.candidates.delete(id),
+    onSuccess: () => invalidateAfterCandidateRemoval(queryClient),
+  });
+}
+
+export function useBulkDeleteCandidates() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (candidateIds: string[]) => api.candidates.bulkDelete(candidateIds),
+    onSuccess: () => invalidateAfterCandidateRemoval(queryClient),
+  });
+}
+
+export function useAnonymizeCandidate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.candidates.anonymize(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: applicationKeys.all });
     },

@@ -5,12 +5,12 @@ import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 import { loginAsHrAdmin, loginAsRecruiter, open } from "./helpers/auth";
+import { FIXTURES_DIR } from "./helpers/paths";
 
-const FIXTURES = path.resolve(__dirname, "fixtures");
-const SAMPLE_CV = path.join(FIXTURES, "cv01_backend.pdf");
-const CV2 = path.join(FIXTURES, "cv02.pdf");
-const CV3 = path.join(FIXTURES, "cv03.pdf");
-const WRONG_TYPE = path.join(FIXTURES, "wrong-type.exe");
+const SAMPLE_CV = path.join(FIXTURES_DIR, "cv01_backend.pdf");
+const CV2 = path.join(FIXTURES_DIR, "cv02.pdf");
+const CV3 = path.join(FIXTURES_DIR, "cv03.pdf");
+const WRONG_TYPE = path.join(FIXTURES_DIR, "wrong-type.exe");
 const SEEDED_DEMO_EMAIL = "demo01@candidates.demo";
 
 function makeOversizedPdf(): string {
@@ -47,6 +47,7 @@ test.describe("Feature coverage", () => {
       .getByLabel(/Location/i)
       .first()
       .fill("Bengaluru");
+    await page.getByLabel("Job", { exact: true }).selectOption({ index: 1 });
     await page.locator("#current_ctc\\.amount").fill("900000");
     await page.locator("#expected_ctc\\.amount").fill("1200000");
     await page.locator("#notice_period_days").fill("30");

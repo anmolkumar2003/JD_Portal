@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core import storage
+from app.core.redis import is_candidate_marked_deleted_sync
 from app.cv_engine.ats_check import run_ats_check
 from app.cv_engine.extract import extract_text
 from app.cv_engine.matcher import match_result_to_breakdown, score_match
@@ -216,7 +217,14 @@ def process_document_sync(session: Session, document_id: uuid.UUID) -> None:
     """Run full CV pipeline for one document. Raises on hard failures (Celery retries)."""
     document = session.get(Document, document_id)
     if document is None:
-        logger.error("process_document_missing document_id=%s", document_id)
+        logger.warning("process_document_missing document_id=%s", document_id)
+        return
+    # Hard-deleted candidates: never recreate parsed data, ATS checks or scores for them.
+    if (
+        session.get(Candidate, document.candidate_id) is None
+        or is_candidate_marked_deleted_sync(document.candidate_id)
+    ):
+        logger.warning("process_document_skipped_deleted_candidate document_id=%s", document_id)
         return
 
     profile = session.scalar(select(ParsedProfile).where(ParsedProfile.document_id == document_id))

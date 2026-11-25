@@ -80,3 +80,13 @@ Legend: `[x]` done · `[~]` partial · `[ ]` pending · `[-]` skipped
 ### FINAL
 
 - [x] Re-audit written to `docs/AUDIT.md` (2026-11-23)
+
+### Feature: permanent delete and required fields (`feature/delete-and-required-fields`)
+
+- [x] A1–A7: Admin-only permanent delete (profile + bulk), typed confirmation, hard delete with
+      MinIO orphan cleanup and CV-task cancel, audit without PII, Anonymize kept as softer
+      action, toast/redirect/cache refresh, pytest + Playwright
+- [x] B1–B7: Draft MinIO area (24h expiry + cleanup), preview parse without creating candidates,
+      required first/last/email/phone/job on client and API, duplicate warnings, draft→permanent
+      save and cancel cleanup, multi-CV review table with partial save, pytest + Playwright
+- [x] `docs/USER-GUIDE.md` updated for delete and draft add-candidate flows
