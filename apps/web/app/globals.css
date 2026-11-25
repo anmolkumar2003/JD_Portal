@@ -51,7 +51,7 @@
     --glass-strong-opacity: 0.9; /* 85–92% */
     --glass-border: 0 0% 100%;
     --glass-border-opacity: 0.6;
-    --glass-blur: 18px;
+    --glass-blur: 16px;
     --glass-saturate: 1.4;
     --glow-primary: 243 75% 70%;
     --glow-violet: 263 70% 72%;
@@ -105,7 +105,7 @@
     --glass-strong-opacity: 0.12;
     --glass-border: 0 0% 100%;
     --glass-border-opacity: 0.14;
-    --glass-blur: 18px;
+    --glass-blur: 16px;
     --glass-saturate: 1.4;
     --glow-primary: 243 75% 55%;
     --glow-violet: 263 70% 55%;

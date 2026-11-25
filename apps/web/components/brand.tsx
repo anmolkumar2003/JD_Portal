@@ -35,7 +35,7 @@ export function Brand({ name, logoUrl, showName = true, className }: BrandProps)
         />
       ) : (
         <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-brand text-sm text-primary-foreground shadow-glow-sm"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-gradient-brand text-sm text-primary-foreground"
           aria-hidden
         >
           {initials(name)}
