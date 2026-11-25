@@ -329,6 +329,23 @@ export interface ManualCandidateResult {
   budget_status: BudgetStatus;
 }
 
+export interface CandidateDeleteOut {
+  id: string;
+  deleted: boolean;
+  counts: Record<string, number>;
+}
+
+export interface CandidateDeleteFailure {
+  id: string;
+  code: string;
+  message: string;
+}
+
+export interface BulkCandidateDeleteOut {
+  deleted: CandidateDeleteOut[];
+  failed: CandidateDeleteFailure[];
+}
+
 export interface CandidateOut {
   id: string;
   first_name: string;

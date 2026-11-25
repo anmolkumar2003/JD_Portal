@@ -7,7 +7,9 @@ import type {
   ApplyResult,
   BulkActionInput,
   BulkActionResult,
+  BulkCandidateDeleteOut,
   BoardOut,
+  CandidateDeleteOut,
   CandidateOut,
   CandidatePatchInput,
   CandidateTagsOut,
@@ -426,6 +428,20 @@ export const api = {
         method: "PATCH",
         body,
       }),
+    delete: (id: string) =>
+      request<CandidateDeleteOut>(`/api/v1/candidates/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      }),
+    bulkDelete: (candidate_ids: string[]) =>
+      request<BulkCandidateDeleteOut>("/api/v1/candidates/bulk-delete", {
+        method: "POST",
+        body: { candidate_ids },
+      }),
+    anonymize: (id: string) =>
+      request<{ id: string; status: string }>(
+        `/api/v1/candidates/${encodeURIComponent(id)}/anonymize`,
+        { method: "POST" },
+      ),
     uploadDocument: (id: string, form: FormData) =>
       request<DocumentOut>(`/api/v1/candidates/${encodeURIComponent(id)}/documents`, {
         method: "POST",

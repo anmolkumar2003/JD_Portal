@@ -2,14 +2,15 @@
 
 import { FileQuestion } from "lucide-react";
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { ActivityTimeline } from "@/components/candidates/activity-timeline";
+import { AnonymizeCandidateDialog } from "@/components/candidates/anonymize-candidate-dialog";
 import { CandidateOverview } from "@/components/candidates/candidate-overview";
 import { CandidateProfileHeader } from "@/components/candidates/candidate-profile-header";
 import { CvViewer } from "@/components/candidates/cv-viewer";
-import { AnonymizeCandidateDialog } from "@/components/candidates/anonymize-candidate-dialog";
 import { DeleteCandidateDialog } from "@/components/candidates/delete-candidate-dialog";
 import { EmailComposer } from "@/components/candidates/email-composer";
 import { InterviewRatings } from "@/components/candidates/interview-ratings";
@@ -23,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useApplication, useApplications } from "@/hooks/use-applications";
 import { useAuth } from "@/hooks/use-auth";
+import { useAnonymizeCandidate, useDeleteCandidate } from "@/hooks/use-candidates";
 import { ApiError } from "@/lib/api";
 import { canManageJobs } from "@/lib/permissions";
 
@@ -39,10 +41,13 @@ function ProfileSkeleton() {
 
 function CandidateProfileContent() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const applicationParam = searchParams.get("application");
   const { user } = useAuth();
   const canEmail = canManageJobs(user?.role);
+  const deleteCandidate = useDeleteCandidate();
+  const anonymizeCandidate = useAnonymizeCandidate();
   const [emailOpen, setEmailOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [anonymizeOpen, setAnonymizeOpen] = useState(false);
@@ -160,8 +165,17 @@ function CandidateProfileContent() {
         onOpenChange={setDeleteOpen}
         mode="single"
         candidateName={name}
+        busy={deleteCandidate.isPending}
         onConfirm={() => {
-          /* wired in A6 */
+          deleteCandidate.mutate(data.candidate.id, {
+            onSuccess: () => {
+              toast.success("Candidate permanently deleted");
+              setDeleteOpen(false);
+              router.push("/candidates");
+            },
+            onError: (e) =>
+              toast.error(e instanceof ApiError ? e.message : "Could not delete candidate"),
+          });
         }}
       />
 
@@ -169,8 +183,17 @@ function CandidateProfileContent() {
         open={anonymizeOpen}
         onOpenChange={setAnonymizeOpen}
         candidateName={name}
+        busy={anonymizeCandidate.isPending}
         onConfirm={() => {
-          /* wired in A6 */
+          anonymizeCandidate.mutate(data.candidate.id, {
+            onSuccess: () => {
+              toast.success("Candidate anonymized");
+              setAnonymizeOpen(false);
+              void detail.refetch();
+            },
+            onError: (e) =>
+              toast.error(e instanceof ApiError ? e.message : "Could not anonymize candidate"),
+          });
         }}
       />
     </div>
