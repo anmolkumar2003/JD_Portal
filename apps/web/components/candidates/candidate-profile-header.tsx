@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, FileDown, Loader2, Mail, Star } from "lucide-react";
+import { ChevronDown, FileDown, Loader2, Mail, MoreHorizontal, Star, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { CandidateTagsEditor } from "@/components/candidates/candidate-tags-editor";
@@ -15,6 +15,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -31,12 +32,19 @@ import type { ApplicationDetail } from "@/types/api";
 interface CandidateProfileHeaderProps {
   application: ApplicationDetail;
   onEmail?: () => void;
+  /** Opens the permanent-delete confirmation (admin only). */
+  onDeleteRequest?: () => void;
 }
 
-export function CandidateProfileHeader({ application, onEmail }: CandidateProfileHeaderProps) {
+export function CandidateProfileHeader({
+  application,
+  onEmail,
+  onDeleteRequest,
+}: CandidateProfileHeaderProps) {
   const { user } = useAuth();
   const canEdit = canMoveStages(user?.role);
   const canExport = isAdmin(user?.role);
+  const canDelete = isAdmin(user?.role);
   const stages = usePipelineStages();
   const moveStage = useMoveStage();
   const shortlist = useShortlist();
@@ -165,6 +173,31 @@ export function CandidateProfileHeader({ application, onEmail }: CandidateProfil
                 <FileDown className="mr-1 h-4 w-4" aria-hidden />
                 Download PDF summary
               </Button>
+            )}
+            {canDelete && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    aria-label="Candidate actions"
+                    data-testid="candidate-actions-menu"
+                  >
+                    <MoreHorizontal className="h-4 w-4" aria-hidden />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                    data-testid="delete-candidate-action"
+                    onSelect={() => onDeleteRequest?.()}
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden />
+                    Delete candidate
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             {moveStage.isPending && (
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden />
