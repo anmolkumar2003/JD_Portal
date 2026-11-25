@@ -4,9 +4,10 @@ import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 import { DEMO_PASSWORD, loginAsRecruiter, open } from "./helpers/auth";
+import { DOCS_DIR } from "./helpers/paths";
 
 // Run via `make test-e2e-screenshots` (docs/ mounted at /work/docs in the container).
-const OUTPUT_DIR = path.resolve(__dirname, "../docs/screenshots");
+const OUTPUT_DIR = path.join(DOCS_DIR, "screenshots");
 
 const VIEWPORTS: { name: string; width: number; height: number }[] = [
   { name: "390x844", width: 390, height: 844 },

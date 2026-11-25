@@ -3,8 +3,9 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 
 import { CAREERS_ENABLED, loginAs, loginAsRecruiter } from "./helpers/auth";
+import { FIXTURES_DIR } from "./helpers/paths";
 
-const SAMPLE_CV = path.resolve(__dirname, "fixtures/cv01_backend.pdf");
+const SAMPLE_CV = path.join(FIXTURES_DIR, "cv01_backend.pdf");
 const SEEDED_DEMO_EMAIL = "demo01@candidates.demo";
 
 test.describe("Careers apply", () => {

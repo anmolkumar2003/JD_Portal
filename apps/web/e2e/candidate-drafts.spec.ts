@@ -4,15 +4,15 @@ import path from "node:path";
 import { expect, test, type Locator, type Page, type Request } from "@playwright/test";
 
 import { loginAsRecruiter, open } from "./helpers/auth";
+import { FIXTURES_DIR } from "./helpers/paths";
 
 /**
  * Add Candidate draft flow (B1-B6): dropped CVs go to a temporary draft, required fields block
  * saving, and nothing becomes a candidate until Save.
  */
 
-const FIXTURES = path.resolve(__dirname, "fixtures");
-const CV_BACKEND = path.join(FIXTURES, "cv01_backend.pdf");
-const CV_FRONTEND = path.join(FIXTURES, "cv02_frontend.pdf");
+const CV_BACKEND = path.join(FIXTURES_DIR, "cv01_backend.pdf");
+const CV_FRONTEND = path.join(FIXTURES_DIR, "cv02_frontend.pdf");
 const ANDROID_JOB = "Senior Android Developer";
 
 type DropFile = { name: string; type: string; base64: string };

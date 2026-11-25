@@ -4,6 +4,7 @@ import path from "node:path";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { loginAsRecruiter, open } from "./helpers/auth";
+import { FIXTURES_DIR } from "./helpers/paths";
 
 /**
  * Portal flows covered end to end (requirement ids in docs/requirements.md):
@@ -15,10 +16,9 @@ import { loginAsRecruiter, open } from "./helpers/auth";
  * Responsive screenshots are NOT part of this suite (see `make test-e2e-screenshots`).
  */
 
-const FIXTURES = path.resolve(__dirname, "fixtures");
-const CV_BACKEND = path.join(FIXTURES, "cv01_backend.pdf");
-const CV_FRONTEND = path.join(FIXTURES, "cv02_frontend.pdf");
-const WRONG_TYPE = path.join(FIXTURES, "wrong-type.exe"); // starts with "MZ" (Windows executable)
+const CV_BACKEND = path.join(FIXTURES_DIR, "cv01_backend.pdf");
+const CV_FRONTEND = path.join(FIXTURES_DIR, "cv02_frontend.pdf");
+const WRONG_TYPE = path.join(FIXTURES_DIR, "wrong-type.exe"); // starts with "MZ" (Windows executable)
 
 const MAILPIT_URL = process.env.MAILPIT_URL ?? "http://mailpit:8025";
 const MAX_CV_BYTES = 5 * 1024 * 1024;
