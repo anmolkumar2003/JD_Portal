@@ -4,11 +4,13 @@ from decimal import Decimal, InvalidOperation
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
-from app.core.deps import CurrentUser, require_roles
+from app.core.deps import AdminUser, CurrentUser, require_roles
 from app.core.errors import AppError
+from app.core.redis import get_redis
 from app.models import User
 from app.models.enums import CandidateSource, DocumentType, SalaryUnit, UserRole
 from app.schemas.application import (
@@ -20,16 +22,23 @@ from app.schemas.application import (
     TimelineEntry,
 )
 from app.schemas.candidate_actions import CandidateOut, CandidatePatch, NoteCreate, NoteOut
+from app.schemas.candidate_delete import (
+    BulkCandidateDeleteOut,
+    BulkCandidateDeleteRequest,
+    CandidateDeleteOut,
+)
 from app.schemas.salary import SalaryIn
 from app.services import analysis as analysis_service
 from app.services import applications as applications_service
 from app.services import candidate_actions as actions_service
+from app.services import candidate_delete as delete_service
 from app.services import documents as documents_service
 from app.services.cv_validation import MAX_CV_BYTES
 
 router = APIRouter(prefix="/api/v1/candidates", tags=["candidates"])
 
 Session = Annotated[AsyncSession, Depends(get_db)]
+RedisClient = Annotated[Redis, Depends(get_redis)]
 CandidateEditor = Annotated[
     User,
     Depends(require_roles(UserRole.SUPER_ADMIN, UserRole.HR_ADMIN, UserRole.RECRUITER)),
@@ -107,6 +116,24 @@ async def create_note(
 ) -> NoteOut:
     """CAND-05: add a note; `mentions` is a list of user ids."""
     return await actions_service.create_note(session, user, candidate_id, body)
+
+
+@router.post("/bulk-delete", response_model=BulkCandidateDeleteOut)
+async def bulk_delete_candidates(
+    body: BulkCandidateDeleteRequest, user: AdminUser, session: Session, redis: RedisClient
+) -> BulkCandidateDeleteOut:
+    """Permanently delete candidates and all their data (admins only). Not reversible."""
+    return await delete_service.hard_delete_candidates(
+        session, redis, user, body.candidate_ids, bulk=True
+    )
+
+
+@router.delete("/{candidate_id}", response_model=CandidateDeleteOut)
+async def delete_candidate(
+    candidate_id: uuid.UUID, user: AdminUser, session: Session, redis: RedisClient
+) -> CandidateDeleteOut:
+    """Permanently delete one candidate and all their data (admins only). Not reversible."""
+    return await delete_service.hard_delete_candidate(session, redis, user, candidate_id)
 
 
 @router.patch("/{candidate_id}", response_model=CandidateOut)
