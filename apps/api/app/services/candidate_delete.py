@@ -61,6 +61,17 @@ logger = logging.getLogger(__name__)
 NOT_FOUND = "not_found"
 DELETE_FAILED = "delete_failed"
 REVOKE_TIMEOUT_SECONDS = 5.0
+_FORBIDDEN_AUDIT_KEYS = frozenset(
+    {"name", "first_name", "last_name", "email", "phone", "to", "to_address", "body"}
+)
+
+
+def _audit_diff_without_pii(counts: dict[str, int], *, storage_key_count: int) -> dict[str, Any]:
+    """Build the audit payload. Raises if a forbidden PII key slips into counts."""
+    overlap = _FORBIDDEN_AUDIT_KEYS.intersection(counts)
+    if overlap:
+        raise RuntimeError(f"refusing to audit PII keys: {sorted(overlap)}")
+    return {"counts": dict(counts), "storage_objects": storage_key_count}
 
 
 @dataclass(frozen=True)
@@ -234,7 +245,7 @@ async def _delete_in_transaction(
         action="candidate.bulk_deleted" if bulk else "candidate.deleted",
         entity_type="candidate",
         entity_id=candidate_id,
-        diff={"counts": counts, "storage_objects": len(storage_keys)},
+        diff=_audit_diff_without_pii(counts, storage_key_count=len(storage_keys)),
     )
     await session.commit()
     return _Outcome(counts=counts, storage_keys=storage_keys)
