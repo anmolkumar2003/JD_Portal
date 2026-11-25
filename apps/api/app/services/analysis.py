@@ -43,7 +43,7 @@ from app.schemas.application import (
 )
 from app.services.applications import _applied_stage, _safe_file_name
 from app.services.cv_processing import process_document_sync, score_application
-from app.services.cv_validation import validate_cv
+from app.services.cv_validation import ValidatedFile, validate_cv
 from app.workers.tasks import process_document, rescore_job
 
 logger = logging.getLogger(__name__)
@@ -254,14 +254,28 @@ async def enqueue_job_rescore(session: AsyncSession, user: User, job_id: uuid.UU
     return RescoreOut(job_id=job_id, status="queued")
 
 
-async def create_manual_candidate(
+async def _load_job_for_create(session: AsyncSession, user: User, job_id: uuid.UUID) -> Job:
+    if not await can_access_job(session, user, job_id):
+        raise _not_found("Job")
+    job = await session.get(Job, job_id)
+    if job is None or job.deleted_at is not None:
+        raise _not_found("Job")
+    return job
+
+
+async def stage_manual_candidate(
     session: AsyncSession,
     user: User,
     body: ManualCandidateCreate,
     cv_bytes: bytes | None,
     cv_file_name: str | None,
 ) -> ManualCandidateResult:
-    """CAND-10: HR adds a candidate (and optional application) with CV upload."""
+    """CAND-10: write candidate + application + CV document rows and the permanent object.
+
+    Flushes but never commits, so callers can add their own rows (e.g. delete a draft file) to
+    the same transaction. The caller commits and then queues `process_document`.
+    """
+    job = await _load_job_for_create(session, user, body.job_id)
     email = body.email.lower()
     existing = await session.scalar(
         select(Candidate).where(
@@ -291,7 +305,10 @@ async def create_manual_candidate(
         candidate.linkedin_url = body.linkedin_url
     if body.portfolio_url:
         candidate.portfolio_url = body.portfolio_url
-    if body.department_id is not None:
+    # Department comes from the job; the form value is only a fallback for jobs without one.
+    if job.department_id is not None:
+        candidate.department_id = job.department_id
+    elif body.department_id is not None:
         candidate.department_id = body.department_id
     apply_salary(candidate, "current", body.current_ctc)
     apply_salary(candidate, "expected", body.expected_ctc)
@@ -317,51 +334,43 @@ async def create_manual_candidate(
     application_id = None
     reference_no = None
     document_id = None
-    job_for_budget: Job | None = None
 
-    if body.job_id is not None:
-        if not await can_access_job(session, user, body.job_id):
-            raise _not_found("Job")
-        job = await session.get(Job, body.job_id)
-        if job is None or job.deleted_at is not None:
-            raise _not_found("Job")
-        job_for_budget = job
-        dup = await session.scalar(
-            select(Application.id).where(
-                Application.candidate_id == candidate.id, Application.job_id == job.id
+    dup = await session.scalar(
+        select(Application.id).where(
+            Application.candidate_id == candidate.id, Application.job_id == job.id
+        )
+    )
+    if dup is not None:
+        application_id = dup  # already applied to this job: attach the CV to that application
+    else:
+        from app.models.candidate import APPLICATION_REFERENCE_SEQ
+
+        stage = await _applied_stage(session, user.org_id)
+        now = datetime.now(UTC)
+        sequence = int(await session.scalar(select(APPLICATION_REFERENCE_SEQ.next_value())) or 0)
+        reference_no = f"APP-{now.year}-{sequence:06d}"
+        application = Application(
+            candidate_id=candidate.id,
+            job_id=job.id,
+            stage_id=stage.id,
+            reference_no=reference_no,
+            status=ApplicationStatus.ACTIVE,
+            applied_at=now,
+            stage_entered_at=now,
+            assigned_recruiter_id=user.id,
+        )
+        session.add(application)
+        await session.flush()
+        application_id = application.id
+        session.add(
+            ActivityLog(
+                candidate_id=candidate.id,
+                application_id=application_id,
+                actor_id=user.id,
+                action="application.created",
+                meta={"job_id": str(job.id), "reference_no": reference_no},
             )
         )
-        if dup is None:
-            from app.models.candidate import APPLICATION_REFERENCE_SEQ
-
-            stage = await _applied_stage(session, user.org_id)
-            now = datetime.now(UTC)
-            sequence = int(
-                await session.scalar(select(APPLICATION_REFERENCE_SEQ.next_value())) or 0
-            )
-            reference_no = f"APP-{now.year}-{sequence:06d}"
-            application = Application(
-                candidate_id=candidate.id,
-                job_id=job.id,
-                stage_id=stage.id,
-                reference_no=reference_no,
-                status=ApplicationStatus.ACTIVE,
-                applied_at=now,
-                stage_entered_at=now,
-                assigned_recruiter_id=user.id,
-            )
-            session.add(application)
-            await session.flush()
-            application_id = application.id
-            session.add(
-                ActivityLog(
-                    candidate_id=candidate.id,
-                    application_id=application_id,
-                    actor_id=user.id,
-                    action="application.created",
-                    meta={"job_id": str(job.id), "reference_no": reference_no},
-                )
-            )
 
     if cv_bytes:
         validated = validate_cv(cv_bytes)
@@ -400,31 +409,50 @@ async def create_manual_candidate(
         await session.flush()
         await storage.put_object(storage_key, cv_bytes, validated.mime_type)
 
-    await session.commit()
-    if document_id is not None:
-        try:
-            process_document.delay(str(document_id))
-        except Exception:
-            logger.exception("manual_candidate_process_enqueue_failed")
     return ManualCandidateResult(
         candidate_id=candidate.id,
         application_id=application_id,
         document_id=document_id,
         reference_no=reference_no,
         reused=existing is not None,
-        budget_status=(
-            candidate_budget(candidate, job_for_budget.salary_max, job_for_budget.salary_min)
-            if job_for_budget is not None
-            else candidate_budget(candidate, None)
-        ),
+        budget_status=candidate_budget(candidate, job.salary_max, job.salary_min),
     )
 
 
-async def parse_cv_preview(cv_bytes: bytes, file_name: str | None) -> CvParseOut:
-    """Extract autofill fields from a CV without saving anything."""
+def enqueue_cv_processing(document_id: uuid.UUID | None) -> None:
+    """Queue CV parsing after the commit. A missing broker must not fail the save."""
+    if document_id is None:
+        return
+    try:
+        process_document.delay(str(document_id))
+    except Exception:
+        logger.exception("manual_candidate_process_enqueue_failed")
+
+
+async def create_manual_candidate(
+    session: AsyncSession,
+    user: User,
+    body: ManualCandidateCreate,
+    cv_bytes: bytes | None,
+    cv_file_name: str | None,
+) -> ManualCandidateResult:
+    """CAND-10: HR adds a candidate with an application (job required) and optional CV."""
+    result = await stage_manual_candidate(session, user, body, cv_bytes, cv_file_name)
+    await session.commit()
+    enqueue_cv_processing(result.document_id)
+    return result
+
+
+async def parse_cv_preview(
+    cv_bytes: bytes, file_name: str | None, validated: ValidatedFile | None = None
+) -> CvParseOut:
+    """Extract autofill fields from a CV without saving anything.
+
+    Pass `validated` when the caller already ran `validate_cv` (avoids a second virus scan).
+    """
     from app.cv_engine import RuleBasedParser, extract_text
 
-    validated = validate_cv(cv_bytes)
+    validated = validated or validate_cv(cv_bytes)
     extracted = extract_text(cv_bytes, validated.mime_type)
     parsed = RuleBasedParser().parse(extracted.text, file_meta=extracted)
     first_name = None

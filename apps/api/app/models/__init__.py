@@ -3,6 +3,7 @@
 from app.models.activity import ActivityLog
 from app.models.base import Base
 from app.models.candidate import Application, Candidate, Document
+from app.models.candidate_draft import CandidateDraft, CandidateDraftFile
 from app.models.comms import EmailLog, EmailTemplate, Note, Notification
 from app.models.compliance import AuditLog, ConsentRecord
 from app.models.cv import AtsCheck, MatchResult, ParsedProfile
@@ -28,6 +29,8 @@ __all__ = [
     "AuditLog",
     "Base",
     "Candidate",
+    "CandidateDraft",
+    "CandidateDraftFile",
     "ConsentRecord",
     "Department",
     "Document",

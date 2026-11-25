@@ -4,12 +4,13 @@ from decimal import Decimal, InvalidOperation
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
+from pydantic import ValidationError
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import AdminUser, CurrentUser, require_roles
-from app.core.errors import AppError
+from app.core.errors import AppError, validation_app_error
 from app.core.redis import get_redis
 from app.models import User
 from app.models.enums import CandidateSource, DocumentType, SalaryUnit, UserRole
@@ -27,11 +28,19 @@ from app.schemas.candidate_delete import (
     BulkCandidateDeleteRequest,
     CandidateDeleteOut,
 )
+from app.schemas.candidate_drafts import (
+    DraftCommitIn,
+    DraftCommitOut,
+    DraftDeleteOut,
+    DraftFileUploadOut,
+    DraftOut,
+)
 from app.schemas.salary import SalaryIn
 from app.services import analysis as analysis_service
 from app.services import applications as applications_service
 from app.services import candidate_actions as actions_service
 from app.services import candidate_delete as delete_service
+from app.services import candidate_drafts as drafts_service
 from app.services import documents as documents_service
 from app.services.cv_validation import MAX_CV_BYTES
 
@@ -83,9 +92,47 @@ async def parse_cv(
     user: CandidateEditor,
     cv: Annotated[UploadFile, File()],
 ) -> CvParseOut:
-    """Extract autofill fields from a CV. Nothing is stored."""
+    """Extract autofill fields from a CV. Nothing is stored (use drafts to keep the file)."""
     data = await cv.read(MAX_CV_BYTES + 1)
     return await analysis_service.parse_cv_preview(data, cv.filename)
+
+
+@router.post("/drafts", response_model=DraftOut, status_code=status.HTTP_201_CREATED)
+async def create_draft(user: CandidateEditor, session: Session) -> DraftOut:
+    """Start an empty draft (24h). Dropped CVs live here until saved or cancelled."""
+    return await drafts_service.create_draft(session, user)
+
+
+@router.post(
+    "/drafts/{draft_id}/files",
+    response_model=DraftFileUploadOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_draft_file(
+    draft_id: uuid.UUID,
+    user: CandidateEditor,
+    session: Session,
+    cv: Annotated[UploadFile, File()],
+) -> DraftFileUploadOut:
+    """Store a CV in the draft area and return its parsed fields. Creates no candidate."""
+    data = await cv.read(MAX_CV_BYTES + 1)
+    return await drafts_service.upload_draft_file(session, user, draft_id, data, cv.filename)
+
+
+@router.delete("/drafts/{draft_id}", response_model=DraftDeleteOut)
+async def delete_draft(
+    draft_id: uuid.UUID, user: CandidateEditor, session: Session
+) -> DraftDeleteOut:
+    """Cancel a draft: delete its rows and the stored CVs."""
+    return await drafts_service.delete_draft(session, user, draft_id)
+
+
+@router.post("/drafts/{draft_id}/commit", response_model=DraftCommitOut)
+async def commit_draft(
+    draft_id: uuid.UUID, body: DraftCommitIn, user: CandidateEditor, session: Session
+) -> DraftCommitOut:
+    """Save draft rows as candidates + applications and move the CVs to permanent storage."""
+    return await drafts_service.commit_draft(session, user, draft_id, body)
 
 
 @router.get("/duplicates", response_model=DuplicateCheckOut)
@@ -177,9 +224,11 @@ async def upload_document(
 async def create_candidate(
     user: CandidateEditor,
     session: Session,
-    first_name: Annotated[str, Form()],
-    last_name: Annotated[str, Form()],
-    email: Annotated[str, Form()],
+    # Required fields are validated by ManualCandidateCreate so that missing, blank and
+    # malformed values all return the same 422 `validation_error` with per-field details.
+    first_name: Annotated[str | None, Form()] = None,
+    last_name: Annotated[str | None, Form()] = None,
+    email: Annotated[str | None, Form()] = None,
     phone: Annotated[str | None, Form()] = None,
     current_location: Annotated[str | None, Form()] = None,
     current_company: Annotated[str | None, Form()] = None,
@@ -189,7 +238,7 @@ async def create_candidate(
     linkedin_url: Annotated[str | None, Form()] = None,
     portfolio_url: Annotated[str | None, Form()] = None,
     department_id: Annotated[uuid.UUID | None, Form()] = None,
-    job_id: Annotated[uuid.UUID | None, Form()] = None,
+    job_id: Annotated[str | None, Form()] = None,
     source: Annotated[str, Form()] = CandidateSource.MANUAL.value,
     tags: Annotated[str | None, Form()] = None,
     current_ctc_amount: Annotated[str | None, Form()] = None,
@@ -206,7 +255,7 @@ async def create_candidate(
     offered_ctc_negotiable: Annotated[bool | None, Form()] = None,
     cv: Annotated[UploadFile | None, File()] = None,
 ) -> ManualCandidateResult:
-    """CAND-10: manual candidate create with optional CV and job link."""
+    """CAND-10: manual candidate create. Name, email, phone and job are required (B3)."""
     tag_list: list[str] = []
     if tags:
         try:
@@ -234,32 +283,46 @@ async def create_candidate(
     except ValueError:
         source_enum = CandidateSource.MANUAL
 
-    body = ManualCandidateCreate(
-        first_name=first_name,
-        last_name=last_name,
-        email=email,
-        phone=phone,
-        current_location=current_location,
-        current_company=current_company,
-        current_title=current_title,
-        total_experience_years=years,
-        notice_period_days=notice_period_days,
-        linkedin_url=linkedin_url,
-        portfolio_url=portfolio_url,
-        department_id=department_id,
-        job_id=job_id,
-        source=source_enum,
-        tags=tag_list,
-        current_ctc=_salary_from_form(
-            current_ctc_amount, current_ctc_currency, current_ctc_unit, current_ctc_negotiable
-        ),
-        expected_ctc=_salary_from_form(
-            expected_ctc_amount, expected_ctc_currency, expected_ctc_unit, expected_ctc_negotiable
-        ),
-        offered_ctc=_salary_from_form(
-            offered_ctc_amount, offered_ctc_currency, offered_ctc_unit, offered_ctc_negotiable
-        ),
-    )
+    try:
+        body = ManualCandidateCreate.model_validate(
+            {
+                "first_name": first_name,
+                "last_name": last_name,
+                "email": email,
+                "phone": phone,
+                "current_location": current_location,
+                "current_company": current_company,
+                "current_title": current_title,
+                "total_experience_years": years,
+                "notice_period_days": notice_period_days,
+                "linkedin_url": linkedin_url,
+                "portfolio_url": portfolio_url,
+                "department_id": department_id,
+                "job_id": job_id,
+                "source": source_enum,
+                "tags": tag_list,
+                "current_ctc": _salary_from_form(
+                    current_ctc_amount,
+                    current_ctc_currency,
+                    current_ctc_unit,
+                    current_ctc_negotiable,
+                ),
+                "expected_ctc": _salary_from_form(
+                    expected_ctc_amount,
+                    expected_ctc_currency,
+                    expected_ctc_unit,
+                    expected_ctc_negotiable,
+                ),
+                "offered_ctc": _salary_from_form(
+                    offered_ctc_amount,
+                    offered_ctc_currency,
+                    offered_ctc_unit,
+                    offered_ctc_negotiable,
+                ),
+            }
+        )
+    except ValidationError as exc:
+        raise validation_app_error(exc) from exc
     cv_bytes = await cv.read() if cv is not None else None
     cv_name = cv.filename if cv is not None else None
     return await analysis_service.create_manual_candidate(session, user, body, cv_bytes, cv_name)

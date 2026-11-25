@@ -8,6 +8,7 @@ from email.utils import formataddr
 from app.core.config import get_settings
 from app.core.db import SessionLocal, sync_session
 from app.services.cv_processing import process_document_sync, rescore_job_sync
+from app.services.draft_cleanup import cleanup_expired_drafts_sync
 from app.services.retention import run_retention_rejected
 from app.services.storage_cleanup import cleanup_orphan_storage_sync
 from app.workers.celery_app import celery_app
@@ -88,3 +89,10 @@ def cleanup_orphan_storage() -> dict[str, int]:
     """Retry MinIO deletes that failed after a candidate hard-delete (runs hourly)."""
     with sync_session() as session:
         return cleanup_orphan_storage_sync(session)
+
+
+@celery_app.task(name="cleanup_expired_drafts")
+def cleanup_expired_drafts() -> dict[str, int]:
+    """Delete Add Candidate drafts older than 24h together with their MinIO objects (hourly)."""
+    with sync_session() as session:
+        return cleanup_expired_drafts_sync(session)

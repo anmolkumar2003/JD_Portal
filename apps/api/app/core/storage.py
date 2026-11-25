@@ -50,6 +50,17 @@ def delete_object_sync(key: str) -> None:
     _internal_client().delete_object(Bucket=get_settings().s3_bucket, Key=key)
 
 
+def list_prefix_sync(prefix: str) -> list[str]:
+    """Every object key under `prefix` (used to sweep stray draft uploads)."""
+    client = _internal_client()
+    keys: list[str] = []
+    for page in client.get_paginator("list_objects_v2").paginate(
+        Bucket=get_settings().s3_bucket, Prefix=prefix
+    ):
+        keys.extend(item["Key"] for item in page.get("Contents", []))
+    return keys
+
+
 def delete_all_objects_sync() -> int:
     """Empty the bucket. Used only by the demo-cleanup command."""
     client = _internal_client()
@@ -74,6 +85,10 @@ async def get_object(key: str) -> bytes:
 
 async def delete_object(key: str) -> None:
     await to_thread.run_sync(lambda: delete_object_sync(key))
+
+
+async def list_prefix(prefix: str) -> list[str]:
+    return await to_thread.run_sync(lambda: list_prefix_sync(prefix))
 
 
 def presigned_download_url(key: str, file_name: str, expires_in: int) -> str:

@@ -35,6 +35,10 @@ beat_schedule: dict[str, dict[str, Any]] = {
         "task": "cleanup_orphan_storage",
         "schedule": crontab(minute=7),
     },
+    "cleanup-expired-drafts-hourly": {
+        "task": "cleanup_expired_drafts",
+        "schedule": crontab(minute=22),
+    },
 }
 if settings.retention_rejected_days > 0:
     beat_schedule["retention-rejected-daily"] = {
