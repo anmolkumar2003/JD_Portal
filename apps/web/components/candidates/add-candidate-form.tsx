@@ -303,32 +303,17 @@ function AddCandidateFormInner({ sharedJobId, sharedDepartmentId }: AddCandidate
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [hasUnsaved]);
 
-  // --- Local draft of the form fields (survives a reload) ------------------------------------
-
+  // The form always starts empty: an autosaved copy kept re-appearing after a save or refresh
+  // (and it held CV-parsed values whose file was gone). Remove any copy left by older versions.
   useEffect(() => {
     if (!user?.id || restoredRef.current) return;
     restoredRef.current = true;
     try {
-      const raw = localStorage.getItem(draftKey(user.id));
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as CandidateFormValues;
-      reset({ ...EMPTY_CANDIDATE_FORM, ...parsed });
+      localStorage.removeItem(draftKey(user.id));
     } catch {
-      /* ignore corrupt draft */
+      /* storage unavailable */
     }
-  }, [user?.id, reset]);
-
-  useEffect(() => {
-    if (!user?.id) return;
-    const id = window.setInterval(() => {
-      try {
-        localStorage.setItem(draftKey(user.id), JSON.stringify(values));
-      } catch {
-        /* quota */
-      }
-    }, 3000);
-    return () => window.clearInterval(id);
-  }, [user?.id, values]);
+  }, [user?.id]);
 
   // Department follows the job (the API does the same); shown read-only when the job has one.
   useEffect(() => {
