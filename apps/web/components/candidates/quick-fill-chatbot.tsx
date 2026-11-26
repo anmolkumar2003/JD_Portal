@@ -44,6 +44,13 @@ export function greetingForLocalHour(hour: number): string {
   return "Good night";
 }
 
+/** The greeting always addresses the same name, whoever is signed in. */
+const GREETING_NAME = "Akanksha";
+
+function greeted(hour: number): string {
+  return `${greetingForLocalHour(hour)}, ${GREETING_NAME}`;
+}
+
 /**
  * Floating Quick fill chatbot for HR Admin / Super Admin. Paste candidate text → Extract → Add.
  * Add creates a new candidate, or updates an existing one when email/phone already matches.
@@ -72,14 +79,11 @@ function QuickFillChatbotInner() {
   const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const [greeting, setGreeting] = useState(() => greetingForLocalHour(new Date().getHours()));
+  const [greeting, setGreeting] = useState(() => greeted(new Date().getHours()));
 
   useEffect(() => {
-    if (!open) return;
-    const first = user?.full_name?.trim().split(/\s+/)[0];
-    const base = greetingForLocalHour(new Date().getHours());
-    setGreeting(first ? `${base}, ${first}` : base);
-  }, [open, user?.full_name]);
+    if (open) setGreeting(greeted(new Date().getHours()));
+  }, [open]);
 
   useEffect(() => {
     if (open) {
