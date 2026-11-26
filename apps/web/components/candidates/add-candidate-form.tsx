@@ -28,7 +28,6 @@ import {
 } from "@/components/candidates/candidate-form-schema";
 import { BudgetBadge } from "@/components/candidates/budget-badge";
 import { MultiCvDropzone, type CvUploadItem } from "@/components/candidates/cv-dropzone";
-import { QuickFillCard } from "@/components/candidates/quick-fill-card";
 import { QuickFillBadge, QuickFillProvider } from "@/components/candidates/quick-fill-context";
 import { SalaryFields } from "@/components/candidates/salary-fields";
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +42,6 @@ import { useJob, useJobs } from "@/hooks/use-jobs";
 import { useDepartments } from "@/hooks/use-lookups";
 import { ApiError, api } from "@/lib/api";
 import { CANDIDATE_SOURCE_LABELS } from "@/lib/labels";
-import { isAdmin } from "@/lib/permissions";
 import { computeBudgetStatus } from "@/lib/salary";
 import type {
   CommitRowError,
@@ -242,10 +240,6 @@ function AddCandidateFormInner({ sharedJobId, sharedDepartmentId }: AddCandidate
   const jobId = values.job_id;
   const jobDetail = useJob(jobId || "");
   const jobItems: JobListItem[] = useMemo(() => jobs.data?.items ?? [], [jobs.data]);
-  const quickFillJobs = useMemo(
-    () => jobItems.map((j) => ({ id: j.id, name: j.title })),
-    [jobItems],
-  );
   const jobDepartment = jobItems.find((j) => j.id === jobId)?.department ?? null;
 
   const isBatchMode = cvItems.filter((i) => i.status !== "error").length > 1;
@@ -834,11 +828,6 @@ function AddCandidateFormInner({ sharedJobId, sharedDepartmentId }: AddCandidate
   return (
     <FormProvider {...form}>
       <form onSubmit={onSaveSingle} noValidate className="space-y-6">
-        {/* Quick fill is HR-admin only (the API enforces it too) and is for one candidate. */}
-        {isAdmin(user?.role) && !isBatchMode && (
-          <QuickFillCard jobs={quickFillJobs} departmentLocked={Boolean(jobDepartment)} />
-        )}
-
         <Card>
           <CardHeader>
             <CardTitle>CV upload</CardTitle>
@@ -850,10 +839,24 @@ function AddCandidateFormInner({ sharedJobId, sharedDepartmentId }: AddCandidate
           <CardContent className="space-y-3">
             <MultiCvDropzone items={cvItems} onChange={setCvItems} />
             {cvAlert && (
-              <p role="alert" className="text-sm text-destructive">
-                No CV was uploaded successfully. Add a valid PDF or DOCX, or remove the failed files
-                to enter the details by hand.
-              </p>
+              <div
+                role="alert"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
+                <p>
+                  No CV was uploaded successfully. Add a valid PDF or DOCX, or remove the failed
+                  files to enter the details by hand.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  data-testid="remove-failed-cvs"
+                  onClick={() => setCvItems((prev) => prev.filter((i) => i.status !== "error"))}
+                >
+                  Remove failed files
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>

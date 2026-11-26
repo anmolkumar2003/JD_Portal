@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { candidateFormSchema, parseTagsInput } from "@/components/candidates/candidate-form-schema";
-import { QuickFillCard } from "@/components/candidates/quick-fill-card";
 import { QuickFillBadge, QuickFillProvider } from "@/components/candidates/quick-fill-context";
 import { CvDropzone, cvFileError } from "@/components/careers/cv-dropzone";
 import { SalaryFields } from "@/components/candidates/salary-fields";
@@ -24,12 +23,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { useAuth } from "@/hooks/use-auth";
 import { useUpdateCandidate, useUploadCandidateDocument } from "@/hooks/use-candidates";
 import { useDepartments } from "@/hooks/use-lookups";
 import { ApiError } from "@/lib/api";
 import { CANDIDATE_SOURCE_LABELS } from "@/lib/labels";
-import { isAdmin } from "@/lib/permissions";
 import { normalizeLinkedInUrl } from "@/lib/linkedin";
 import { formSalaryToIn, salaryOutToForm } from "@/lib/salary";
 import type { ApplicationDetail, CandidatePatchInput } from "@/types/api";
@@ -115,7 +112,6 @@ export function CandidateEditDialog(props: CandidateEditDialogProps) {
 }
 
 function CandidateEditDialogInner({ application, open, onOpenChange }: CandidateEditDialogProps) {
-  const { user } = useAuth();
   const departments = useDepartments();
   const update = useUpdateCandidate();
   const uploadDoc = useUploadCandidateDocument();
@@ -160,7 +156,6 @@ function CandidateEditDialogInner({ application, open, onOpenChange }: Candidate
         </DialogHeader>
         <FormProvider {...form}>
           <form onSubmit={onSubmit} className="space-y-4">
-            {isAdmin(user?.role) && <QuickFillCard defaultOpen={false} sources={EDIT_SOURCES} />}
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="edit-first_name">
@@ -269,13 +264,11 @@ function CandidateEditDialogInner({ application, open, onOpenChange }: Candidate
                   <QuickFillBadge path="source" />
                 </Label>
                 <Select id="edit-source" {...register("source")}>
-                  {(["manual", "referral", "linkedin", "agency", "career_site"] as const).map(
-                    (s) => (
-                      <option key={s} value={s}>
-                        {CANDIDATE_SOURCE_LABELS[s]}
-                      </option>
-                    ),
-                  )}
+                  {EDIT_SOURCES.map((s) => (
+                    <option key={s} value={s}>
+                      {CANDIDATE_SOURCE_LABELS[s]}
+                    </option>
+                  ))}
                 </Select>
               </div>
             </div>

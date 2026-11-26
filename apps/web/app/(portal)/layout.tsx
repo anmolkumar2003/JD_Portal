@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Brand } from "@/components/brand";
+import { QuickFillChatbot } from "@/components/candidates/quick-fill-chatbot";
 import { CommandPalette } from "@/components/command-palette";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
@@ -88,6 +89,7 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
         <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="page-enter mx-auto max-w-6xl p-4 sm:p-5 lg:p-6">{children}</div>
         </main>
+        <QuickFillChatbot />
       </div>
     </div>
   );

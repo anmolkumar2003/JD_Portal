@@ -69,21 +69,16 @@ On **Candidates**, use the search bar and filter popover (skills, score, departm
 
 ![Add candidate form](screenshots/add-candidate.png)
 
-### Quick fill (Add candidate and Edit profile)
+### Quick fill chatbot
 
-Quick fill turns a pasted sentence or a few lines into form values. It is available to HR Admin and Super Admin, at the top of **Add candidate** and in the **Edit** dialog on a candidate profile. It runs on our own server with free, open-source tools only (rules, a place list, a skills list and spaCy). No text is sent to an outside service.
+HR Admin and Super Admin see a floating **message** button at the bottom right of every portal page. Click it to open Quick fill. It runs on our own server (rules, place list, skills list, spaCy) — no text is sent to an outside service.
 
-1. Open the **Quick fill** card (click its title to collapse or expand it) and paste or type the details. The limit is 2,000 characters.
-2. Click **Extract**. The text is read and returned to your screen. It is **not saved and not logged**; only the form you save later becomes a record. The last few entries stay on this page so you can reuse them. They are never stored on the server and disappear when you leave the page.
-3. A preview table shows each field: the **found value** (you can edit it), what the **form holds now**, a **confidence** badge and a checkbox. High-confidence rows start ticked; medium and low rows start unticked. Fields that were not in the text say **Not found**.
-4. Click **Apply selected** (ticked rows) or **Apply all high confidence**. This only fills the form: you still review it and click **Save**. Required fields, the duplicate-email/phone check and the unsaved-draft behaviour work exactly as before.
-5. Fields filled this way show a **from quick fill** badge until you change them. **Undo quick fill** puts the form back; fields you edited by hand afterwards are left alone.
+1. Paste a sentence or a few lines (2,000 character limit) and click **Extract**.
+2. Review and edit the fields. For a **new** candidate, choose a **Job**, then click **Add**.
+3. If the email or phone already matches someone, Add becomes **Update candidate** and only that person is changed. Other records are left alone.
+4. CV drag-and-drop on **Add candidate** is unchanged: you can still drop PDFs/DOCX to prefill the form and save there as before.
 
-**Your own typing is protected.** If a field already holds something you typed, the preview shows both values and a **Replace** box. The field is only overwritten when its row is ticked **and** Replace is ticked.
-
-**Nothing is guessed.** When the text can be read two ways (for example two salaries with no label), the row shows a **Choose…** list instead of a value, with a warning. The same applies to two possible names, places or companies. Rows can also carry notes, for example "range: the maximum was filled" or "in-hand pay is not CTC".
-
-**Several candidates in one text.** If the text clearly holds more than one person (one candidate per line, or several email/phone blocks), nothing is filled. The card lists the pieces and you extract one at a time, so details are never mixed.
+**Nothing is guessed.** Ambiguous text (for example two salaries with no label) is left empty or asked about — details are never mixed across several people in one paste.
 
 How values are normalised:
 
