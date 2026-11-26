@@ -21,6 +21,7 @@ import {
   isHighConfidenceApplicable,
   rowEffect,
   rowProblem,
+  SALARY_CURRENCIES,
   type FormValuesLike,
   type PreviewCandidate,
   type PreviewRow,
@@ -31,8 +32,6 @@ import type { QuickFillConfidence, QuickFillFieldName, SalaryUnit } from "@/type
 function isSource(options: QuickFillOptions, text: string): boolean {
   return (options.sources as readonly string[]).includes(text);
 }
-
-const CURRENCIES = ["INR", "USD", "EUR", "GBP"] as const;
 
 const CONFIDENCE_VARIANT: Record<QuickFillConfidence, "success" | "warning" | "secondary"> = {
   high: "success",
@@ -173,7 +172,7 @@ function ValueEditor({
               value={row.currency}
               onChange={(e) => set({ currency: e.target.value })}
             >
-              {CURRENCIES.map((c) => (
+              {SALARY_CURRENCIES.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>

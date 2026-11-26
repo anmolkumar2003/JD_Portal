@@ -6,9 +6,8 @@ import { QuickFillBadge } from "@/components/candidates/quick-fill-context";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { SALARY_CURRENCIES } from "@/lib/quick-fill";
 import type { SalaryUnit } from "@/types/api";
-
-const CURRENCIES = ["INR", "USD", "EUR", "GBP"] as const;
 
 export type SalaryFormSlice = {
   amount: string;
@@ -53,7 +52,7 @@ export function SalaryFields({ title, prefix, description }: SalaryFieldsProps) 
         <div className="space-y-2">
           <Label htmlFor={`${prefix}.currency`}>Currency</Label>
           <Select id={`${prefix}.currency`} {...register(`${prefix}.currency`)}>
-            {CURRENCIES.map((c) => (
+            {SALARY_CURRENCIES.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>

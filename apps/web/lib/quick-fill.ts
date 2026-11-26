@@ -16,6 +16,20 @@ import type {
  * would do to the form. No React and no network here, so the rules are easy to read and test.
  */
 
+/** Currencies the salary fields offer. The API accepts any 3-letter code. */
+export const SALARY_CURRENCIES = [
+  "INR",
+  "USD",
+  "EUR",
+  "GBP",
+  "AED",
+  "SAR",
+  "QAR",
+  "SGD",
+  "AUD",
+  "CAD",
+] as const;
+
 export type RowKind =
   "text" | "number" | "salary" | "boolean" | "tags" | "source" | "department" | "job";
 
