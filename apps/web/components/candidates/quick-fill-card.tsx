@@ -1,16 +1,28 @@
 "use client";
 
 import { ChevronDown, History, Loader2, Sparkles } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { QuickFillPreview } from "@/components/candidates/quick-fill-preview";
 import { Textarea } from "@/components/ui/textarea";
+import { useDepartments } from "@/hooks/use-lookups";
 import { useQuickParse } from "@/hooks/use-quick-parse";
 import { ApiError } from "@/lib/api";
+import {
+  buildRows,
+  isHighConfidenceApplicable,
+  pickCandidate,
+  type FormValuesLike,
+  type NamedOption,
+  type PreviewRow,
+  type QuickFillOptions,
+} from "@/lib/quick-fill";
 import { cn } from "@/lib/utils";
-import type { QuickParseOut } from "@/types/api";
+import type { CandidateSource, QuickFillFieldName, QuickParseOut } from "@/types/api";
 
 /** Same limit as the API; the box stops accepting more so the request is never rejected. */
 export const QUICK_FILL_MAX_CHARS = 2000;
@@ -25,12 +37,25 @@ function snippet(text: string): string {
   return flat.length > 60 ? `${flat.slice(0, 57)}...` : flat;
 }
 
+const DEFAULT_SOURCES = ["manual", "referral", "linkedin", "agency"] as const;
+
 interface QuickFillCardProps {
   /** The Add form starts open; the edit dialog starts closed to keep the form in view. */
   defaultOpen?: boolean;
+  /** Jobs the form can pick from. Omit (null) when the form has no job picker. */
+  jobs?: NamedOption[] | null;
+  /** The department follows the selected job and cannot be filled by hand. */
+  departmentLocked?: boolean;
+  /** Sources the form's Source select offers. */
+  sources?: readonly CandidateSource[];
 }
 
-export function QuickFillCard({ defaultOpen = true }: QuickFillCardProps) {
+export function QuickFillCard({
+  defaultOpen = true,
+  jobs = null,
+  departmentLocked = false,
+  sources = DEFAULT_SOURCES,
+}: QuickFillCardProps) {
   const uid = useId();
   const panelId = `${uid}-panel`;
   const [open, setOpen] = useState(defaultOpen);
@@ -38,7 +63,21 @@ export function QuickFillCard({ defaultOpen = true }: QuickFillCardProps) {
   // Session-only: lives in this component's state, so it is gone on reload or navigation.
   const [history, setHistory] = useState<string[]>([]);
   const [result, setResult] = useState<QuickParseOut | null>(null);
+  const [rows, setRows] = useState<PreviewRow[] | null>(null);
   const parse = useQuickParse();
+  const departments = useDepartments();
+  const { control } = useFormContext();
+  const values = useWatch({ control }) as FormValuesLike;
+
+  const options: QuickFillOptions = useMemo(
+    () => ({
+      departments: (departments.data ?? []).map((d) => ({ id: d.id, name: d.name })),
+      jobs,
+      sources,
+      departmentLocked,
+    }),
+    [departments.data, jobs, sources, departmentLocked],
+  );
 
   const trimmed = text.trim();
 
@@ -50,15 +89,31 @@ export function QuickFillCard({ defaultOpen = true }: QuickFillCardProps) {
     parse.mutate(trimmed, {
       onSuccess: (data) => {
         setResult(data);
+        setRows(buildRows(data, options));
         setHistory((prev) =>
           [trimmed, ...prev.filter((h) => h !== trimmed)].slice(0, HISTORY_LIMIT),
         );
       },
       onError: (error: unknown) => {
         setResult(null);
+        setRows(null);
         toast.error(error instanceof ApiError ? error.message : "Could not read that text");
       },
     });
+  };
+
+  const patchRow = (key: QuickFillFieldName, patch: Partial<PreviewRow>) =>
+    setRows((prev) => prev?.map((r) => (r.key === key ? { ...r, ...patch } : r)) ?? prev);
+
+  const cancelPreview = () => {
+    setRows(null);
+    setResult(null);
+  };
+
+  // Step 5 wires these to the form.
+  const applySelected = () => toast.info("Applying is added in the next step");
+  const applyHigh = () => {
+    if (rows?.some(isHighConfidenceApplicable)) toast.info("Applying is added in the next step");
   };
 
   return (
@@ -141,14 +196,22 @@ export function QuickFillCard({ defaultOpen = true }: QuickFillCardProps) {
           </div>
         )}
 
-        {result && (
-          <p
-            role="status"
-            className="text-sm text-muted-foreground"
-            data-testid="quick-fill-summary"
-          >
-            Found {result.fields.length} field{result.fields.length === 1 ? "" : "s"}.
-          </p>
+        {result && rows && (
+          <QuickFillPreview
+            rows={rows}
+            values={values}
+            options={options}
+            warnings={result.warnings}
+            ignored={result.ignored}
+            truncated={result.truncated}
+            onRowChange={patchRow}
+            onPick={(key, index) =>
+              setRows((prev) => (prev ? pickCandidate(prev, key, index) : prev))
+            }
+            onApplySelected={applySelected}
+            onApplyHighConfidence={applyHigh}
+            onCancel={cancelPreview}
+          />
         )}
       </CardContent>
     </Card>

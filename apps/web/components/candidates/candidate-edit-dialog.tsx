@@ -33,6 +33,8 @@ import { normalizeLinkedInUrl } from "@/lib/linkedin";
 import { formSalaryToIn, salaryOutToForm } from "@/lib/salary";
 import type { ApplicationDetail, CandidatePatchInput } from "@/types/api";
 
+const EDIT_SOURCES = ["manual", "referral", "linkedin", "agency", "career_site"] as const;
+
 const editSchema = candidateFormSchema.extend({
   source: z.enum(["manual", "referral", "linkedin", "agency", "career_site"]),
 });
@@ -148,7 +150,7 @@ export function CandidateEditDialog({ application, open, onOpenChange }: Candida
         </DialogHeader>
         <FormProvider {...form}>
           <form onSubmit={onSubmit} className="space-y-4">
-            {isAdmin(user?.role) && <QuickFillCard defaultOpen={false} />}
+            {isAdmin(user?.role) && <QuickFillCard defaultOpen={false} sources={EDIT_SOURCES} />}
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="edit-first_name">First name</Label>

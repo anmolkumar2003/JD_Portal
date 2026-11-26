@@ -231,6 +231,10 @@ export function AddCandidateForm({ sharedJobId, sharedDepartmentId }: AddCandida
   const jobId = values.job_id;
   const jobDetail = useJob(jobId || "");
   const jobItems: JobListItem[] = useMemo(() => jobs.data?.items ?? [], [jobs.data]);
+  const quickFillJobs = useMemo(
+    () => jobItems.map((j) => ({ id: j.id, name: j.title })),
+    [jobItems],
+  );
   const jobDepartment = jobItems.find((j) => j.id === jobId)?.department ?? null;
 
   const isBatchMode = cvItems.filter((i) => i.status !== "error").length > 1;
@@ -820,7 +824,9 @@ export function AddCandidateForm({ sharedJobId, sharedDepartmentId }: AddCandida
     <FormProvider {...form}>
       <form onSubmit={onSaveSingle} noValidate className="space-y-6">
         {/* Quick fill is HR-admin only (the API enforces it too) and is for one candidate. */}
-        {isAdmin(user?.role) && !isBatchMode && <QuickFillCard />}
+        {isAdmin(user?.role) && !isBatchMode && (
+          <QuickFillCard jobs={quickFillJobs} departmentLocked={Boolean(jobDepartment)} />
+        )}
 
         <Card>
           <CardHeader>
