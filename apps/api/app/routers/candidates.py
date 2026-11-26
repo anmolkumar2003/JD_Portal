@@ -35,6 +35,7 @@ from app.schemas.candidate_drafts import (
     DraftFileUploadOut,
     DraftOut,
 )
+from app.schemas.quick_fill import QuickParseIn, QuickParseOut
 from app.schemas.salary import SalaryIn
 from app.services import analysis as analysis_service
 from app.services import applications as applications_service
@@ -42,6 +43,7 @@ from app.services import candidate_actions as actions_service
 from app.services import candidate_delete as delete_service
 from app.services import candidate_drafts as drafts_service
 from app.services import documents as documents_service
+from app.services import quick_fill as quick_fill_service
 from app.services.cv_validation import MAX_CV_BYTES
 
 router = APIRouter(prefix="/api/v1/candidates", tags=["candidates"])
@@ -95,6 +97,12 @@ async def parse_cv(
     """Extract autofill fields from a CV. Nothing is stored (use drafts to keep the file)."""
     data = await cv.read(MAX_CV_BYTES + 1)
     return await analysis_service.parse_cv_preview(data, cv.filename)
+
+
+@router.post("/quick-parse", response_model=QuickParseOut)
+async def quick_parse(body: QuickParseIn, user: AdminUser, redis: RedisClient) -> QuickParseOut:
+    """Suggest candidate fields from pasted text. Saves nothing, stores and logs no text."""
+    return await quick_fill_service.quick_parse(redis, user, body.text)
 
 
 @router.post("/drafts", response_model=DraftOut, status_code=status.HTTP_201_CREATED)
