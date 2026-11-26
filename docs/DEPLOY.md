@@ -44,11 +44,9 @@ Optional ClamAV:
 docker compose -f docker-compose.prod.yml --profile clamav up -d
 ```
 
-Optional Celery Beat (only when `RETENTION_REJECTED_DAYS` > 0):
-
-```bash
-docker compose -f docker-compose.prod.yml --profile beat up -d
-```
+Celery Beat (`beat` service) starts with the stack. It schedules the hourly cleanup of orphaned
+CV files and expired Add Candidate drafts, and the daily retention run when
+`RETENTION_REJECTED_DAYS` > 0.
 
 ## 2. Start the stack
 
