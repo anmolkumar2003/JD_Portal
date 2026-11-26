@@ -1,0 +1,1 @@
+var e=new Set([`super_admin`,`hr_admin`,`recruiter`]);function t(t){return t!==void 0&&e.has(t)}var n=new Set([`super_admin`,`hr_admin`]);function r(e){return e!==void 0&&n.has(e)}function i(e){return t(e)}export{i as n,r,t};

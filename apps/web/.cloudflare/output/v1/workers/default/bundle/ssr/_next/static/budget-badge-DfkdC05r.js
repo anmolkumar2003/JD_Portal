@@ -1,0 +1,2 @@
+import{t as e}from"./badge-Hdf34oFT.js";import{t}from"./utils-D75mlXbt.js";import{t as n}from"./jsx-runtime-LKYXHABd.js";var r=n();function i({status:n,className:i}){return n===`unknown`?null:n===`above`?(0,r.jsx)(e,{variant:`warning`,className:t(`whitespace-nowrap`,i),children:`Above budget`}):(0,r.jsx)(e,{variant:`success`,className:t(`whitespace-nowrap`,i),children:`Within budget`})}export{i as t};
+//# sourceMappingURL=budget-badge-DfkdC05r.js.map

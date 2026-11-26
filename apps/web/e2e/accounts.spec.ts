@@ -10,7 +10,7 @@ test.describe("Accounts and settings", () => {
     await page.getByRole("button", { name: "Add user" }).click();
     await page.getByLabel("Full name").fill("New Hire");
     await page.getByLabel("Work email").fill(email);
-    await page.getByLabel("Role").selectOption("recruiter");
+    await page.getByLabel("Role").selectOption("hr_admin");
     await page.getByRole("button", { name: "Create user" }).click();
 
     const temporary = (await page.getByTestId("temp-password").textContent())?.trim() ?? "";

@@ -1,0 +1,2 @@
+import{g as e}from"./request-context-CCa2vvON.js";var t=e(`vinext.workStoreScope.als`);function n(e){return t.run(!0,e)}function r(e){return t.run(!1,e)}export{r as n,n as t};
+//# sourceMappingURL=work-store-scope-DQuw-aNn.js.map

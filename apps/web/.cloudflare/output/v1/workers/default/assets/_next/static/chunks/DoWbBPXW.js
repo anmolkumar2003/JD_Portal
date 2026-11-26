@@ -1,0 +1,1 @@
+import{y as e}from"./BjZqNUbI.js";import{t}from"./zvT2TZpX.js";import{r as n}from"./B0PXqnjO.js";var r=n();function i({reset:e}){return(0,r.jsx)(`div`,{className:`container py-14`,children:(0,r.jsx)(t,{error:null,title:`We couldn't load our open roles`,onRetry:e})})}e(`34c393835976`,{get default(){return i}});

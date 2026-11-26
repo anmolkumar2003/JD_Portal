@@ -1,0 +1,1 @@
+import{t as e}from"./BtWeTOg6.js";import{n as t}from"./CqsItydT.js";var n=3e5;function r(){return e({queryKey:[`departments`,`active`],queryFn:()=>t.org.departments(),staleTime:n})}function i(){return e({queryKey:[`locations`,`active`],queryFn:()=>t.org.locations(),staleTime:n})}export{i as n,r as t};

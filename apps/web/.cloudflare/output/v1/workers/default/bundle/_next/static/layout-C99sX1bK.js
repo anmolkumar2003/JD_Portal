@@ -1,0 +1,2 @@
+import{i as e}from"./navigation-errors-DAOpTDSc.js";import"./navigation.react-server-0QhAVGzl.js";import{t}from"./server-api-BT9a3oil.js";async function n(){let{org_name:e}=await t.config();return{title:{template:`%s · ${e} Careers`,default:`Careers at ${e}`},description:`Explore open roles at ${e} and apply online.`}}async function r({children:n}){let{features:r}=await t.config();return r.public_careers||e(),n}export{r as default,n as generateMetadata};
+//# sourceMappingURL=layout-C99sX1bK.js.map

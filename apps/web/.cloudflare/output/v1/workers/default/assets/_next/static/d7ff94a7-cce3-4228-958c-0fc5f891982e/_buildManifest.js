@@ -1,0 +1,1 @@
+self.__BUILD_MANIFEST = {"__rewrites":{"beforeFiles":[],"afterFiles":[{"source":"/api/v1/:path*","requiresServerEvaluation":true},{"source":"/health","requiresServerEvaluation":true}],"fallback":[]},"sortedPages":["/_app","/_error"]};self.__BUILD_MANIFEST_CB && self.__BUILD_MANIFEST_CB()

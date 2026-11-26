@@ -1,0 +1,2 @@
+import{t as e}from"./utils-D75mlXbt.js";import{t}from"./jsx-runtime-LKYXHABd.js";var n=t();function r({className:t,...r}){return(0,n.jsx)(`div`,{className:e(`animate-pulse rounded-xl bg-muted/80 bg-gradient-to-r from-muted via-muted/50 to-muted bg-[length:200%_100%]`,t),...r})}export{r as t};
+//# sourceMappingURL=skeleton-Dh0aJ9Wn.js.map

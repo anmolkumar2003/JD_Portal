@@ -1,0 +1,2 @@
+import{t as e}from"./rolldown-runtime-XKyaHtl9.js";import{n as t}from"./framework~index~page~page~layout~page~page~page~page~page~page~page~page~page~page~page~lay~c0eadk99-DmmhBwAE.js";var n=e((e=>{e.prerender=t().prerender}));export{n as t};
+//# sourceMappingURL=framework~index-ChsTH-E0.js.map
