@@ -186,7 +186,8 @@ MONTHS_ONLY_RE = re.compile(
 )
 FRESHER_RE = re.compile(
     r"(?<![\w])(?:freshers?|fresh\s+(?:graduates?|grads?)|no\s+(?:work\s+|prior\s+)?experience|"
-    r"zero\s+experience|nil\s+experience|0\s*(?:years?|yrs?)(?:\s+of)?(?:\s+experience)?)(?![a-z])",
+    r"zero\s+experience|nil\s+experience|0\s*(?:years?|yrs?)(?:\s+of)?(?:\s+experience)?)(?![a-z])"
+    r"(?!\s*(?:and\s*|&\s*)?\d)",  # "0 years 8 months" is not a fresher
     re.IGNORECASE,
 )
 BARE_YEARS_RE = re.compile(
@@ -204,10 +205,12 @@ def experience_from_match(match: re.Match[str]) -> Quantity:
         low = round_years(y1)
         if low > high:
             low, high = high, low
-        return Quantity(high, low, f"Range {low:g}-{high:g} years: the maximum was used.")
+        return Quantity(
+            high, low, f"Range {float(low):g}-{float(high):g} years: the maximum was used."
+        )
     note = "'+' read as the plain number." if match.groupdict().get("plus") else None
     if months:
-        note = f"{months * 12:g} extra months converted to a decimal year."
+        note = f"{float(months * 12):g} extra months converted to a decimal year."
     return Quantity(round_years(y1 + months), None, note)
 
 
@@ -269,9 +272,9 @@ def notice_from_match(match: re.Match[str]) -> Quantity:
     days = to_days(first, unit)
     note = None
     if unit[0].casefold() == "m":
-        note = f"{first:g} month(s) counted as {days} days (30 days a month)."
+        note = f"{float(first):g} month(s) counted as {days} days (30 days a month)."
     elif unit[0].casefold() == "w":
-        note = f"{first:g} week(s) counted as {days} days."
+        note = f"{float(first):g} week(s) counted as {days} days."
     return Quantity(Decimal(days), None, note)
 
 
@@ -479,6 +482,6 @@ def format_money(value: MoneyValue) -> str:
     per = "per annum" if value.unit == "pa" else "per month"
     text = f"{shown} {per}"
     if value.currency == "INR" and value.unit == "pa" and value.amount >= 100_000:
-        lakhs = value.amount / 100_000
-        text = f"{lakhs:g} LPA ({text})"
+        lakhs = float(value.amount / 100_000)
+        text = f"{float(lakhs):g} LPA ({text})"
     return text

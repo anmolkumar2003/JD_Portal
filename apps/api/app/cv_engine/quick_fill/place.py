@@ -107,31 +107,39 @@ def _place_hits(doc: Doc) -> list[_PlaceHit]:
 
 
 def _merge_state(doc: Doc, hits: list[_PlaceHit]) -> list[_PlaceHit]:
-    """ "Pune, Maharashtra" / "Dubai, UAE": the second place completes the first."""
+    """ "Pune, Maharashtra, India" / "Dubai, UAE": the following states or country complete a city."""
     out: list[_PlaceHit] = []
     skip: set[int] = set()
     for i, hit in enumerate(hits):
         if i in skip:
             continue
-        if hit.place.kind == "city" and i + 1 < len(hits):
-            nxt = hits[i + 1]
-            gap = doc.text[hit.end : nxt.start]
-            same_place = re.fullmatch(r"[\s,]{0,3}", gap) is not None and (
-                nxt.chunk is hit.chunk or nxt.chunk.index == hit.chunk.index + 1
-            )
-            if same_place and nxt.place.kind in ("state", "country"):
+        if hit.place.kind == "city":
+            j = i + 1
+            last_chunk = hit.chunk
+            while j < len(hits):
+                nxt = hits[j]
+                gap = doc.text[hit.end : nxt.start]
+                adjacent = re.fullmatch(r"[\s,]{0,3}", gap) is not None and (
+                    nxt.chunk is last_chunk or nxt.chunk.index <= last_chunk.index + 1
+                )
+                if not adjacent or nxt.place.kind not in ("state", "country"):
+                    break
                 belongs = nxt.place.name in (hit.place.state, hit.place.country) or (
                     nxt.place.kind == "country"
                     and nxt.place.name == "India"
                     and not hit.place.international
                 )
-                if belongs:
-                    hit.state_text = nxt.place.name if nxt.place.name != "India" else None
-                    hit.end = nxt.end
-                    skip.add(i + 1)
-                    doc.claim(nxt.start, nxt.end)
-                    if nxt.tier == "standalone" and hit.tier == "loose":
-                        hit.tier = "standalone"
+                if not belongs:
+                    break
+                if nxt.place.kind == "state":
+                    hit.state_text = nxt.place.name
+                hit.end = nxt.end
+                last_chunk = nxt.chunk
+                skip.add(j)
+                doc.claim(nxt.start, nxt.end)
+                if nxt.tier == "standalone" and hit.tier == "loose":
+                    hit.tier = "standalone"
+                j += 1
         out.append(hit)
     return out
 
@@ -479,13 +487,25 @@ def _title_core(text: str) -> tuple[str, bool] | None:
     )
     if not head_ok:
         return None
-    if any(
-        w.casefold() in get_rules().non_name_words and not _is_known_title_word(w) for w in words
-    ):
+    covered = _multiword_modifier_words(text)
+
+    def known(word: str) -> bool:
+        low = word.casefold().strip(".")
+        return low in covered or low in ("of", "and") or _is_known_title_word(word)
+
+    if any(w.casefold() in get_rules().non_name_words and not known(w) for w in words):
         return None
-    return smart_title(text), all(
-        _is_known_title_word(w) or w.casefold() in ("of", "and") for w in words
-    )
+    return smart_title(text), all(known(w) for w in words)
+
+
+def _multiword_modifier_words(text: str) -> frozenset[str]:
+    """Words that belong to a known multi-word modifier ("full stack", "machine learning")."""
+    low = " ".join(text.casefold().split())
+    words: set[str] = set()
+    for modifier in get_rules().title_modifiers:
+        if (" " in modifier or "-" in modifier) and modifier in low:
+            words.update(modifier.replace("-", " ").split())
+    return frozenset(words)
 
 
 _TITLE_PHRASE = re.compile(

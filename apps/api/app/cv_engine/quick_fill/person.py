@@ -64,6 +64,8 @@ def _is_non_name(words: list[str]) -> bool:
             return True
         if low in rules.title_modifiers and low not in rules.first_names:
             return True
+        if len(low.strip(".")) > 1 and is_known_skill(word) and low not in rules.first_names:
+            return True  # "knows Docker": a skill, not a person
         if norm_key(low) in gazetteer.places and low not in rules.first_names:
             return True
         initial = len(word.strip(".")) == 1  # "C. Ramesh": a single initial is fine
@@ -235,16 +237,15 @@ def extract_name(doc: Doc) -> list[FieldResult]:
     distinct: dict[str, _NameHit] = {}
     for hit in pool:
         distinct.setdefault(" ".join(hit.tokens).casefold(), hit)
-    for hit in pool:
-        doc.claim(hit.start, hit.end)
     if len(distinct) > 1:
         strong = [h for h in distinct.values() if h.confidence != "low"]
         if len(strong) == 1:
-            hit = strong[0]
-            return results + _name_results(
-                doc, hit, taken, "Other word groups looked less like names and were left out."
-            )
-        return results + _ambiguous_names(list(distinct.values()))
+            # Weaker word groups stay unclaimed: they show up under "not understood".
+            return results + _name_results(doc, strong[0], taken, None)
+        chosen = strong or list(distinct.values())
+        for hit in chosen:
+            doc.claim(hit.start, hit.end)
+        return results + _ambiguous_names(chosen)
     (hit,) = distinct.values()
     return results + _name_results(doc, hit, taken, None)
 

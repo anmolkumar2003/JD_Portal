@@ -18,6 +18,7 @@ from app.cv_engine.quick_fill.normalize import (
     MONTHS_ONLY_RE,
     NOTICE_RE,
     NUM,
+    YEAR_UNIT,
     YOE_RE,
     Money,
     MoneyValue,
@@ -585,6 +586,12 @@ def _notice_hits(doc: Doc) -> list[_NoticeHit]:
             unit = m.group("u")[0].casefold()
             labelled = keyed or bool(_NOTICE_BEFORE.search(before) or _NOTICE_AFTER.match(after))
             quantity = notice_from_match(m)
+            if (
+                not labelled
+                and unit == "m"
+                and re.search(rf"{YEAR_UNIT}\s*(?:and|&)?\s*$", before, re.IGNORECASE)
+            ):
+                continue  # "5 years 3 months": the months belong to the experience
             if not labelled and unit == "m":
                 months = parse_number(m.group("n2") or m.group("n1")) or Decimal(0)
                 if months > 3:
@@ -816,7 +823,7 @@ def _experience_hits(doc: Doc) -> list[_ExpHit]:
                 continue
             months = parse_number(m.group("m2") or m.group("m1")) or Decimal(0)
             quantity = Quantity(
-                round_years(months / 12), None, f"{months:g} months converted to years."
+                round_years(months / 12), None, f"{float(months):g} months converted to years."
             )
             add(m, quantity)
         if keyed and not covered:
@@ -884,7 +891,7 @@ def extract_experience(doc: Doc) -> list[FieldResult]:
             distinct = strong
         else:
             options = [
-                Alternative(float(v), f"{v:g} years", "An experience figure in the text")
+                Alternative(float(v), f"{float(v):g} years", "An experience figure in the text")
                 for v in distinct
             ]
             return [
@@ -903,8 +910,8 @@ def extract_experience(doc: Doc) -> list[FieldResult]:
                 field="total_experience_years",
                 value=None,
                 confidence="low",
-                reason=f"{years:g} years is above the 50-year limit.",
-                warning=f"Experience of {years:g} years is above 50: check the figure.",
+                reason=f"{float(years):g} years is above the 50-year limit.",
+                warning=f"Experience of {float(years):g} years is above 50: check the figure.",
             )
         ]
     reasons: list[str] = []
@@ -936,18 +943,18 @@ def extract_experience(doc: Doc) -> list[FieldResult]:
         low = hit.quantity.low
         mid = round_years((low + years) / 2)
         candidates = [
-            Alternative(float(low), f"{low:g} years", "Lower end of the range"),
-            Alternative(float(mid), f"{mid:g} years", "Midpoint of the range"),
-            Alternative(float(years), f"{years:g} years", "Upper end of the range (filled)"),
+            Alternative(float(low), f"{float(low):g} years", "Lower end of the range"),
+            Alternative(float(mid), f"{float(mid):g} years", "Midpoint of the range"),
+            Alternative(float(years), f"{float(years):g} years", "Upper end of the range (filled)"),
         ]
-        warning = f"Range {low:g}-{years:g} years: the maximum was filled. Choose the midpoint ({mid:g}) if you prefer."
+        warning = f"Range {float(low):g}-{float(years):g} years: the maximum was filled. Choose the midpoint ({float(mid):g}) if you prefer."
     if scope_note == "scoped" and len(hits) > 1:
         warning = warning or "Only a skill-specific figure was found."
     return [
         found(
             "total_experience_years",
             float(years),
-            f"{years:g} years",
+            f"{float(years):g} years",
             confidence,
             " ".join(reasons),
             candidates=candidates,
