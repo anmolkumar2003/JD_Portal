@@ -310,6 +310,14 @@ def test_skills_not_found(text: str) -> None:
         ("labels: senior, remote", ["senior", "remote"]),
         ("tags: A, B, a", ["a", "b"]),
         ("#top-talent", ["top talent"]),
+        ("tags: urgent; remote", ["urgent", "remote"]),
+        ("Tags - fast joiner, local", ["fast joiner", "local"]),
+        ("tags: Urgent, URGENT", ["urgent"]),
+        ("Name: Anita Rao, tags: bench, priority", ["bench", "priority"]),
+        ("#remote-ok, Pune", ["remote ok"]),
+        ("label: strong referral", ["strong referral"]),
+        ("tags: hot\ncity: Pune", ["hot"]),
+        ("tags: night-shift, 2nd round done", ["night-shift", "2nd round done"]),
     ],
 )
 def test_tags(text: str, tags: list[str]) -> None:
@@ -365,6 +373,16 @@ def test_source_not_filled(text: str) -> None:
         ("Finance team", "Finance"),
         ("for the HR department", "HR"),
         ("team: Customer Support", "Customer Support"),
+        ("Department - Operations", "Operations"),
+        ("dept: IT", "IT"),
+        ("Rahul, Pune, department: Finance", "Finance"),
+        ("belongs to the legal department", "Legal"),
+        ("for the product team", "Product"),
+        ("department: Human Resources", "Human Resources"),
+        ("dept = Design", "Design"),
+        ("working in the Data department", "Data"),
+        ("Dept: Marketing, 5 yrs", "Marketing"),
+        ("team: Engineering; 7 yrs", "Engineering"),
     ],
 )
 def test_department_hint(text: str, department: str) -> None:
@@ -380,6 +398,16 @@ def test_department_hint(text: str, department: str) -> None:
         ("position applied: Product Manager", "Product Manager"),
         ("interested in Backend Engineer position", "Backend Engineer"),
         ("applied for DevOps Engineer, 5 yrs", "DevOps Engineer"),
+        ("Job: Senior Android Developer", "Senior Android Developer"),
+        ("role applied for: Sales Executive", "Sales Executive"),
+        ("applying for Frontend Developer", "Frontend Developer"),
+        ("Applied Position - Data Scientist", "Data Scientist"),
+        ("applied for the post of Accountant", "Accountant"),
+        ("Rahul Sharma, Pune, applied for HR Manager", "HR Manager"),
+        ("job applied: UI Designer; 4 yrs", "UI Designer"),
+        ("interested in the Support Engineer opening", "Support Engineer"),
+        ("opening: Business Analyst", "Business Analyst"),
+        ("applied for Java Developer in Engineering", "Java Developer"),
     ],
 )
 def test_job_hint(text: str, job: str) -> None:

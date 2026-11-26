@@ -243,6 +243,15 @@ _JOB_PHRASE = re.compile(
 )
 
 
+# "applied for Java Developer in Engineering": the job ends before "in / at / with ..."
+_JOB_TAIL = re.compile(r"\s+(?:in|at|with|from|since|under|through|via)\s+", re.IGNORECASE)
+# "the post of Accountant": the noun in front is not part of the title
+_JOB_NOUN_LEAD = re.compile(
+    r"^(?:the\s+)?(?:post|position|role|job|opening|vacancy)\s+(?:of|for|as)\s+(?:an?\s+|the\s+)?",
+    re.IGNORECASE,
+)
+
+
 def extract_job(doc: Doc) -> list[FieldResult]:
     for chunk in doc.chunks:
         if chunk.key == "job" and chunk.value:
@@ -251,7 +260,10 @@ def extract_job(doc: Doc) -> list[FieldResult]:
             return [found("job_hint", value, value, "high", "Labelled as the job applied for.")]
     masked = doc.masked()
     for m in _JOB_PHRASE.finditer(masked):
-        raw = m.group("j").strip()
+        raw = _JOB_TAIL.split(m.group("j").strip(), maxsplit=1)[0].strip()
+        raw = _JOB_NOUN_LEAD.sub("", raw).strip()
+        if not raw:
+            continue
         if len(raw.split()) > 7 or re.search(r"\d|@", raw):
             continue
         if raw.casefold().split()[0] in ("a", "an", "my", "our", "your", "it", "this", "that"):

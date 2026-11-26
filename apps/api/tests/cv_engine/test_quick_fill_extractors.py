@@ -160,6 +160,16 @@ def test_two_unlabelled_numbers_are_not_guessed() -> None:
         ("linkedin: rahul-sharma", "https://www.linkedin.com/in/rahul-sharma"),
         ("Rahul, Pune, linkedin.com/in/rahul, 5 yrs", "https://www.linkedin.com/in/rahul"),
         ("profile https://uk.linkedin.com/in/neha", "https://www.linkedin.com/in/neha"),
+        ("LinkedIn - linkedin.com/in/sanjay-p", "https://www.linkedin.com/in/sanjay-p"),
+        ("Name: Anita, linkedin url: linkedin.com/in/anita9", "https://www.linkedin.com/in/anita9"),
+        (
+            "https://www.linkedin.com/in/dev-patel-0a1b2c/?originalSubdomain=in",
+            "https://www.linkedin.com/in/dev-patel-0a1b2c",
+        ),
+        ("Pune; 5 yrs; LINKEDIN.COM/IN/Karan", "https://www.linkedin.com/in/Karan"),
+        ("li: linkedin.com/in/meera-j", "https://www.linkedin.com/in/meera-j"),
+        ("see https://linkedin.com/in/zoya.khan.", "https://www.linkedin.com/in/zoya.khan"),
+        ("rahul@mail.com, linkedin.com/in/rahul-9", "https://www.linkedin.com/in/rahul-9"),
     ],
 )
 def test_linkedin_url(text: str, url: str) -> None:
@@ -176,6 +186,14 @@ def test_linkedin_url(text: str, url: str) -> None:
         ("behance.net/amit", "https://behance.net/amit"),
         ("www.myportfolio.in", "https://www.myportfolio.in"),
         ("portfolio https://kaggle.com/neha", "https://kaggle.com/neha"),
+        ("GitHub: github.com/sanjay-p", "https://github.com/sanjay-p"),
+        ("https://sunita.dev/projects", "https://sunita.dev/projects"),
+        ("portfolio: http://karan.me", "http://karan.me"),
+        ("web: www.zoya.design", "https://www.zoya.design"),
+        ("Rahul, Pune, github.com/rahul, 5 yrs", "https://github.com/rahul"),
+        ("dribbble.com/meera", "https://dribbble.com/meera"),
+        ("blog: https://dev.to/anita", "https://dev.to/anita"),
+        ("site https://rohan.codes", "https://rohan.codes"),
     ],
 )
 def test_portfolio_url(text: str, url: str) -> None:
