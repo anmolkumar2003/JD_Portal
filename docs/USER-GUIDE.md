@@ -69,6 +69,61 @@ On **Candidates**, use the search bar and filter popover (skills, score, departm
 
 ![Add candidate form](screenshots/add-candidate.png)
 
+### Quick fill (Add candidate and Edit profile)
+
+Quick fill turns a pasted sentence or a few lines into form values. It is available to HR Admin and Super Admin, at the top of **Add candidate** and in the **Edit** dialog on a candidate profile. It runs on our own server with free, open-source tools only (rules, a place list, a skills list and spaCy). No text is sent to an outside service.
+
+1. Open the **Quick fill** card (click its title to collapse or expand it) and paste or type the details. The limit is 2,000 characters.
+2. Click **Extract**. The text is read and returned to your screen. It is **not saved and not logged**; only the form you save later becomes a record. The last few entries stay on this page so you can reuse them. They are never stored on the server and disappear when you leave the page.
+3. A preview table shows each field: the **found value** (you can edit it), what the **form holds now**, a **confidence** badge and a checkbox. High-confidence rows start ticked; medium and low rows start unticked. Fields that were not in the text say **Not found**.
+4. Click **Apply selected** (ticked rows) or **Apply all high confidence**. This only fills the form: you still review it and click **Save**. Required fields, the duplicate-email/phone check and the unsaved-draft behaviour work exactly as before.
+5. Fields filled this way show a **from quick fill** badge until you change them. **Undo quick fill** puts the form back; fields you edited by hand afterwards are left alone.
+
+**Your own typing is protected.** If a field already holds something you typed, the preview shows both values and a **Replace** box. The field is only overwritten when its row is ticked **and** Replace is ticked.
+
+**Nothing is guessed.** When the text can be read two ways (for example two salaries with no label), the row shows a **Choose…** list instead of a value, with a warning. The same applies to two possible names, places or companies. Rows can also carry notes, for example "range: the maximum was filled" or "in-hand pay is not CTC".
+
+**Several candidates in one text.** If the text clearly holds more than one person (one candidate per line, or several email/phone blocks), nothing is filled. The card lists the pieces and you extract one at a time, so details are never mixed.
+
+How values are normalised:
+
+| Field | What is stored |
+| --- | --- |
+| Salary | A number, a currency (INR unless the text says otherwise) and per annum or per month. `8 LPA`, `8 lakh`, `1.2 cr`, `65k`, `₹80,000 pm`, `14,00,000` all work. Lakh, crore and LPA mean per annum. A plain amount under ₹1.5 lakh is read as per month. After a CTC label a small plain number such as `ctc 10` means lakhs. |
+| Salary range | The **maximum** is filled with a note, and the lower end and midpoint are offered as other readings. |
+| Notice | Days. `1 month` is 30 days, `2 weeks` is 14 days, `immediate` is 0. `serving notice` alone gives no number. |
+| Experience | Years with decimals. `2 yrs 6 months` is 2.5, `fresher` is 0. |
+| Phone | A standard format (`+91 98765 43210`) for Indian and international numbers. |
+| Skills | Added to the form's **Tags** field (merged with what is there, never replacing it). |
+| Source | Only the sources the form offers (Manual, Referral, LinkedIn, Agency, Career site). |
+
+Example sentences that work well:
+
+- `Rahul Sharma, Pune, 5 years, current 8 LPA, expected 12 LPA, 30 days notice, rahul@mail.com`
+- `Name: Priya Nair; Email: priya@example.com; Phone: 9876543210; Location: Bengaluru; Exp: 3.5 years; Current CTC: 9 LPA; Expected CTC: 14 LPA; Notice: 60 days` (also fine one item per line)
+- `Amit Verma; Noida; 7 yrs; CCTC 18 LPA; ECTC 24 LPA; NP 90 days; amit.verma@corp.in`
+- `Sneha Iyer - Chennai - 2 years exp - python, django, sql - immediate joiner`
+- `Vikram Singh, Gurgaon, 10 years, Engineering Manager at Accenture, 35 LPA current, 45 LPA expected, 2 months notice`
+- `Candidate: Varun Sethi. Currently in Pune. 6 years of experience. Current CTC is 17 LPA. Expected CTC is 22 LPA. Can join in 45 days.`
+- `Rahul Sharma is a full stack developer at Infosys in Pune with 5 years of experience`
+- `Neha Kapoor, Delhi, 8 yrs, ctc 22L, ectc 30L, 45 days np`
+- `Sanjay Patil, Nagpur, 3 years, current 25000 per month, expected 35000 per month`
+- `Source: LinkedIn; Name: Omar Farooq; Location: Srinagar; Experience: 9 years`
+
+Tips for best results: say **current** and **expected** next to each salary; use a comma, semicolon or new line between items; write the name first or after `Name:`. Labels without a colon also work for two-word labels (`current location Pune`, `notice period 30 days`, `NP 45`).
+
+What Quick fill does **not** understand (it shows these under "not understood" or leaves the field empty):
+
+- Names written in non-Latin scripts (for example Devanagari). The rest of the line is still read.
+- Lines with only spaces between facts and no capital letters (`rahul sharma pune 5 years 8 lpa`). Add commas.
+- Two salaries without current/expected words. You are asked which is which.
+- Percent hikes (`30% hike`) and in-hand pay as CTC.
+- Another company's offer (`offered 36 lpa by Flipkart`): shown with a warning, never filled.
+- Place names that are also common surnames (for example a bare `Salem` between commas) unless a cue such as `from`, `in` or `Location:` is present.
+- Job-portal names as the source (Naukri, Indeed): the form's source list does not include them.
+- Currencies other than INR, USD, EUR, GBP, AED, SAR, QAR, SGD, AUD and CAD.
+- Text of more than 2,000 characters is refused.
+
 ### Candidate profile
 
 Open a candidate to see tabs:

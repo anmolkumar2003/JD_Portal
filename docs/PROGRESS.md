@@ -101,3 +101,48 @@ Legend: `[x]` done · `[~]` partial · `[ ]` pending · `[-]` skipped
       orphan-file and expired-draft cleanups actually run.
 - [x] Users dialog offers only HR Admin and Super Admin (API enum unchanged).
 - [x] `make remove-user EMAIL=…` (audited, last-admin guard); "UI Review" account removed.
+
+### Feature: Quick fill (`feature/quick-fill`)
+
+HR Admin / Super Admin paste a sentence or a few lines into **Add candidate** or the profile
+**Edit** dialog and review the extracted values before anything touches the form. Free,
+open-source tools only; no external AI API, no paid service.
+
+- [x] 1. UI: collapsible glass **Quick fill** card, placeholder example, **Extract**, optional
+      on-page history (kept in component state only, never stored)
+- [x] 2. `POST /candidates/quick-parse`: login + `hr_admin`/`super_admin`, 30 requests per minute
+      per user, 2,000 character limit (422 `text_too_long`, text never echoed back); returns the
+      fields without saving or storing the text; the text is never logged
+- [x] 3. Pure Python engine in `app/cv_engine/quick_fill/` (no FastAPI imports): regex, spaCy NER
+      (`en_core_web_sm`), rule dictionaries in `data/*.json`, the skills taxonomy and a JSON
+      city/state list. Normalises salary (number + currency + pa/pm), notice (days), experience
+      (decimal years) and phone. Every field has a confidence (high/medium/low) and a reason;
+      ambiguous input returns candidates and a warning instead of a guess
+- [x] 4. Preview table: Field | Found value (editable) | Current form value | Confidence | tick,
+      "Not found" rows, **Apply selected**, **Apply all high confidence**, **Cancel**
+- [x] 5. Apply only fills the form (never saves); HR-typed values are replaced only when the row
+      is ticked and **Replace** is ticked; "from quick fill" badges; **Undo quick fill** (skips
+      fields edited afterwards); required-field validation, duplicate check and drafts unchanged
+- [x] 6. Edge cases: Indian number formats, k / lakh / crore / LPA, ranges (maximum filled with a
+      note, other readings offered), several candidates in one text (detected, never mixed),
+      unknown words (listed as "not understood"), empty / very long / emoji / non-English text
+- [x] 7. Tests: 613 engine tests (normalisers, every extractor with 15+ varied examples, styles,
+      robustness), 18 API tests (permissions, rate limit, length limit, nothing saved, no text in
+      logs), 50-line + 20-line hold-out accuracy fixtures with a report script
+      (`python -m scripts.quick_fill_accuracy`) and regression floors, Playwright
+      (`e2e/quick-fill.spec.ts`: type, Extract, edit, Apply, Undo, Replace, ambiguous salary,
+      several candidates, edit dialog, save under the required-field rules)
+- [x] 8. `USER-GUIDE.md` (with example sentences), `LICENSES.md` (no new dependencies)
+
+Accuracy on the hand-labelled fixtures (`apps/api/tests/cv_engine/fixtures/`):
+
+| Set | Fields expected | Correct | Accuracy | Wrong | Filled when it should stay empty | High-confidence precision |
+| --- | --- | --- | --- | --- | --- | --- |
+| 50 lines (used while tuning) | 301 | 298 | 99.0% | 0 | 0 | 100% |
+| 20-line hold-out (first run, before any tuning) | 123 | 112 | 91.1% | 2 | 0 | 98.1% |
+| 20-line hold-out (after fixing what it found) | 122 | 118 | 96.7% | 0 | 0 | 100% |
+
+The hold-out was written after the 50-line set was tuned. Its first run is the honest estimate
+for unseen text (about 91%); the later figure is no longer independent because the bugs it found
+were fixed. Fields the text leaves ambiguous (two unlabelled salaries, for example) are expected
+to stay empty and count as errors if they are filled.
