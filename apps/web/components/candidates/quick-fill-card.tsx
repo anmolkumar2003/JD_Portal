@@ -1,12 +1,13 @@
 "use client";
 
-import { ChevronDown, History, Loader2, Sparkles } from "lucide-react";
-import { useId, useMemo, useState } from "react";
+import { ChevronDown, History, Loader2, Sparkles, Undo2 } from "lucide-react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuickFillMarks } from "@/components/candidates/quick-fill-context";
 import { QuickFillPreview } from "@/components/candidates/quick-fill-preview";
 import { Textarea } from "@/components/ui/textarea";
 import { useDepartments } from "@/hooks/use-lookups";
@@ -14,13 +15,13 @@ import { useQuickParse } from "@/hooks/use-quick-parse";
 import { ApiError } from "@/lib/api";
 import {
   buildRows,
-  isHighConfidenceApplicable,
   pickCandidate,
   type FormValuesLike,
   type NamedOption,
   type PreviewRow,
   type QuickFillOptions,
 } from "@/lib/quick-fill";
+import { planApply, planUndo, type ApplyMode, type WriteOp } from "@/lib/quick-fill-apply";
 import { cn } from "@/lib/utils";
 import type { CandidateSource, QuickFillFieldName, QuickParseOut } from "@/types/api";
 
@@ -66,8 +67,14 @@ export function QuickFillCard({
   const [rows, setRows] = useState<PreviewRow[] | null>(null);
   const parse = useQuickParse();
   const departments = useDepartments();
-  const { control } = useFormContext();
+  const { control, getValues, setValue, getFieldState } = useFormContext();
   const values = useWatch({ control }) as FormValuesLike;
+  const { mark, clear, reset } = useQuickFillMarks();
+  // Closing the card's form (or leaving batch mode) forgets which fields it filled.
+  useEffect(() => reset, [reset]);
+  // One entry per Apply, newest last. Undo reverts the newest. Lives only in this component.
+  const [undoStack, setUndoStack] = useState<WriteOp[][]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const options: QuickFillOptions = useMemo(
     () => ({
@@ -89,6 +96,7 @@ export function QuickFillCard({
     parse.mutate(trimmed, {
       onSuccess: (data) => {
         setResult(data);
+        setNotice(null);
         setRows(buildRows(data, options));
         setHistory((prev) =>
           [trimmed, ...prev.filter((h) => h !== trimmed)].slice(0, HISTORY_LIMIT),
@@ -110,10 +118,58 @@ export function QuickFillCard({
     setResult(null);
   };
 
-  // Step 5 wires these to the form.
-  const applySelected = () => toast.info("Applying is added in the next step");
-  const applyHigh = () => {
-    if (rows?.some(isHighConfidenceApplicable)) toast.info("Applying is added in the next step");
+  /** Write into the form. Never saves: the user still has to click Save. */
+  const writeField = (path: string, value: string | boolean) => {
+    // Re-validate only fields that already show an error, so required-field rules still decide.
+    const hasError = Boolean(getFieldState(path).error);
+    setValue(path, value, { shouldDirty: true, shouldTouch: true, shouldValidate: hasError });
+  };
+
+  const apply = (mode: ApplyMode) => {
+    if (!rows) return;
+    const plan = planApply(rows, getValues() as FormValuesLike, options, mode);
+    for (const op of plan.writes) writeField(op.path, op.value);
+    if (plan.writes.length > 0) {
+      setUndoStack((prev) => [...prev, plan.writes]);
+      mark(Object.fromEntries(plan.writes.map((op) => [op.path, String(op.value)])));
+    }
+    const parts: string[] = [];
+    if (plan.filled.length > 0) {
+      parts.push(`Filled ${plan.filled.length} field${plan.filled.length === 1 ? "" : "s"}`);
+    }
+    if (plan.kept.length > 0) {
+      parts.push(
+        `kept your existing value for ${plan.kept.join(", ")} (tick Replace to overwrite)`,
+      );
+    }
+    if (plan.invalid.length > 0) {
+      parts.push(`skipped ${plan.invalid.join(", ")} (invalid value)`);
+    }
+    const message = parts.length > 0 ? `${parts.join("; ")}.` : "Nothing to apply.";
+    if (plan.writes.length === 0) {
+      // Keep the preview open so the user can fix or tick something.
+      toast.info(message);
+      return;
+    }
+    setNotice(`${message} Review the form, then save.`);
+    toast.success(message);
+    setRows(null);
+    setResult(null);
+  };
+
+  const undo = () => {
+    const last = undoStack[undoStack.length - 1];
+    if (!last) return;
+    const plan = planUndo(last, getValues() as FormValuesLike);
+    for (const op of plan.ops) writeField(op.path, op.previous);
+    clear(plan.restored);
+    setUndoStack((prev) => prev.slice(0, -1));
+    const note =
+      plan.skipped.length > 0
+        ? "Quick fill undone. Fields you edited afterwards were left as they are."
+        : "Quick fill undone.";
+    setNotice(note);
+    toast.success(note);
   };
 
   return (
@@ -196,6 +252,23 @@ export function QuickFillCard({
           </div>
         )}
 
+        {(notice || undoStack.length > 0) && (
+          <div
+            className="flex flex-wrap items-center justify-between gap-2"
+            data-testid="quick-fill-notice"
+          >
+            <p role="status" className="text-sm text-muted-foreground">
+              {notice}
+            </p>
+            {undoStack.length > 0 && (
+              <Button type="button" variant="outline" onClick={undo} data-testid="quick-fill-undo">
+                <Undo2 className="mr-2 h-4 w-4" aria-hidden />
+                Undo quick fill
+              </Button>
+            )}
+          </div>
+        )}
+
         {result && rows && (
           <QuickFillPreview
             rows={rows}
@@ -208,8 +281,8 @@ export function QuickFillCard({
             onPick={(key, index) =>
               setRows((prev) => (prev ? pickCandidate(prev, key, index) : prev))
             }
-            onApplySelected={applySelected}
-            onApplyHighConfidence={applyHigh}
+            onApplySelected={() => apply("selected")}
+            onApplyHighConfidence={() => apply("high")}
             onCancel={cancelPreview}
           />
         )}

@@ -29,6 +29,7 @@ import {
 import { BudgetBadge } from "@/components/candidates/budget-badge";
 import { MultiCvDropzone, type CvUploadItem } from "@/components/candidates/cv-dropzone";
 import { QuickFillCard } from "@/components/candidates/quick-fill-card";
+import { QuickFillBadge, QuickFillProvider } from "@/components/candidates/quick-fill-context";
 import { SalaryFields } from "@/components/candidates/salary-fields";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -97,6 +98,7 @@ function Field({
           {label}
         </span>
         <FromCvBadge show={Boolean(fromCv)} />
+        <QuickFillBadge path={id} />
       </Label>
       {children}
       {error && (
@@ -182,7 +184,16 @@ interface AddCandidateFormProps {
   sharedDepartmentId?: string;
 }
 
-export function AddCandidateForm({ sharedJobId, sharedDepartmentId }: AddCandidateFormProps) {
+/** Quick fill remembers which fields it wrote (for the "from quick fill" badges). */
+export function AddCandidateForm(props: AddCandidateFormProps) {
+  return (
+    <QuickFillProvider>
+      <AddCandidateFormInner {...props} />
+    </QuickFillProvider>
+  );
+}
+
+function AddCandidateFormInner({ sharedJobId, sharedDepartmentId }: AddCandidateFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuth();
