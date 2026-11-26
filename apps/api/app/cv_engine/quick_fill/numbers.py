@@ -71,7 +71,8 @@ _FILLER = re.compile(
 _INHAND = re.compile(r"in[\s-]?hand|take[\s-]?home", re.IGNORECASE)
 _COMPETING = re.compile(
     r"(?:another|other|competing|counter|different|alternate)\s+offer|offer\s+(?:in\s+hand|from)"
-    r"|offer\s+of\s+[\d\u20b9$]+[^,;]{0,25}\s+from|from\s+[A-Z]",
+    r"|offer\s+of\s+[\d\u20b9$]+[^,;]{0,25}\s+from|from\s+[A-Z]"
+    r"|(?<![\w])by\s+(?!HR\b|us\b|me\b|the\s+company)[A-Z]",
 )
 _AFTER_LABEL = re.compile(
     r"^[\s:()\-]*(?:ctc\s*)?(?P<word>current(?:ly)?|present|expected|expecting|offered|offer|"
@@ -363,9 +364,13 @@ def _salary_result(label: Label, mention: _Mention) -> FieldResult:
         notes.append("Written as in-hand / take-home pay, which is not the same as CTC.")
         warning = (warning + " " if warning else "") + "In-hand pay is not CTC: check this value."
     if mention.competing:
-        confidence = "low"
-        notes.append("This may be another company's offer, not ours.")
-        warning = (warning + " " if warning else "") + "Looks like a competing offer."
+        # Another company's offer is not what we offer: never fill it, only show it.
+        return ambiguous(
+            name,
+            [_alt(value, "Written as an offer; looks like another company's")],
+            "Looks like a competing offer from another company, so it was not filled.",
+            reason="This may be another company's offer, not ours.",
+        )
     sanity = _sanity_warning(value)
     if sanity:
         confidence = "low"

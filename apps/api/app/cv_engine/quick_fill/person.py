@@ -99,6 +99,21 @@ def _score(words: list[str], doc: Doc, start: int, end: int, *, keyed: bool) -> 
         )
     spacy = _spacy_label(doc, start, end)
     if spacy in ("GPE", "ORG", "LOC") and not known:
+        suffixes = get_rules().company_suffixes
+        if (
+            spacy == "ORG"
+            and shape
+            and len(words) <= 3
+            and not any(w.casefold().strip(".") in suffixes for w in words)
+        ):
+            # spaCy often reads unfamiliar Indian names as organisations. Offer, never tick.
+            return _NameHit(
+                words,
+                start,
+                end,
+                "medium",
+                "Capitalised words; spaCy read them as an organisation but no known company matches.",
+            )
         return None
     if known and shape:
         return _NameHit(words, start, end, "high", "Starts with a common first name.")

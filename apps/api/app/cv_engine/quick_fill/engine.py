@@ -73,6 +73,28 @@ def _name_key_starts(lines: list[str]) -> list[int]:
     return starts
 
 
+def _described_lines(lines: list[str]) -> list[str]:
+    """Lines that each describe a whole person: a clear name plus several other facts.
+
+    "Rahul Sharma, Pune, 5 years" / "Priya Nair, Mumbai, 3 years" is two candidates even when no
+    line has an email or phone. A line that is just a label ("Name: x") never counts.
+    """
+    out: list[str] = []
+    for line in lines:
+        if ":" in line or "=" in line:
+            continue
+        doc = Doc.from_raw(line)
+        by_field = _run_extractors(doc)
+        first = by_field.get("first_name")
+        if first is not None and first.value is not None and first.confidence == "high":
+            others = [
+                f for f in by_field.values() if f.value is not None and f.field != "first_name"
+            ]
+            if len(others) >= 3:
+                out.append(line)
+    return out
+
+
 def detect_segments(text: str) -> list[str] | None:
     """Several candidates pasted together? Returns the pieces (maybe none), or None for one person.
 
@@ -94,11 +116,28 @@ def detect_segments(text: str) -> list[str] | None:
     if len(starts) >= 2:
         bounds = [*starts, len(lines)]
         return ["\n".join(lines[a:b]) for a, b in itertools.pairwise(bounds)][:MAX_SEGMENTS]
+    described = _described_lines(lines)
+    if len(described) >= 2:
+        return described[:MAX_SEGMENTS]
     email_lines = [ln for ln in lines if contact.EMAIL_RE.search(ln)]
     distinct = {m.group(0).lower() for ln in email_lines for m in contact.EMAIL_RE.finditer(ln)}
     if len(lines) >= 2 and len(email_lines) == len(lines) and len(distinct) >= 2:
         return lines[:MAX_SEGMENTS]
     return None
+
+
+def _run_extractors(doc: Doc, warnings: list[str] | None = None) -> dict[str, FieldResult]:
+    by_field: dict[str, FieldResult] = {}
+    for extractor in _EXTRACTORS:
+        try:
+            produced = extractor(doc)
+        except Exception:  # noqa: BLE001 - one broken rule must not lose the others; text is PII
+            if warnings is not None:
+                warnings.append("A part of the text could not be read and was skipped.")
+            continue
+        for item in produced:
+            by_field.setdefault(item.field, item)
+    return by_field
 
 
 def parse_quick_fill(text: str) -> QuickFillResult:
@@ -128,15 +167,7 @@ def parse_quick_fill(text: str) -> QuickFillResult:
             + ("pick one below." if segments else "paste one candidate at a time.")
         )
         return result
-    by_field: dict[str, FieldResult] = {}
-    for extractor in _EXTRACTORS:
-        try:
-            produced = extractor(doc)
-        except Exception:  # noqa: BLE001 - one broken rule must not lose the others; text is PII
-            result.warnings.append("A part of the text could not be read and was skipped.")
-            continue
-        for item in produced:
-            by_field.setdefault(item.field, item)
+    by_field = _run_extractors(doc, result.warnings)
     result.fields = [by_field[name] for name in FIELD_NAMES if name in by_field]
     for item in result.fields:
         if item.warning and item.warning not in result.warnings:

@@ -311,6 +311,14 @@ _CURRENCIES = {
     "eur": "EUR",
     "euro": "EUR",
     "euros": "EUR",
+    "aed": "AED",
+    "dirham": "AED",
+    "dirhams": "AED",
+    "sar": "SAR",
+    "qar": "QAR",
+    "sgd": "SGD",
+    "aud": "AUD",
+    "cad": "CAD",
 }
 _SCALES: dict[str, tuple[Decimal, Unit | None]] = {
     "lpa": (Decimal(100_000), "pa"),
@@ -330,8 +338,10 @@ _SCALES: dict[str, tuple[Decimal, Unit | None]] = {
 }
 _LAKH_CRORE = frozenset({"lakh", "lakhs", "lac", "lacs", "lk", "lks", "l", "cr", "crore", "crores"})
 
-_CUR_PRE = r"(?:\u20b9|(?<![a-z])rs\.?|inr|us\$|usd|\$|gbp|\u00a3|eur|\u20ac)"
-_CUR_POST = r"(?:inr|usd|eur|gbp|rs\.?|rupees?|dollars?|euros?|pounds?)"
+_CUR_PRE = r"(?:\u20b9|(?<![a-z])rs\.?|inr|us\$|usd|\$|gbp|\u00a3|eur|\u20ac|(?<![a-z])(?:aed|sar|qar|sgd|aud|cad))"
+_CUR_POST = (
+    r"(?:inr|usd|eur|gbp|aed|sar|qar|sgd|aud|cad|rs\.?|rupees?|dollars?|euros?|pounds?|dirhams?)"
+)
 SCALE = r"(?:lpa|lpm|lakhs?|lacs?|lks?|crores?|cr|thousand|k|l)(?![a-z])"
 _PA = r"(?:p\.?\s?a\.?|per\s+an+um|per\s+(?:year|yr)|yearly|annual(?:ly)?|/\s?(?:yr|year|annum|pa))(?![a-z])"
 _PM = r"(?:p\.?\s?m\.?|per\s+(?:month|mo|mth)|monthly|/\s?(?:month|mo|mth|pm|m))(?![a-z])"
@@ -470,7 +480,7 @@ def indian_group(value: int) -> str:
     return ("-" if value < 0 else "") + ",".join([*parts, tail])
 
 
-_SYMBOLS = {"INR": "\u20b9", "USD": "$", "GBP": "\u00a3", "EUR": "\u20ac"}
+_SYMBOLS = {"INR": "\u20b9", "USD": "$", "GBP": "\u00a3", "EUR": "\u20ac"}  # others: "AED 15,000"
 
 
 def format_money(value: MoneyValue) -> str:

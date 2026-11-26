@@ -477,6 +477,9 @@ def test_a_competing_offer_is_flagged() -> None:
 
     assert field is not None
     assert field.confidence == "low"
+    assert field.value is None  # never filled: it is not our offer
+    assert field.candidates
+    assert field.warning
 
 
 def test_two_different_amounts_for_the_same_label_are_not_guessed() -> None:

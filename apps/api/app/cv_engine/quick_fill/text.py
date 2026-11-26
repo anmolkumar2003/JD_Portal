@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import functools
+import itertools
 import re
 import unicodedata
 from dataclasses import dataclass, field
@@ -61,6 +63,7 @@ _UNIT_AHEAD = (
 _WORD_NUMBER_RE = re.compile(
     rf"\b({_WORD_NUM_ALT})(?:[\s-]+({_WORD_NUM_ALT}))?\b{_UNIT_AHEAD}", re.I
 )
+_BETWEEN_RE = re.compile(r"\bbetween\s+(?=\d)(.{1,24}?)\s+(?:and|&)\s+(?=\d)", re.I)
 _AND_HALF_RE = re.compile(
     r"\b(\d+)\s+(?:and\s+(?:a\s+)?half|&\s*(?:a\s+)?half)\s+(years?|yrs?|months?|lakhs?|lacs?)\b",
     re.I,
@@ -97,6 +100,10 @@ def clean_text(raw: str) -> str:
             out.append(ch)
         elif category == "Cf" or ch in "\r\x0b\x0c":
             out.append(" " if ch in "\r\x0b\x0c" else "")
+        elif (
+            category == "So"
+        ):  # emoji and pictographs usually separate the facts: "📍 Pune 💼 5 yrs"
+            out.append(" , ")
         elif category in _NOISE_CATEGORIES or category == "Cc":
             out.append(" ")
         elif ch == "\u20b9":  # the rupee sign is a Sc symbol; keep it, spaced for matching
@@ -105,6 +112,7 @@ def clean_text(raw: str) -> str:
             out.append(ch)
     text = "".join(out)
     text = _WORD_NUMBER_RE.sub(_word_number, text)
+    text = _BETWEEN_RE.sub(lambda m: f"{m.group(1)} to ", text)  # "between 10 and 12 LPA"
     text = _AND_HALF_RE.sub(lambda m: f"{m.group(1)}.5 {m.group(2)}", text)
     text = _HALF_RE.sub(lambda m: f"{m.group(1)}.5 {m.group(2)}", text)
     lines = [re.sub(r"[ \t]+", " ", line).strip() for line in text.split("\n")]
@@ -114,7 +122,55 @@ def clean_text(raw: str) -> str:
 # --- Chunks -----------------------------------------------------------------------------------
 
 # Splits a line into pieces. A comma between two digits stays (8,00,000).
-_PIECE_BREAK = re.compile(r"[;|\t]|(?<!\d),|,(?!\d)")
+# A full stop that ends a sentence ("... 6 years. Current CTC ...") also breaks, but not after an
+# initial ("C. Ramesh"), a title ("Dr. Rao"), a company suffix ("Pvt. Ltd.") or inside a number.
+_ABBREVIATIONS = (
+    # titles and company suffixes
+    "mr",
+    "mrs",
+    "ms",
+    "dr",
+    "sr",
+    "jr",
+    "prof",
+    "st",
+    "no",
+    "pvt",
+    "ltd",
+    "inc",
+    "co",
+    "corp",
+    "llc",
+    "smt",
+    "sh",
+    # labels and units that are followed by a number: "Exp. 5 yrs", "Rs. 65,000"
+    "rs",
+    "exp",
+    "approx",
+    "ctc",
+    "ectc",
+    "cctc",
+    "np",
+    "tel",
+    "ph",
+    "mob",
+    "ext",
+    "ref",
+    "min",
+    "max",
+    "avg",
+    "sal",
+    "curr",
+    "expt",
+    "inr",
+    "usd",
+)
+_SENTENCE_END = (
+    r"(?<=[A-Za-z0-9]{2})"
+    + "".join(rf"(?i:(?<!\b{a}))" for a in _ABBREVIATIONS)
+    + r"\.\s+(?=[A-Z0-9])"
+)
+_PIECE_BREAK = re.compile(rf"[;|\t]|(?<!\d),|,(?!\d)|{_SENTENCE_END}")
 # Inside a piece: " - ", " / " and arrows separate ideas, except between two numbers (12 - 15).
 _SUB_BREAK = re.compile(r"(?<!\d)\s+[-/]\s+|\s+[-/]\s+(?!\d)")
 _LIST_KEYS = frozenset({"skills", "tags"})
@@ -133,6 +189,14 @@ class Chunk:
     index: int = 0
 
 
+@functools.lru_cache(maxsize=1)
+def _inner_key_re() -> re.Pattern[str]:
+    """A label written after other text with only spaces between: "phone: 98... name: Tarun"."""
+    aliases = sorted(get_rules().key_aliases, key=lambda a: (-len(a), a))
+    body = "|".join(re.escape(a).replace(r"\ ", r"\s+") for a in aliases)
+    return re.compile(rf"(?<![\w])(?:{body})\s*[:=]", re.IGNORECASE)
+
+
 def _pieces(line: str, offset: int) -> list[tuple[int, int]]:
     spans: list[tuple[int, int]] = []
     pos = 0
@@ -140,12 +204,18 @@ def _pieces(line: str, offset: int) -> list[tuple[int, int]]:
         spans.append((pos, m.start()))
         pos = m.end()
     spans.append((pos, len(line)))
-    return [(offset + a, offset + b) for a, b in spans]
+    out: list[tuple[int, int]] = []
+    for a, b in spans:
+        lead = a + len(line[a:b]) - len(line[a:b].lstrip())
+        cuts = [m.start() for m in _inner_key_re().finditer(line, a, b) if m.start() > lead]
+        edges = [a, *cuts, b]
+        out.extend((x, y) for x, y in itertools.pairwise(edges) if line[x:y].strip())
+    return [(offset + a, offset + b) for a, b in out]
 
 
 def _key_of(piece: str) -> tuple[str, int] | None:
     """Canonical key and the offset (within `piece`) where its value starts."""
-    m = get_rules().key_re.match(piece)
+    m = get_rules().key_re.match(piece) or get_rules().key_space_re.match(piece)
     if m is None:
         return None
     canonical = get_rules().key_aliases.get(norm_key(m.group("key")))

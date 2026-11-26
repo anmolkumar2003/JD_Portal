@@ -262,6 +262,9 @@ def _canonical_company(raw: str) -> tuple[str, bool]:
     return (text if any(c.isupper() for c in text) else smart_title(text)), False
 
 
+_AS_TITLE = re.compile(r"\s+as\s+(?:an?\s+|the\s+)?", re.IGNORECASE)
+
+
 def _company_hits(doc: Doc) -> list[_CompanyHit]:
     rules = get_rules()
     hits: list[_CompanyHit] = []
@@ -272,6 +275,7 @@ def _company_hits(doc: Doc) -> list[_CompanyHit]:
         body = free.strip()
         if chunk.key == "company":
             value = free[chunk.value_start - chunk.start :].strip()
+            value = _AS_TITLE.split(value, maxsplit=1)[0].strip()  # "Cognizant as Senior Associate"
             if value and not re.search(r"\d{3}|@", value):
                 name, known = _canonical_company(value)
                 offset = free.find(value)
@@ -318,7 +322,9 @@ def _company_hits(doc: Doc) -> list[_CompanyHit]:
             if _TITLE_HEAD_AFTER.match(after):
                 continue  # "Oracle DBA", "SAP consultant": a skill, not an employer
             previous = bool(_PREV_COMPANY.search(free[: m.start()]))
-            standalone = len(m.group(0)) >= len(body.strip(" .")) - 1
+            standalone = len(m.group(0)) >= len(body.strip(" .")) - 1 or _only_suffixes_follow(
+                free[m.end() :]
+            )
             if not standalone and not previous:
                 continue  # inside a longer sentence only "at/with X" is trusted (handled above)
             name, known = _canonical_company(m.group(0))
@@ -351,6 +357,13 @@ def _company_hits(doc: Doc) -> list[_CompanyHit]:
                     )
                 )
     return hits
+
+
+def _only_suffixes_follow(rest: str) -> bool:
+    """ "Infosys Pvt. Ltd.": after the known name only company words (Pvt, Ltd, Inc ...) remain."""
+    suffixes = get_rules().company_suffixes
+    words = rest.replace(".", " ").split()
+    return bool(words) and all(w.casefold() in suffixes for w in words)
 
 
 def _is_known_company(raw: str) -> bool:
@@ -436,7 +449,7 @@ def _company_result(
 
 # --- Job title --------------------------------------------------------------------------------
 
-_TITLE_KEYS = frozenset({None, "title"})
+_TITLE_KEYS = frozenset({None, "title", "company"})
 _TITLE_LEAD = re.compile(
     r"^(?:(?:currently\s+)?working\s+as\s+(?:an?\s+|the\s+)?|(?:he|she|they)\s+is\s+(?:an?\s+)?|"
     r"is\s+(?:an?\s+)?|as\s+(?:an?\s+|the\s+)?|designation\s*[:=-]?\s*|role\s*[:=-]?\s*)",
@@ -510,7 +523,7 @@ def _multiword_modifier_words(text: str) -> frozenset[str]:
 
 _TITLE_PHRASE = re.compile(
     r"(?<![\w])(?:working|employed|serving|currently\s+working)\s+as\s+(?:an?\s+|the\s+)?|"
-    r"(?<![\w])(?:is|was|currently)\s+(?:an?\s+|the\s+)|(?<![\w])as\s+(?:an?\s+|the\s+)",
+    r"(?<![\w])(?:is|was|currently)\s+(?:an?\s+|the\s+)|(?<![\w])as\s+(?:an?\s+|the\s+)?",
     re.IGNORECASE,
 )
 _TITLE_STOP = frozenset(
@@ -552,6 +565,24 @@ def _title_hits(doc: Doc) -> list[_TitleHit]:
         if chunk.key not in _TITLE_KEYS:
             continue
         free = doc.free_text(chunk)
+        if chunk.key == "company":
+            # "working at Cognizant as Senior Associate": the title follows the company.
+            parts = _AS_TITLE.split(free, maxsplit=1)
+            if len(parts) == 2:
+                stripped = _TITLE_TAIL_PREP.sub("", parts[1].strip()).strip(" .")
+                core = _title_core(stripped) if stripped else None
+                if core is not None:
+                    offset = free.find(stripped)
+                    hits.append(
+                        _TitleHit(
+                            core[0],
+                            chunk.start + offset,
+                            chunk.start + offset + len(stripped),
+                            "lead",
+                            core[1],
+                        )
+                    )
+            continue
         if chunk.key == "title":
             value = free[chunk.value_start - chunk.start :]
             value = _TITLE_TAIL_PREP.sub("", value.strip()).strip(" .")
