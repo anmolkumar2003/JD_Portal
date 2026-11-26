@@ -40,6 +40,7 @@ import type {
   Page,
   ParsedProfileOut,
   ParsedProfilePatchInput,
+  QuickParseOut,
   PublicConfig,
   PublicJob,
   PublicJobFilters,
@@ -424,6 +425,12 @@ export const api = {
       form.append("cv", file);
       return request<CvParseOut>("/api/v1/candidates/parse-cv", { method: "POST", body: form });
     },
+    /** Extract fields from pasted text. Nothing is saved or stored by the server. */
+    quickParse: (text: string) =>
+      request<QuickParseOut>("/api/v1/candidates/quick-parse", {
+        method: "POST",
+        body: { text },
+      }),
     createDraft: () => request<CandidateDraft>("/api/v1/candidates/drafts", { method: "POST" }),
     uploadDraftFile: (draftId: string, file: File) => {
       const form = new FormData();

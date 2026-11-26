@@ -28,6 +28,7 @@ import {
 } from "@/components/candidates/candidate-form-schema";
 import { BudgetBadge } from "@/components/candidates/budget-badge";
 import { MultiCvDropzone, type CvUploadItem } from "@/components/candidates/cv-dropzone";
+import { QuickFillCard } from "@/components/candidates/quick-fill-card";
 import { SalaryFields } from "@/components/candidates/salary-fields";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ import { useJob, useJobs } from "@/hooks/use-jobs";
 import { useDepartments } from "@/hooks/use-lookups";
 import { ApiError, api } from "@/lib/api";
 import { CANDIDATE_SOURCE_LABELS } from "@/lib/labels";
+import { isAdmin } from "@/lib/permissions";
 import { computeBudgetStatus } from "@/lib/salary";
 import type {
   CommitRowError,
@@ -817,6 +819,9 @@ export function AddCandidateForm({ sharedJobId, sharedDepartmentId }: AddCandida
   return (
     <FormProvider {...form}>
       <form onSubmit={onSaveSingle} noValidate className="space-y-6">
+        {/* Quick fill is HR-admin only (the API enforces it too) and is for one candidate. */}
+        {isAdmin(user?.role) && !isBatchMode && <QuickFillCard />}
+
         <Card>
           <CardHeader>
             <CardTitle>CV upload</CardTitle>
