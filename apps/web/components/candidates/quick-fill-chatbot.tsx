@@ -63,7 +63,6 @@ export function QuickFillChatbot() {
 }
 
 function QuickFillChatbotInner() {
-  const { user } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const jobs = useJobs({ page_size: 100 });
