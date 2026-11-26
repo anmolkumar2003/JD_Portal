@@ -21,6 +21,7 @@ import { isAdmin } from "@/lib/permissions";
 import {
   draftFromParse,
   emptyChatDraft,
+  formatValidationError,
   missingForCreate,
   toCreateFormData,
   toPatchBody,
@@ -29,8 +30,9 @@ import {
 import { cn } from "@/lib/utils";
 import type { DuplicateMatch } from "@/types/api";
 
-const PLACEHOLDER = "e.g. Add Rahul Sharma, React Developer, 5 years experience...";
-const TAGLINE = "One quick paste, one step closer to your next great hire! 🚀";
+const PLACEHOLDER =
+  "e.g. Rahul Sharma, Pune, 5 years, current 8 LPA, rahul@mail.com, +91 98765 43210";
+const TAGLINE = "One quick paste, one step closer to your next great hire!";
 
 type Phase = "compose" | "review";
 
@@ -174,7 +176,11 @@ function QuickFillChatbotInner() {
       reset();
       router.push("/candidates");
     } catch (error) {
-      setStatus(error instanceof ApiError ? error.message : "Could not save candidate");
+      if (error instanceof ApiError) {
+        setStatus(formatValidationError(error));
+      } else {
+        setStatus("Could not save candidate");
+      }
     } finally {
       setBusy(false);
     }

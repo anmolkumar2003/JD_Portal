@@ -41,6 +41,8 @@ def name_of(text: str) -> tuple[Any, Any]:
         ("Rahul Sharma is a senior java developer based in Pune", "Rahul", "Sharma"),
         ("C. Ramesh, Chennai", "C", "Ramesh"),
         ("Name - Asha Rani\nCity - Kochi", "Asha", "Rani"),
+        ("Add Rahul Sharma, React Developer, 5 years", "Rahul", "Sharma"),
+        ("Please add Priya Nair, Pune", "Priya", "Nair"),
     ],
 )
 def test_name(text: str, first: str, last: str) -> None:
@@ -71,6 +73,12 @@ def test_a_single_known_first_name_gives_a_first_name_only() -> None:
         "Referral",
         "Engineering",
         "xyz",
+        "Professional Summary",
+        "PROFESSIONAL SUMMARY",
+        "Career Objective",
+        "Projects",
+        "Technical Skills",
+        "Work Experience",
     ],
 )
 def test_text_that_is_not_a_name_is_not_taken_as_one(text: str) -> None:
@@ -78,6 +86,20 @@ def test_text_that_is_not_a_name_is_not_taken_as_one(text: str) -> None:
 
     assert first is None
     assert last is None
+
+
+def test_heading_then_real_name_keeps_the_person() -> None:
+    result = parse_quick_fill(
+        "Professional Summary\n"
+        "Backend engineer with platform experience.\n"
+        "Name: John Smith\n"
+        "Email: john.smith@example.com\n"
+        "Location: Bengaluru\n"
+    )
+    assert result.value("first_name") == "John"
+    assert result.value("last_name") == "Smith"
+    assert result.value("email") == "john.smith@example.com"
+    assert result.value("current_location") == "Bengaluru"
 
 
 def test_two_possible_names_are_listed_and_neither_is_chosen() -> None:

@@ -452,30 +452,38 @@ async def parse_cv_preview(
     """
     from app.cv_engine import RuleBasedParser, extract_text
 
+    from app.cv_engine.parser import AUTOFILL_MIN_CONFIDENCE
+
     validated = validated or validate_cv(cv_bytes)
     extracted = extract_text(cv_bytes, validated.mime_type)
     parsed = RuleBasedParser().parse(extracted.text, file_meta=extracted)
+    conf = parsed.confidence
+
+    def ok(key: str) -> bool:
+        return float(conf.get(key, 0.0)) >= AUTOFILL_MIN_CONFIDENCE
+
     first_name = None
     last_name = None
-    if parsed.full_name:
+    if parsed.full_name and ok("name"):
         parts = parsed.full_name.split()
         first_name = parts[0]
         last_name = " ".join(parts[1:]) if len(parts) > 1 else None
     linkedin = next((u for u in parsed.links if "linkedin.com" in u.lower()), None)
-    title = parsed.experience[0].title if parsed.experience else None
-    company = parsed.experience[0].company if parsed.experience else None
+    current = parsed.experience[0] if parsed.experience else None
+    title = current.title if current and ok("title") else None
+    company = current.company if current and ok("company") else None
     return CvParseOut(
         file_name=file_name or f"cv.{validated.extension}",
         first_name=first_name,
         last_name=last_name,
-        email=parsed.email,
-        phone=parsed.phone,
-        current_location=parsed.location,
+        email=parsed.email if ok("email") else None,
+        phone=parsed.phone if ok("phone") else None,
+        current_location=parsed.location if ok("location") else None,
         current_company=company,
         current_title=title,
         total_experience_years=parsed.total_experience_years,
         linkedin_url=linkedin,
-        skills=list(parsed.skills[:40]),
+        skills=list(parsed.skills[:40]) if ok("skills") else [],
         confidence=dict(parsed.confidence),
     )
 

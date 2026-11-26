@@ -30,9 +30,44 @@ function asString(value: unknown): string {
 }
 
 function asNumberString(value: unknown): string {
-  if (typeof value === "number" && Number.isFinite(value)) return String(value);
-  if (typeof value === "string" && value.trim() !== "") return value.trim();
+  if (typeof value === "number" && Number.isFinite(value)) {
+    // API rejects >1 decimal place on experience years.
+    return String(Math.round(value * 10) / 10);
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value.trim());
+    if (Number.isFinite(n)) return String(Math.round(n * 10) / 10);
+    return value.trim();
+  }
   return "";
+}
+
+/** Turn API 422 details into a short human message (avoids bare "Request validation failed"). */
+export function formatValidationError(error: {
+  message: string;
+  details?: unknown;
+}): string {
+  const details = error.details;
+  if (!Array.isArray(details) || details.length === 0) return error.message;
+  const parts: string[] = [];
+  for (const item of details) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as { loc?: unknown; msg?: unknown; field?: unknown; message?: unknown };
+    const msg =
+      typeof row.msg === "string"
+        ? row.msg
+        : typeof row.message === "string"
+          ? row.message
+          : null;
+    if (!msg) continue;
+    let field: string | null = typeof row.field === "string" ? row.field : null;
+    if (!field && Array.isArray(row.loc)) {
+      const partsLoc = row.loc.map(String).filter((p) => p !== "body");
+      field = partsLoc[partsLoc.length - 1] ?? null;
+    }
+    parts.push(field ? `${field.replace(/_/g, " ")}: ${msg}` : msg);
+  }
+  return parts.length ? parts.join("; ") : error.message;
 }
 
 function asSalary(value: unknown): SalaryIn | null {
@@ -54,9 +89,11 @@ function fieldMap(result: QuickParseOut): Map<string, QuickParseField> {
   return new Map(result.fields.map((f) => [f.field, f]));
 }
 
-function pick(fields: Map<string, QuickParseField>, name: string): unknown {
+/** Only high-confidence values are auto-applied; uncertain fields stay blank for review. */
+function pickHigh(fields: Map<string, QuickParseField>, name: string): unknown {
   const item = fields.get(name);
-  return item?.value ?? null;
+  if (!item || item.confidence !== "high" || item.value == null) return null;
+  return item.value;
 }
 
 /** Editable draft held inside the chatbot after Extract. */
@@ -129,29 +166,30 @@ function applySalary(
 export function draftFromParse(result: QuickParseOut, jobId = ""): ChatCandidateDraft {
   const fields = fieldMap(result);
   const draft = emptyChatDraft();
-  draft.first_name = asString(pick(fields, "first_name"));
-  draft.last_name = asString(pick(fields, "last_name"));
-  draft.email = asString(pick(fields, "email"));
-  draft.phone = asString(pick(fields, "phone"));
-  draft.current_location = asString(pick(fields, "current_location"));
-  draft.current_company = asString(pick(fields, "current_company"));
-  draft.current_title = asString(pick(fields, "current_title"));
-  draft.total_experience_years = asNumberString(pick(fields, "total_experience_years"));
-  draft.notice_period_days = asNumberString(pick(fields, "notice_period_days"));
-  draft.linkedin_url = asString(pick(fields, "linkedin_url"));
-  draft.portfolio_url = asString(pick(fields, "portfolio_url"));
-  const source = asString(pick(fields, "source"));
+  // High confidence only — medium/low stay empty so HR maps them by hand.
+  draft.first_name = asString(pickHigh(fields, "first_name"));
+  draft.last_name = asString(pickHigh(fields, "last_name"));
+  draft.email = asString(pickHigh(fields, "email"));
+  draft.phone = asString(pickHigh(fields, "phone"));
+  draft.current_location = asString(pickHigh(fields, "current_location"));
+  draft.current_company = asString(pickHigh(fields, "current_company"));
+  draft.current_title = asString(pickHigh(fields, "current_title"));
+  draft.total_experience_years = asNumberString(pickHigh(fields, "total_experience_years"));
+  draft.notice_period_days = asNumberString(pickHigh(fields, "notice_period_days"));
+  draft.linkedin_url = asString(pickHigh(fields, "linkedin_url"));
+  draft.portfolio_url = asString(pickHigh(fields, "portfolio_url"));
+  const source = asString(pickHigh(fields, "source"));
   if (SOURCES.has(source as CandidateSource)) draft.source = source as CandidateSource;
-  const skills = pick(fields, "skills");
-  const tags = pick(fields, "tags");
+  const skills = pickHigh(fields, "skills");
+  const tags = pickHigh(fields, "tags");
   const tagParts: string[] = [];
   if (Array.isArray(skills)) tagParts.push(...skills.map(asString).filter(Boolean));
   if (Array.isArray(tags)) tagParts.push(...tags.map(asString).filter(Boolean));
   draft.tags = [...new Set(tagParts)].join(", ");
   draft.job_id = jobId;
-  applySalary(draft, "current_ctc", pick(fields, "current_ctc"));
-  applySalary(draft, "expected_ctc", pick(fields, "expected_ctc"));
-  applySalary(draft, "offered_ctc", pick(fields, "offered_ctc"));
+  applySalary(draft, "current_ctc", pickHigh(fields, "current_ctc"));
+  applySalary(draft, "expected_ctc", pickHigh(fields, "expected_ctc"));
+  applySalary(draft, "offered_ctc", pickHigh(fields, "offered_ctc"));
   return draft;
 }
 
@@ -255,12 +293,17 @@ export function toPatchBody(draft: ChatCandidateDraft): CandidatePatchInput {
   return body;
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_RE = /^\+?[0-9 ()\-.]{6,40}$/;
+
 export function missingForCreate(draft: ChatCandidateDraft): string[] {
   const missing: string[] = [];
   if (!draft.first_name.trim()) missing.push("first name");
   if (!draft.last_name.trim()) missing.push("last name");
   if (!draft.email.trim()) missing.push("email");
+  else if (!EMAIL_RE.test(draft.email.trim())) missing.push("a valid email");
   if (!draft.phone.trim()) missing.push("phone");
+  else if (!PHONE_RE.test(draft.phone.trim())) missing.push("a valid phone number");
   if (!draft.job_id.trim()) missing.push("job");
   return missing;
 }

@@ -20,7 +20,7 @@ from app.cv_engine.skills import is_known_skill
 
 _NAME_LEAD = re.compile(
     r"^(?:(?:my\s+name\s+is|name\s+is|name|this\s+is|i\s+am|i'm|candidate|applicant|meet|"
-    r"mr|mrs|ms|miss|mx|shri|smt|dr|prof)\.?\s+)+",
+    r"add|adding|please\s+add|mr|mrs|ms|miss|mx|shri|smt|dr|prof)\.?\s+)+",
     re.IGNORECASE,
 )
 _SENTENCE_NAME = re.compile(

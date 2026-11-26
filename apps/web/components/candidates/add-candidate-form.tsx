@@ -41,6 +41,7 @@ import { applicationKeys } from "@/hooks/use-applications";
 import { useJob, useJobs } from "@/hooks/use-jobs";
 import { useDepartments } from "@/hooks/use-lookups";
 import { ApiError, api } from "@/lib/api";
+import { parseToFormPatch } from "@/lib/cv-autofill";
 import { CANDIDATE_SOURCE_LABELS } from "@/lib/labels";
 import { computeBudgetStatus } from "@/lib/salary";
 import type {
@@ -108,22 +109,6 @@ function Field({
   );
 }
 
-function parseToFormPatch(data: CvParseOut): Partial<CandidateFormValues> {
-  const patch: Partial<CandidateFormValues> = {};
-  if (data.first_name) patch.first_name = data.first_name;
-  if (data.last_name) patch.last_name = data.last_name;
-  if (data.email) patch.email = data.email;
-  if (data.phone) patch.phone = data.phone;
-  if (data.current_location) patch.current_location = data.current_location;
-  if (data.current_company) patch.current_company = data.current_company;
-  if (data.current_title) patch.current_title = data.current_title;
-  if (data.total_experience_years != null) {
-    patch.total_experience_years = String(data.total_experience_years);
-  }
-  if (data.linkedin_url) patch.linkedin_url = data.linkedin_url;
-  return patch;
-}
-
 type BatchRow = {
   itemId: string;
   fileName: string;
@@ -156,7 +141,7 @@ function isCommitRowErrors(details: unknown): details is CommitRowError[] {
   );
 }
 
-/** Field errors from `POST /candidates` (FastAPI style: loc = ["body", field]). */
+/** Field errors from `POST /candidates` (FastAPI style: loc = ["body", field] or ["field"]). */
 function manualFieldErrors(details: unknown): { field: string; message: string }[] {
   if (!Array.isArray(details)) return [];
   const out: { field: string; message: string }[] = [];
@@ -164,9 +149,10 @@ function manualFieldErrors(details: unknown): { field: string; message: string }
     if (typeof d !== "object" || d === null) continue;
     const loc = (d as { loc?: unknown }).loc;
     const msg = (d as { msg?: unknown }).msg;
-    if (Array.isArray(loc) && typeof loc[1] === "string" && typeof msg === "string") {
-      out.push({ field: loc[1], message: msg });
-    }
+    if (!Array.isArray(loc) || typeof msg !== "string") continue;
+    const parts = loc.map(String).filter((p) => p !== "body");
+    const field = parts[0];
+    if (field) out.push({ field: field.split(".")[0] ?? field, message: msg });
   }
   return out;
 }

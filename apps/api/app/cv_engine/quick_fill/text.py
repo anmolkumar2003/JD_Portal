@@ -115,8 +115,27 @@ def clean_text(raw: str) -> str:
     text = _BETWEEN_RE.sub(lambda m: f"{m.group(1)} to ", text)  # "between 10 and 12 LPA"
     text = _AND_HALF_RE.sub(lambda m: f"{m.group(1)}.5 {m.group(2)}", text)
     text = _HALF_RE.sub(lambda m: f"{m.group(1)}.5 {m.group(2)}", text)
-    lines = [re.sub(r"[ \t]+", " ", line).strip() for line in text.split("\n")]
-    return "\n".join(lines).strip("\n")
+    text = _MARKDOWN_RE.sub("", text)
+    lines = [_tidy_line(line) for line in text.split("\n")]
+    return _BLANK_RUN_RE.sub("\n\n", "\n".join(lines)).strip("\n")
+
+
+_MARKDOWN_RE = re.compile(r"\*\*|`+|~~")
+# A list marker at the start of a line: "- ", "* ", "> ", "1. ", "2) ", "(3) ". Letters are not markers: "A. Kumar" is a name.
+_LIST_MARKER_RE = re.compile(r"^(?:[-*>#]+|\(?\d{1,2}[.)])\s+")
+_BLANK_RUN_RE = re.compile(r"\n{3,}")
+_SPACE_BEFORE_PUNCT_RE = re.compile(r"\s+([,;:])")
+_REPEATED_SEP_RE = re.compile(r"([,;])(?:\s*[,;])+")
+
+
+def _tidy_line(line: str) -> str:
+    """Whitespace, list markers and stray separators; the words themselves are untouched."""
+    line = re.sub(r"[ \t]+", " ", line).strip()
+    line = re.sub(r"^[,;\s]+", "", line)  # bullets became " , ": nothing before the first word
+    line = _LIST_MARKER_RE.sub("", line, count=1)
+    line = _REPEATED_SEP_RE.sub(r"\1", line)
+    line = _SPACE_BEFORE_PUNCT_RE.sub(r"\1", line)
+    return line.strip(" ,;")
 
 
 # --- Chunks -----------------------------------------------------------------------------------

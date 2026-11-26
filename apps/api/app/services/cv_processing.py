@@ -46,23 +46,45 @@ def _split_name(full_name: str | None) -> tuple[str | None, str | None]:
     return parts[0], " ".join(parts[1:])
 
 
-def _fill_candidate(candidate: Candidate, data: dict[str, Any], years: float | None) -> None:
-    """Update only empty candidate fields from parsed data (no PII in logs)."""
+def _fill_candidate(
+    candidate: Candidate,
+    data: dict[str, Any],
+    years: float | None,
+    confidence: dict[str, Any] | None = None,
+) -> None:
+    """Update only empty candidate fields from parsed data (no PII in logs).
+
+    When `confidence` is provided, uncertain extractions (below AUTOFILL_MIN_CONFIDENCE)
+    are left blank for manual review instead of writing the wrong value.
+    """
+    from app.cv_engine.parser import AUTOFILL_MIN_CONFIDENCE
+
+    conf = confidence if isinstance(confidence, dict) else None
+
+    def ok(key: str) -> bool:
+        if conf is None:
+            return True
+        try:
+            return float(conf.get(key, 0.0)) >= AUTOFILL_MIN_CONFIDENCE
+        except (TypeError, ValueError):
+            return False
+
     first, last = _split_name(
         data.get("full_name") if isinstance(data.get("full_name"), str) else None
     )
-    if not candidate.first_name and first:
-        candidate.first_name = first[:100]
-    if not candidate.last_name and last:
-        candidate.last_name = last[:100]
+    if ok("name"):
+        if not candidate.first_name and first:
+            candidate.first_name = first[:100]
+        if not candidate.last_name and last:
+            candidate.last_name = last[:100]
     email = data.get("email")
-    if not candidate.email and isinstance(email, str):
+    if ok("email") and not candidate.email and isinstance(email, str):
         candidate.email = email.lower()[:255]
     phone = data.get("phone")
-    if not candidate.phone and isinstance(phone, str):
+    if ok("phone") and not candidate.phone and isinstance(phone, str):
         candidate.phone = phone[:50]
     location = data.get("location")
-    if not candidate.current_location and isinstance(location, str):
+    if ok("location") and not candidate.current_location and isinstance(location, str):
         candidate.current_location = location[:200]
     if candidate.total_experience_years is None and years is not None:
         candidate.total_experience_years = Decimal(str(years))
@@ -76,11 +98,12 @@ def _fill_candidate(candidate: Candidate, data: dict[str, Any], years: float | N
                 candidate.linkedin_url = link[:500]
             elif not candidate.portfolio_url and lower.startswith("http"):
                 candidate.portfolio_url = link[:500]
-    if not candidate.current_title and data.get("experience"):
+    if data.get("experience") and (ok("title") or ok("company")):
         exp0 = data["experience"][0] if data["experience"] else None
-        if isinstance(exp0, dict) and exp0.get("title"):
-            candidate.current_title = str(exp0["title"])[:200]
-            if not candidate.current_company and exp0.get("company"):
+        if isinstance(exp0, dict):
+            if ok("title") and not candidate.current_title and exp0.get("title"):
+                candidate.current_title = str(exp0["title"])[:200]
+            if ok("company") and not candidate.current_company and exp0.get("company"):
                 candidate.current_company = str(exp0["company"])[:200]
 
 
@@ -262,7 +285,9 @@ def process_document_sync(session: Session, document_id: uuid.UUID) -> None:
 
         candidate = session.get(Candidate, document.candidate_id)
         if candidate is not None:
-            _fill_candidate(candidate, data, parsed.total_experience_years)
+            _fill_candidate(
+                candidate, data, parsed.total_experience_years, confidence=parsed.confidence
+            )
 
         applications = session.scalars(
             select(Application).where(Application.candidate_id == document.candidate_id)
