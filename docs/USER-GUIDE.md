@@ -71,7 +71,7 @@ On **Candidates**, use the search bar and filter popover (skills, score, departm
 
 ### Quick fill chatbot
 
-HR Admin and Super Admin see a floating **message** button at the bottom right of every portal page. Click it to open Quick fill. It runs on our own server (rules, place list, skills list, spaCy) — no text is sent to an outside service.
+HR Admin and Super Admin see a floating **message** button at the bottom right of **Add candidate** (the page with CV drag-and-drop). Click it to open Quick fill. It runs on our own server (rules, place list, skills list, spaCy) — no text is sent to an outside service.
 
 1. Paste a sentence or a few lines (2,000 character limit) and click **Extract**.
 2. Review and edit the fields. For a **new** candidate, choose a **Job**, then click **Add**.
