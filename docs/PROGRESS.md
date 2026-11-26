@@ -90,3 +90,14 @@ Legend: `[x]` done · `[~]` partial · `[ ]` pending · `[-]` skipped
       required first/last/email/phone/job on client and API, duplicate warnings, draft→permanent
       save and cancel cleanup, multi-CV review table with partial save, pytest + Playwright
 - [x] `docs/USER-GUIDE.md` updated for delete and draft add-candidate flows
+
+### Follow-up: delete visibility and HR-only accounts (`fix/delete-visibility-hr-admin-only`)
+
+- [x] Root cause of "no delete option": the running web images predated the feature and could not
+      be rebuilt because the Dockerfile copies `apps/web/.npmrc`, which was never committed.
+      File added; prod `api`, `worker`, `web` rebuilt and migrations `0011`/`0012` applied.
+- [x] Candidate menu now reads **Actions** (was an icon only); Delete/Anonymize unchanged.
+- [x] `beat` now starts by default (dev and prod) with a writable schedule file, so the hourly
+      orphan-file and expired-draft cleanups actually run.
+- [x] Users dialog offers only HR Admin and Super Admin (API enum unchanged).
+- [x] `make remove-user EMAIL=…` (audited, last-admin guard); "UI Review" account removed.

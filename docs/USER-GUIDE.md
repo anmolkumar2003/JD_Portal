@@ -12,7 +12,7 @@ This guide is for **HR administrators, recruiters, and hiring managers** using t
 ![Login screen](screenshots/login.png)  
 *Placeholder — add `docs/screenshots/login.png` after go-live.*
 
-Administrators create additional users under **Settings → Users** (roles: `hr_admin`, `super_admin`, `recruiter`).
+Administrators create additional users under **Settings → Users**. The portal is HR-only: new accounts are **HR Admin** or **Super Admin**. To remove an account entirely, ask your technical team to run `make remove-user EMAIL=…` (it is audited and never removes the last active admin).
 
 ## Navigation
 
@@ -83,7 +83,7 @@ Open a candidate to see tabs:
 
 Use **Move to** or **Reject** with an optional reason. **Email** opens the composer with templates.
 
-**HR administrators** (`hr_admin`, `super_admin`) can open the actions menu to **Anonymize** (scrub personal details, keep applications and documents) or **Delete candidate** (permanent). Delete asks you to type the candidate’s full name, lists what will be removed, and cannot be undone. The same roles can **Delete** from the bulk toolbar (type `DELETE` to confirm). Recruiters and other roles never see these controls. Deletion is audited with row counts only — never name, email, or phone.
+**HR administrators** (`hr_admin`, `super_admin`) can open the **Actions** menu (top right of the profile, next to Download PDF summary) to **Anonymize** (scrub personal details, keep applications and documents) or **Delete candidate** (permanent). Delete asks you to type the candidate’s full name, lists what will be removed, and cannot be undone. The same roles can **Delete** from the bulk toolbar (type `DELETE` to confirm). Recruiters and other roles never see these controls. Deletion is audited with row counts only — never name, email, or phone.
 
 **HR administrators** can also **Download PDF summary** from the profile header (or from the bulk toolbar for several candidates at once — one PDF each, as a ZIP). A short dialog chooses whether to include contact details (on by default), salary details (off), and HR notes (off). The PDF is one to two A4 pages with organization branding, scores, interview ratings, and a note that scores are advisory. Files are generated on the fly and not stored on the server; the export is written to the audit log without personal data.
 
