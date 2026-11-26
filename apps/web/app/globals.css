@@ -297,3 +297,12 @@
     scroll-behavior: auto;
   }
 }
+
+/* Scrolling still works; the scrollbar / scroll indicator is not drawn. */
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
