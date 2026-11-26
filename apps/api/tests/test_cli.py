@@ -4,8 +4,17 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.cli.cleanup_demo import cleanup
 from app.cli.init_admin import InitAdminError, create_or_reset
+from app.cli.remove_user import RemoveUserError, remove_user
 from app.core.security import verify_password
-from app.models import Candidate, Department, EmailTemplate, Job, PipelineStage, User
+from app.models import (
+    AuditLog,
+    Candidate,
+    Department,
+    EmailTemplate,
+    Job,
+    PipelineStage,
+    User,
+)
 from app.models.enums import UserRole
 from app.reference_data import DEFAULT_DEPARTMENTS
 
@@ -88,3 +97,41 @@ async def test_cleanup_removes_demo_data_and_keeps_reference_data(
         assert await _count(session, EmailTemplate) > 0
         names = set(await session.scalars(select(Department.name)))
         assert names == set(DEFAULT_DEPARTMENTS)
+
+
+async def test_remove_user_deletes_account_and_audits_without_pii(
+    db: async_sessionmaker[AsyncSession],
+) -> None:
+    async with db() as session:
+        await create_or_reset(
+            session,
+            email="ui.review@company.test",
+            full_name="UI Review",
+            role=UserRole.HR_ADMIN,
+            password=STRONG,
+            must_change=True,
+            reset=False,
+        )
+        role = await remove_user(session, email="UI.Review@company.test")
+    assert role is UserRole.HR_ADMIN
+
+    async with db() as session:
+        gone = await session.scalar(select(User).where(User.email == "ui.review@company.test"))
+        assert gone is None
+        entry = await session.scalar(
+            select(AuditLog).where(AuditLog.action == "user.removed_by_cli")
+        )
+        assert entry is not None
+        assert entry.diff == {"role": "hr_admin"}
+        assert "review" not in str(entry.diff).lower()
+        with pytest.raises(RemoveUserError, match="No account"):
+            await remove_user(session, email="ui.review@company.test")
+
+
+async def test_remove_user_keeps_the_last_active_admin(
+    db: async_sessionmaker[AsyncSession],
+) -> None:
+    async with db() as session:
+        # Demo data has exactly one active super_admin.
+        with pytest.raises(RemoveUserError, match="last active super_admin"):
+            await remove_user(session, email="superadmin@demo.example.com")
