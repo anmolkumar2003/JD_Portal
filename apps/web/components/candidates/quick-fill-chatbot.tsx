@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, MessageSquare, Send, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { applicationKeys } from "@/hooks/use-applications";
 import { useAuth } from "@/hooks/use-auth";
 import { useJobs } from "@/hooks/use-jobs";
 import { useQuickParse } from "@/hooks/use-quick-parse";
@@ -27,10 +29,18 @@ import {
 import { cn } from "@/lib/utils";
 import type { DuplicateMatch } from "@/types/api";
 
-const PLACEHOLDER =
-  "Rahul Sharma, Pune, 5 years, current 8 LPA, expected 12 LPA, 30 days notice, rahul@mail.com";
+const PLACEHOLDER = "e.g. Add Rahul Sharma, React Developer, 5 years experience...";
+const TAGLINE = "One quick paste, one step closer to your next great hire! 🚀";
 
 type Phase = "compose" | "review";
+
+/** Local-time greeting for the Quick Add header. */
+export function greetingForLocalHour(hour: number): string {
+  if (hour >= 5 && hour < 12) return "Good morning";
+  if (hour >= 12 && hour < 17) return "Good afternoon";
+  if (hour >= 17 && hour < 21) return "Good evening";
+  return "Good night";
+}
 
 /**
  * Floating Quick fill chatbot for HR Admin / Super Admin. Paste candidate text → Extract → Add.
@@ -44,7 +54,9 @@ export function QuickFillChatbot() {
 }
 
 function QuickFillChatbotInner() {
+  const { user } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const jobs = useJobs({ page_size: 100 });
   const parse = useQuickParse();
   const panelId = useId();
@@ -57,6 +69,15 @@ function QuickFillChatbotInner() {
   const [status, setStatus] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const [greeting, setGreeting] = useState(() => greetingForLocalHour(new Date().getHours()));
+
+  useEffect(() => {
+    if (!open) return;
+    const first = user?.full_name?.trim().split(/\s+/)[0];
+    const base = greetingForLocalHour(new Date().getHours());
+    setGreeting(first ? `${base}, ${first}` : base);
+  }, [open, user?.full_name]);
 
   useEffect(() => {
     if (open) {
@@ -142,22 +163,16 @@ function QuickFillChatbotInner() {
       if (match) {
         await api.candidates.update(match.id, toPatchBody(draft));
         toast.success(`Updated ${match.first_name} ${match.last_name}`);
-        setStatus("Updated. Open the profile to review.");
-        router.push(`/candidates/${match.id}`);
-        setOpen(false);
-        reset();
       } else {
         const created = await api.candidates.create(toCreateFormData(draft));
         toast.success(
           created.reused ? "Existing candidate updated with this application" : "Candidate added",
         );
-        const link = created.application_id
-          ? `/candidates/${created.candidate_id}?application=${created.application_id}`
-          : `/candidates/${created.candidate_id}`;
-        router.push(link);
-        setOpen(false);
-        reset();
       }
+      void queryClient.invalidateQueries({ queryKey: applicationKeys.all });
+      setOpen(false);
+      reset();
+      router.push("/candidates");
     } catch (error) {
       setStatus(error instanceof ApiError ? error.message : "Could not save candidate");
     } finally {
@@ -178,18 +193,19 @@ function QuickFillChatbotInner() {
         onClick={() => setOpen((v) => !v)}
         data-testid="quick-fill-fab"
         className={cn(
-          "fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full",
+          "fixed z-40 flex h-12 w-12 items-center justify-center rounded-full sm:h-14 sm:w-14",
+          "bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))]",
           "bg-primary text-primary-foreground shadow-lg shadow-primary/30",
           "transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         )}
-        title="Quick fill chatbot"
+        title="Quick Add"
       >
         {open ? (
-          <X className="h-6 w-6" aria-hidden />
+          <X className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden />
         ) : (
-          <MessageSquare className="h-6 w-6" aria-hidden />
+          <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden />
         )}
-        <span className="sr-only">{open ? "Close Quick fill" : "Open Quick fill chatbot"}</span>
+        <span className="sr-only">{open ? "Close Quick Add" : "Open Quick Add"}</span>
       </button>
 
       {open && (
@@ -197,17 +213,19 @@ function QuickFillChatbotInner() {
           id={panelId}
           ref={panelRef}
           role="dialog"
-          aria-label="Quick fill chatbot"
+          aria-label="Quick Add"
           data-testid="quick-fill-chatbot"
           className={cn(
-            "fixed bottom-24 right-4 z-40 flex w-[min(100vw-1.5rem,24rem)] flex-col overflow-hidden",
-            "max-h-[min(70vh,36rem)] rounded-2xl border border-border/70 bg-card/95 shadow-2xl backdrop-blur-md",
+            "fixed z-40 flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-2xl backdrop-blur-md",
+            "left-3 right-3 max-h-[min(85dvh,36rem)]",
+            "bottom-[calc(4.5rem+env(safe-area-inset-bottom))]",
+            "sm:bottom-24 sm:left-auto sm:right-4 sm:w-[min(100vw-2rem,24rem)]",
           )}
         >
-          <header className="flex items-center justify-between border-b border-border/60 px-4 py-3">
-            <div>
-              <p className="text-sm font-semibold">Quick fill</p>
-              <p className="text-xs text-muted-foreground">Paste details → Add candidate</p>
+          <header className="flex items-start justify-between gap-2 border-b border-border/60 px-4 py-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">{greeting}</p>
+              <p className="text-xs text-muted-foreground">{TAGLINE}</p>
             </div>
             <Button type="button" variant="ghost" size="icon" onClick={() => setOpen(false)}>
               <X className="h-4 w-4" aria-hidden />
@@ -215,12 +233,7 @@ function QuickFillChatbotInner() {
             </Button>
           </header>
 
-          <div className="flex-1 space-y-3 overflow-y-auto p-4">
-            <div className="rounded-xl bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-              Paste a sentence or a few lines about one candidate. Nothing is saved until you click
-              Add. CV drag-and-drop on Add candidate is unchanged.
-            </div>
-
+          <div className="flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
             {phase === "compose" && (
               <div className="space-y-2">
                 <Label htmlFor={`${panelId}-text`} className="sr-only">
@@ -259,7 +272,7 @@ function QuickFillChatbotInner() {
 
             {phase === "review" && (
               <div className="space-y-3">
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
                   <Field
                     label="First name"
                     value={draft.first_name}
