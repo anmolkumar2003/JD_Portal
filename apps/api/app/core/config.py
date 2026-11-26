@@ -59,6 +59,8 @@ class Settings(BaseSettings):
 
     # General per-client API rate limit (requests per minute); 0 disables it.
     api_rate_limit_per_minute: int = 300
+    # Sign-in attempts per client IP per 15 minutes (the e2e stack raises it: one runner IP).
+    login_limit_per_15_min: int = 30
     # Trust X-Forwarded-For (only when the API is reachable solely through our reverse proxy).
     trust_proxy_headers: bool = False
 
