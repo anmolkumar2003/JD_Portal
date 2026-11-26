@@ -1,0 +1,1376 @@
+{
+ "keys": {
+  "name": [
+   "name",
+   "full name",
+   "fullname",
+   "candidate name",
+   "candidate",
+   "applicant name",
+   "applicant",
+   "cand name",
+   "cand"
+  ],
+  "first_name": [
+   "first name",
+   "firstname",
+   "fname",
+   "f name",
+   "given name",
+   "forename"
+  ],
+  "last_name": [
+   "last name",
+   "lastname",
+   "lname",
+   "l name",
+   "surname",
+   "family name"
+  ],
+  "email": [
+   "email",
+   "e-mail",
+   "e mail",
+   "email id",
+   "email address",
+   "mail id",
+   "mail",
+   "emailid",
+   "email-id"
+  ],
+  "phone": [
+   "phone",
+   "phone number",
+   "phone no",
+   "phone num",
+   "mobile",
+   "mobile number",
+   "mobile no",
+   "mob",
+   "mob no",
+   "contact",
+   "contact number",
+   "contact no",
+   "contact details",
+   "cell",
+   "cell no",
+   "whatsapp",
+   "whats app",
+   "telephone",
+   "tel",
+   "ph",
+   "ph no",
+   "number"
+  ],
+  "alt_phone": [
+   "alt phone",
+   "alt mobile",
+   "alt no",
+   "alt contact",
+   "alternate phone",
+   "alternate mobile",
+   "alternate number",
+   "alternate contact",
+   "alternative number",
+   "alternative phone",
+   "secondary phone",
+   "secondary number",
+   "other number",
+   "emergency contact",
+   "office phone",
+   "landline",
+   "home phone"
+  ],
+  "location": [
+   "location",
+   "current location",
+   "present location",
+   "city",
+   "current city",
+   "present city",
+   "place",
+   "current place",
+   "loc",
+   "curr loc",
+   "current loc",
+   "residing at",
+   "residing in",
+   "residence",
+   "based at",
+   "based in",
+   "currently at",
+   "currently in"
+  ],
+  "company": [
+   "company",
+   "company name",
+   "current company",
+   "present company",
+   "current employer",
+   "present employer",
+   "employer",
+   "organisation",
+   "organization",
+   "current organisation",
+   "current organization",
+   "org",
+   "current org",
+   "firm",
+   "working at",
+   "working with",
+   "working for",
+   "currently working at",
+   "currently working with"
+  ],
+  "title": [
+   "title",
+   "job title",
+   "current title",
+   "present title",
+   "designation",
+   "current designation",
+   "present designation",
+   "role",
+   "current role",
+   "present role",
+   "current position",
+   "present position",
+   "profile"
+  ],
+  "experience": [
+   "experience",
+   "exp",
+   "total experience",
+   "total exp",
+   "overall experience",
+   "overall exp",
+   "work experience",
+   "years of experience",
+   "yrs of experience",
+   "yoe",
+   "tot exp",
+   "t exp",
+   "experience in years",
+   "exp in years"
+  ],
+  "notice": [
+   "notice",
+   "notice period",
+   "np",
+   "n.p.",
+   "notice period in days",
+   "notice (days)",
+   "joining time",
+   "availability",
+   "available in",
+   "available after"
+  ],
+  "current_ctc": [
+   "current ctc",
+   "present ctc",
+   "existing ctc",
+   "current salary",
+   "present salary",
+   "existing salary",
+   "current package",
+   "present package",
+   "current compensation",
+   "present compensation",
+   "current fixed",
+   "fixed ctc",
+   "last drawn",
+   "last drawn ctc",
+   "last drawn salary",
+   "cctc",
+   "c-ctc",
+   "c ctc",
+   "ctc",
+   "salary",
+   "package",
+   "compensation"
+  ],
+  "expected_ctc": [
+   "expected ctc",
+   "expected salary",
+   "expected package",
+   "expected compensation",
+   "expectation",
+   "expectations",
+   "ctc expectation",
+   "salary expectation",
+   "ectc",
+   "e-ctc",
+   "e ctc",
+   "exp ctc",
+   "expected",
+   "expecting",
+   "asking",
+   "ask"
+  ],
+  "offered_ctc": [
+   "offered ctc",
+   "offer ctc",
+   "offered salary",
+   "offered package",
+   "offered compensation",
+   "offered",
+   "offer",
+   "offer amount",
+   "offered amount"
+  ],
+  "negotiable": [
+   "negotiable",
+   "negotiation",
+   "nego",
+   "negotiability"
+  ],
+  "skills": [
+   "skills",
+   "skill",
+   "key skills",
+   "key skill",
+   "technical skills",
+   "tech skills",
+   "tech stack",
+   "technologies",
+   "technology",
+   "skill set",
+   "skillset",
+   "primary skills",
+   "primary skill",
+   "secondary skills",
+   "core skills",
+   "expertise",
+   "know how",
+   "knowledge"
+  ],
+  "linkedin": [
+   "linkedin",
+   "linked in",
+   "linkedin url",
+   "linkedin profile",
+   "linkedin link",
+   "linkedin id"
+  ],
+  "portfolio": [
+   "portfolio",
+   "portfolio url",
+   "portfolio link",
+   "website",
+   "web site",
+   "web",
+   "site",
+   "github",
+   "git hub",
+   "behance",
+   "dribbble",
+   "personal site",
+   "personal website"
+  ],
+  "source": [
+   "source",
+   "sourced from",
+   "sourced via",
+   "source of hire",
+   "source of candidate",
+   "via",
+   "channel"
+  ],
+  "tags": [
+   "tags",
+   "tag",
+   "labels",
+   "label"
+  ],
+  "department": [
+   "department",
+   "dept",
+   "team",
+   "function",
+   "vertical"
+  ],
+  "job": [
+   "job",
+   "applied for",
+   "applying for",
+   "applied position",
+   "position applied",
+   "position applied for",
+   "role applied",
+   "role applied for",
+   "post applied for",
+   "vacancy",
+   "opening",
+   "job applied",
+   "job applied for",
+   "position",
+   "post",
+   "requirement",
+   "interested in"
+  ],
+  "ignore": [
+   "relevant experience",
+   "relevant exp",
+   "rel exp",
+   "rel experience",
+   "native",
+   "native place",
+   "hometown",
+   "home town",
+   "preferred location",
+   "preferred city",
+   "pref location",
+   "relocation",
+   "willing to relocate",
+   "dob",
+   "date of birth",
+   "age",
+   "gender",
+   "sex",
+   "marital status",
+   "qualification",
+   "education",
+   "degree",
+   "college",
+   "university",
+   "reference",
+   "references",
+   "remarks",
+   "remark",
+   "comments",
+   "comment",
+   "notes",
+   "note",
+   "status",
+   "feedback",
+   "interview",
+   "interview date",
+   "current status",
+   "address",
+   "nationality",
+   "religion",
+   "photo",
+   "pan",
+   "aadhaar",
+   "aadhar"
+  ],
+  "current_any": [
+   "current",
+   "present"
+  ]
+ },
+ "title_heads": [
+  "developer",
+  "engineer",
+  "manager",
+  "analyst",
+  "designer",
+  "architect",
+  "consultant",
+  "lead",
+  "executive",
+  "associate",
+  "administrator",
+  "admin",
+  "specialist",
+  "officer",
+  "recruiter",
+  "tester",
+  "scientist",
+  "intern",
+  "trainee",
+  "director",
+  "head",
+  "coordinator",
+  "representative",
+  "assistant",
+  "programmer",
+  "accountant",
+  "writer",
+  "editor",
+  "strategist",
+  "planner",
+  "technician",
+  "supervisor",
+  "trainer",
+  "teacher",
+  "professor",
+  "lecturer",
+  "advisor",
+  "adviser",
+  "auditor",
+  "controller",
+  "buyer",
+  "marketer",
+  "copywriter",
+  "producer",
+  "operator",
+  "researcher",
+  "owner",
+  "evangelist",
+  "sdet",
+  "sde",
+  "devops",
+  "sre",
+  "dba",
+  "cto",
+  "ceo",
+  "cfo",
+  "coo",
+  "vp",
+  "president",
+  "founder"
+ ],
+ "title_modifiers": [
+  "senior",
+  "sr",
+  "junior",
+  "jr",
+  "lead",
+  "principal",
+  "staff",
+  "associate",
+  "assistant",
+  "chief",
+  "deputy",
+  "trainee",
+  "intern",
+  "software",
+  "hardware",
+  "data",
+  "devops",
+  "cloud",
+  "security",
+  "qa",
+  "quality",
+  "test",
+  "testing",
+  "product",
+  "project",
+  "program",
+  "business",
+  "technical",
+  "tech",
+  "sales",
+  "marketing",
+  "hr",
+  "human resources",
+  "talent",
+  "finance",
+  "financial",
+  "operations",
+  "full stack",
+  "fullstack",
+  "full-stack",
+  "front end",
+  "frontend",
+  "front-end",
+  "back end",
+  "backend",
+  "back-end",
+  "mobile",
+  "web",
+  "ui",
+  "ux",
+  "ui/ux",
+  "machine learning",
+  "ml",
+  "ai",
+  "big data",
+  "database",
+  "network",
+  "systems",
+  "system",
+  "application",
+  "applications",
+  "support",
+  "customer",
+  "content",
+  "digital",
+  "seo",
+  "sem",
+  "ppc",
+  "social media",
+  "graphic",
+  "visual",
+  "interaction",
+  "embedded",
+  "automation",
+  "manual",
+  "performance",
+  "site reliability",
+  "reliability",
+  "solution",
+  "solutions",
+  "enterprise",
+  "infrastructure",
+  "platform",
+  "release",
+  "scrum",
+  "agile",
+  "account",
+  "accounts",
+  "accounting",
+  "legal",
+  "administrative",
+  "office",
+  "operations",
+  "supply chain",
+  "logistics",
+  "procurement",
+  "recruitment",
+  "payroll",
+  "training",
+  "learning",
+  "research",
+  "game",
+  "android",
+  "ios",
+  "flutter",
+  "react",
+  "angular",
+  "node",
+  "java",
+  "python",
+  "php",
+  "net",
+  ".net",
+  "golang",
+  "ruby",
+  "rust",
+  "kotlin",
+  "swift",
+  "salesforce",
+  "sap",
+  "oracle",
+  "power bi",
+  "tableau",
+  "sql",
+  "etl",
+  "bi",
+  "erp",
+  "crm",
+  "shopify",
+  "wordpress",
+  "magento",
+  "design",
+  "creative",
+  "brand",
+  "growth",
+  "field",
+  "regional",
+  "area",
+  "zonal",
+  "national",
+  "key",
+  "inside",
+  "outside"
+ ],
+ "title_acronyms": [
+  "QA",
+  "SDET",
+  "UI",
+  "UX",
+  "HR",
+  "IT",
+  "SEO",
+  "SEM",
+  "PPC",
+  "BI",
+  "AI",
+  "ML",
+  "SAP",
+  "iOS",
+  "VP",
+  "CEO",
+  "CTO",
+  "CFO",
+  "COO",
+  "PMO",
+  "ERP",
+  "CRM",
+  "SQL",
+  "API",
+  "NLP",
+  "SRE",
+  "DBA",
+  "SOC",
+  "ETL",
+  "SDE",
+  "DevOps",
+  "JavaScript",
+  "TypeScript",
+  "PHP",
+  "AWS",
+  "GCP",
+  "SaaS",
+  "B2B",
+  "B2C",
+  "BDE",
+  "BDM",
+  "MIS",
+  "UI/UX",
+  "RPA",
+  "CAD",
+  "CAM",
+  "HRBP",
+  "L&D",
+  "AEM",
+  "SEO/SEM"
+ ],
+ "company_suffixes": [
+  "pvt",
+  "pvt.",
+  "private",
+  "ltd",
+  "ltd.",
+  "limited",
+  "llp",
+  "inc",
+  "inc.",
+  "corp",
+  "corp.",
+  "corporation",
+  "technologies",
+  "technology",
+  "solutions",
+  "systems",
+  "software",
+  "softwares",
+  "labs",
+  "consulting",
+  "consultants",
+  "consultancy",
+  "services",
+  "infotech",
+  "infosystems",
+  "softech",
+  "industries",
+  "enterprises",
+  "group",
+  "holdings",
+  "bank",
+  "global",
+  "digital",
+  "networks",
+  "analytics",
+  "interactive",
+  "media",
+  "pharma",
+  "motors",
+  "airlines",
+  "telecom"
+ ],
+ "known_companies": [
+  {
+   "name": "TCS",
+   "aliases": [
+    "Tata Consultancy Services",
+    "Tata Consultancy"
+   ]
+  },
+  {
+   "name": "Infosys",
+   "aliases": [
+    "Infosys Ltd",
+    "Infosys Limited"
+   ]
+  },
+  {
+   "name": "Wipro",
+   "aliases": [
+    "Wipro Ltd",
+    "Wipro Limited"
+   ]
+  },
+  {
+   "name": "HCL",
+   "aliases": [
+    "HCL Technologies",
+    "HCLTech",
+    "HCL Tech"
+   ]
+  },
+  {
+   "name": "Tech Mahindra",
+   "aliases": [
+    "TechM",
+    "Tech M"
+   ]
+  },
+  {
+   "name": "Cognizant",
+   "aliases": [
+    "CTS"
+   ]
+  },
+  {
+   "name": "Accenture",
+   "aliases": []
+  },
+  {
+   "name": "Capgemini",
+   "aliases": []
+  },
+  {
+   "name": "IBM",
+   "aliases": [
+    "IBM India"
+   ]
+  },
+  {
+   "name": "Oracle",
+   "aliases": []
+  },
+  {
+   "name": "SAP",
+   "aliases": []
+  },
+  {
+   "name": "Microsoft",
+   "aliases": []
+  },
+  {
+   "name": "Google",
+   "aliases": []
+  },
+  {
+   "name": "Amazon",
+   "aliases": [
+    "AWS India"
+   ]
+  },
+  {
+   "name": "Meta",
+   "aliases": [
+    "Facebook"
+   ]
+  },
+  {
+   "name": "Apple",
+   "aliases": []
+  },
+  {
+   "name": "Adobe",
+   "aliases": []
+  },
+  {
+   "name": "Salesforce",
+   "aliases": []
+  },
+  {
+   "name": "Intel",
+   "aliases": []
+  },
+  {
+   "name": "Cisco",
+   "aliases": []
+  },
+  {
+   "name": "Dell",
+   "aliases": []
+  },
+  {
+   "name": "HP",
+   "aliases": [
+    "Hewlett Packard"
+   ]
+  },
+  {
+   "name": "Deloitte",
+   "aliases": []
+  },
+  {
+   "name": "EY",
+   "aliases": [
+    "Ernst & Young",
+    "Ernst and Young"
+   ]
+  },
+  {
+   "name": "KPMG",
+   "aliases": []
+  },
+  {
+   "name": "PwC",
+   "aliases": [
+    "PricewaterhouseCoopers"
+   ]
+  },
+  {
+   "name": "McKinsey",
+   "aliases": []
+  },
+  {
+   "name": "Flipkart",
+   "aliases": []
+  },
+  {
+   "name": "Myntra",
+   "aliases": []
+  },
+  {
+   "name": "Paytm",
+   "aliases": []
+  },
+  {
+   "name": "PhonePe",
+   "aliases": []
+  },
+  {
+   "name": "Zomato",
+   "aliases": []
+  },
+  {
+   "name": "Swiggy",
+   "aliases": []
+  },
+  {
+   "name": "Ola",
+   "aliases": [
+    "Ola Cabs"
+   ]
+  },
+  {
+   "name": "Uber",
+   "aliases": []
+  },
+  {
+   "name": "Razorpay",
+   "aliases": []
+  },
+  {
+   "name": "Zoho",
+   "aliases": []
+  },
+  {
+   "name": "Freshworks",
+   "aliases": []
+  },
+  {
+   "name": "Byju's",
+   "aliases": [
+    "Byjus"
+   ]
+  },
+  {
+   "name": "Meesho",
+   "aliases": []
+  },
+  {
+   "name": "Nykaa",
+   "aliases": []
+  },
+  {
+   "name": "CRED",
+   "aliases": []
+  },
+  {
+   "name": "Dream11",
+   "aliases": []
+  },
+  {
+   "name": "Reliance",
+   "aliases": [
+    "Reliance Jio",
+    "Jio"
+   ]
+  },
+  {
+   "name": "Airtel",
+   "aliases": [
+    "Bharti Airtel"
+   ]
+  },
+  {
+   "name": "Vodafone",
+   "aliases": []
+  },
+  {
+   "name": "Tata Motors",
+   "aliases": []
+  },
+  {
+   "name": "Mahindra",
+   "aliases": []
+  },
+  {
+   "name": "Bajaj",
+   "aliases": []
+  },
+  {
+   "name": "L&T",
+   "aliases": [
+    "Larsen & Toubro",
+    "Larsen and Toubro",
+    "L and T"
+   ]
+  },
+  {
+   "name": "HDFC Bank",
+   "aliases": [
+    "HDFC"
+   ]
+  },
+  {
+   "name": "ICICI Bank",
+   "aliases": [
+    "ICICI"
+   ]
+  },
+  {
+   "name": "Axis Bank",
+   "aliases": []
+  },
+  {
+   "name": "SBI",
+   "aliases": [
+    "State Bank of India"
+   ]
+  },
+  {
+   "name": "Kotak",
+   "aliases": [
+    "Kotak Mahindra Bank"
+   ]
+  },
+  {
+   "name": "Mphasis",
+   "aliases": []
+  },
+  {
+   "name": "LTIMindtree",
+   "aliases": [
+    "LTI",
+    "Mindtree",
+    "L&T Infotech"
+   ]
+  },
+  {
+   "name": "Persistent Systems",
+   "aliases": [
+    "Persistent"
+   ]
+  },
+  {
+   "name": "Hexaware",
+   "aliases": []
+  },
+  {
+   "name": "Zensar",
+   "aliases": []
+  },
+  {
+   "name": "Cyient",
+   "aliases": []
+  },
+  {
+   "name": "Mu Sigma",
+   "aliases": []
+  },
+  {
+   "name": "Genpact",
+   "aliases": []
+  },
+  {
+   "name": "Concentrix",
+   "aliases": []
+  },
+  {
+   "name": "Teleperformance",
+   "aliases": []
+  },
+  {
+   "name": "Infosys BPM",
+   "aliases": []
+  },
+  {
+   "name": "Thoughtworks",
+   "aliases": []
+  },
+  {
+   "name": "Nagarro",
+   "aliases": []
+  },
+  {
+   "name": "EPAM",
+   "aliases": []
+  },
+  {
+   "name": "Globant",
+   "aliases": []
+  },
+  {
+   "name": "Publicis Sapient",
+   "aliases": [
+    "Sapient"
+   ]
+  },
+  {
+   "name": "Walmart",
+   "aliases": [
+    "Walmart Labs"
+   ]
+  },
+  {
+   "name": "Target",
+   "aliases": []
+  },
+  {
+   "name": "Goldman Sachs",
+   "aliases": []
+  },
+  {
+   "name": "JP Morgan",
+   "aliases": [
+    "JPMorgan",
+    "JPMorgan Chase"
+   ]
+  },
+  {
+   "name": "Morgan Stanley",
+   "aliases": []
+  },
+  {
+   "name": "Barclays",
+   "aliases": []
+  },
+  {
+   "name": "Citi",
+   "aliases": [
+    "Citibank",
+    "Citigroup"
+   ]
+  },
+  {
+   "name": "Standard Chartered",
+   "aliases": []
+  },
+  {
+   "name": "Siemens",
+   "aliases": []
+  },
+  {
+   "name": "Bosch",
+   "aliases": []
+  },
+  {
+   "name": "Philips",
+   "aliases": []
+  },
+  {
+   "name": "Samsung",
+   "aliases": []
+  },
+  {
+   "name": "Qualcomm",
+   "aliases": []
+  },
+  {
+   "name": "Nvidia",
+   "aliases": []
+  },
+  {
+   "name": "Atlassian",
+   "aliases": []
+  }
+ ],
+ "departments": [
+  "accounts",
+  "admin",
+  "analytics",
+  "content",
+  "customer success",
+  "customer support",
+  "data",
+  "design",
+  "devops",
+  "engineering",
+  "finance",
+  "hr",
+  "human resources",
+  "information technology",
+  "it",
+  "legal",
+  "marketing",
+  "operations",
+  "procurement",
+  "product",
+  "qa",
+  "quality",
+  "research",
+  "sales",
+  "security",
+  "support"
+ ],
+ "non_name_words": [
+  "a",
+  "about",
+  "agency",
+  "all",
+  "also",
+  "an",
+  "and",
+  "annum",
+  "another",
+  "any",
+  "applied",
+  "applying",
+  "approx",
+  "approximately",
+  "around",
+  "as",
+  "at",
+  "available",
+  "based",
+  "buyout",
+  "by",
+  "can",
+  "candidate",
+  "company",
+  "contact",
+  "contract",
+  "crore",
+  "crores",
+  "ctc",
+  "current",
+  "currently",
+  "cv",
+  "day",
+  "days",
+  "dear",
+  "department",
+  "details",
+  "dr",
+  "ectc",
+  "email",
+  "employed",
+  "excellent",
+  "exp",
+  "expected",
+  "expecting",
+  "experience",
+  "female",
+  "first",
+  "for",
+  "fresh",
+  "fresher",
+  "freshers",
+  "from",
+  "full",
+  "fulltime",
+  "good",
+  "graduate",
+  "has",
+  "have",
+  "having",
+  "he",
+  "hello",
+  "her",
+  "hi",
+  "hike",
+  "him",
+  "hiring",
+  "his",
+  "hot",
+  "hr",
+  "hybrid",
+  "i",
+  "id",
+  "immediate",
+  "immediately",
+  "in",
+  "info",
+  "information",
+  "interested",
+  "is",
+  "it",
+  "its",
+  "job",
+  "join",
+  "joining",
+  "just",
+  "kumari",
+  "lac",
+  "lacs",
+  "lakh",
+  "lakhs",
+  "last",
+  "least",
+  "less",
+  "like",
+  "linkedin",
+  "living",
+  "located",
+  "location",
+  "looking",
+  "lpa",
+  "madam",
+  "mail",
+  "male",
+  "manager",
+  "many",
+  "max",
+  "maximum",
+  "may",
+  "me",
+  "might",
+  "min",
+  "minimum",
+  "mobile",
+  "month",
+  "months",
+  "more",
+  "most",
+  "mr",
+  "mrs",
+  "ms",
+  "must",
+  "my",
+  "n/a",
+  "na",
+  "name",
+  "naukri",
+  "nearly",
+  "need",
+  "needs",
+  "negotiable",
+  "new",
+  "night",
+  "nil",
+  "no",
+  "none",
+  "not",
+  "notice",
+  "null",
+  "number",
+  "of",
+  "offer",
+  "offered",
+  "ok",
+  "okay",
+  "old",
+  "on",
+  "only",
+  "onsite",
+  "open",
+  "or",
+  "other",
+  "others",
+  "our",
+  "overall",
+  "pa",
+  "parttime",
+  "per",
+  "period",
+  "permanent",
+  "phone",
+  "please",
+  "pls",
+  "plus",
+  "pm",
+  "position",
+  "present",
+  "profile",
+  "ready",
+  "referral",
+  "referred",
+  "regards",
+  "relocate",
+  "relocation",
+  "remote",
+  "residing",
+  "resume",
+  "role",
+  "roughly",
+  "salary",
+  "same",
+  "serving",
+  "she",
+  "shift",
+  "should",
+  "shri",
+  "sir",
+  "skill",
+  "skills",
+  "smt",
+  "some",
+  "source",
+  "sri",
+  "staying",
+  "strong",
+  "tag",
+  "tags",
+  "team",
+  "thank",
+  "thanks",
+  "the",
+  "their",
+  "them",
+  "they",
+  "to",
+  "total",
+  "urgent",
+  "very",
+  "want",
+  "wanted",
+  "wants",
+  "we",
+  "week",
+  "weeks",
+  "will",
+  "with",
+  "work",
+  "working",
+  "works",
+  "would",
+  "year",
+  "years",
+  "yes",
+  "you",
+  "your",
+  "yr",
+  "yrs"
+ ],
+ "sources": {
+  "referral": [
+   "referral",
+   "referred",
+   "reference",
+   "refer"
+  ],
+  "linkedin": [
+   "linkedin"
+  ],
+  "agency": [
+   "agency",
+   "consultancy",
+   "consultants",
+   "consultant",
+   "staffing",
+   "recruitment",
+   "recruiters",
+   "placement",
+   "vendor",
+   "headhunter"
+  ],
+  "career_site": [
+   "career site",
+   "careers site",
+   "career page",
+   "careers page",
+   "career portal",
+   "company website",
+   "corporate website",
+   "website",
+   "applied online"
+  ],
+  "manual": [
+   "manual",
+   "walk-in",
+   "walk in",
+   "walkin",
+   "direct"
+  ]
+ }
+}
