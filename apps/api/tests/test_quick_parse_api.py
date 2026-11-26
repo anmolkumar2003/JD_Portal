@@ -87,6 +87,62 @@ async def test_response_has_the_documented_shape(client: AsyncClient) -> None:
         assert item["confidence"] in {"high", "medium", "low"}
 
 
+async def test_sample_sentence_returns_the_expected_values(client: AsyncClient) -> None:
+    token = await login(client, "hradmin")
+
+    response = await client.post(URL, headers=_auth(token), json={"text": SAMPLE})
+
+    values = {item["field"]: item for item in response.json()["fields"]}
+    assert values["first_name"]["value"] == "Rahul"
+    assert values["last_name"]["value"] == "Sharma"
+    assert values["email"]["value"] == "rahul@mail.com"
+    assert values["current_location"]["value"] == "Pune"
+    assert values["total_experience_years"]["value"] == 5
+    assert values["notice_period_days"]["value"] == 30
+    assert values["current_ctc"]["value"] == {"amount": 800000, "currency": "INR", "unit": "pa"}
+    assert values["expected_ctc"]["value"] == {"amount": 1200000, "currency": "INR", "unit": "pa"}
+    assert all(item["confidence"] == "high" for item in values.values())
+
+
+async def test_several_candidates_are_reported_and_not_mixed(client: AsyncClient) -> None:
+    token = await login(client, "hradmin")
+    text = "Rahul Sharma, Pune, 5 years\nPriya Nair, Mumbai, 3 years"
+
+    response = await client.post(URL, headers=_auth(token), json={"text": text})
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["multiple_candidates"] is True
+    assert body["fields"] == []
+    assert len(body["segments"]) == 2
+    assert body["warnings"]
+
+
+async def test_ambiguous_text_returns_candidates_and_a_warning(client: AsyncClient) -> None:
+    token = await login(client, "hradmin")
+
+    response = await client.post(
+        URL, headers=_auth(token), json={"text": "Rahul, Pune, 8 LPA, 12 LPA"}
+    )
+
+    ctc = next(i for i in response.json()["fields"] if i["field"] == "current_ctc")
+    assert ctc["value"] is None  # nothing guessed
+    assert len(ctc["candidates"]) == 2
+    assert ctc["warning"]
+
+
+async def test_text_exactly_at_the_limit_is_read_in_full(client: AsyncClient) -> None:
+    token = await login(client, "hradmin")
+    filler = ", " + "x" * (MAX_CHARS - len(SAMPLE) - 2)
+
+    response = await client.post(URL, headers=_auth(token), json={"text": SAMPLE + filler})
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["truncated"] is False  # the API refuses longer text; the engine cut is a backstop
+    assert next(i for i in body["fields"] if i["field"] == "email")["value"] == "rahul@mail.com"
+
+
 async def test_empty_text_is_not_an_error(client: AsyncClient) -> None:
     token = await login(client, "hradmin")
 
