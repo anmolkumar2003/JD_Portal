@@ -66,7 +66,8 @@ def _is_non_name(words: list[str]) -> bool:
             return True
         if norm_key(low) in gazetteer.places and low not in rules.first_names:
             return True
-        if word.isupper() and len(word) <= 3 and low not in rules.first_names:
+        initial = len(word.strip(".")) == 1  # "C. Ramesh": a single initial is fine
+        if word.isupper() and len(word) <= 3 and not initial and low not in rules.first_names:
             return True  # QA, HR, AWS, NA ...
         if any(low in alias for alias in rules.sources.values()):
             return True

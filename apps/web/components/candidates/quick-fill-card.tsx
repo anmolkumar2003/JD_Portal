@@ -88,19 +88,17 @@ export function QuickFillCard({
 
   const trimmed = text.trim();
 
-  const extract = () => {
-    if (!trimmed) {
+  const extract = (source: string = trimmed) => {
+    if (!source) {
       toast.error("Paste or type some candidate details first");
       return;
     }
-    parse.mutate(trimmed, {
+    parse.mutate(source, {
       onSuccess: (data) => {
         setResult(data);
         setNotice(null);
         setRows(buildRows(data, options));
-        setHistory((prev) =>
-          [trimmed, ...prev.filter((h) => h !== trimmed)].slice(0, HISTORY_LIMIT),
-        );
+        setHistory((prev) => [source, ...prev.filter((h) => h !== source)].slice(0, HISTORY_LIMIT));
       },
       onError: (error: unknown) => {
         setResult(null);
@@ -221,7 +219,7 @@ export function QuickFillCard({
           </span>
           <Button
             type="button"
-            onClick={extract}
+            onClick={() => extract()}
             disabled={parse.isPending || !trimmed}
             data-testid="quick-fill-extract"
           >
@@ -269,7 +267,41 @@ export function QuickFillCard({
           </div>
         )}
 
-        {result && rows && (
+        {result?.multiple_candidates && (
+          <section
+            aria-label="Several candidates found"
+            data-testid="quick-fill-multiple"
+            className="space-y-2 rounded-xl border border-warning/40 bg-warning/10 p-3"
+          >
+            <p role="status" className="text-sm">
+              {result.warnings[0]}
+            </p>
+            {result.segments.length > 0 && (
+              <ol className="space-y-1.5">
+                {result.segments.map((segment, index) => (
+                  <li key={`${index}-${segment}`} className="flex items-center gap-2">
+                    <span className="min-w-0 flex-1 truncate text-sm" title={segment}>
+                      {index + 1}. {snippet(segment)}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      data-testid={`quick-fill-segment-${index}`}
+                      onClick={() => {
+                        setText(segment);
+                        extract(segment);
+                      }}
+                    >
+                      Extract this one
+                    </Button>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+        )}
+
+        {result && rows && !result.multiple_candidates && (
           <QuickFillPreview
             rows={rows}
             values={values}
