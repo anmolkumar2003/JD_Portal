@@ -33,11 +33,15 @@ export function SalaryFields({ title, prefix, description }: SalaryFieldsProps) 
   const negotiable = useWatch({ name: `${prefix}.negotiable` }) as boolean;
 
   return (
-    <fieldset className="glass space-y-3 rounded-xl p-4">
-      <legend className="px-1 text-sm font-medium">
+    <div
+      role="group"
+      aria-labelledby={`${prefix}-title`}
+      className="glass space-y-3 rounded-xl p-4"
+    >
+      <p id={`${prefix}-title`} className="text-sm font-medium">
         {title}
         <QuickFillBadge path={`${prefix}.amount`} />
-      </legend>
+      </p>
       {description && <p className="text-xs text-muted-foreground">{description}</p>}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-2 sm:col-span-2">
@@ -82,6 +86,6 @@ export function SalaryFields({ title, prefix, description }: SalaryFieldsProps) 
           <QuickFillBadge path={`${prefix}.negotiable`} />
         </Label>
       </div>
-    </fieldset>
+    </div>
   );
 }
