@@ -1,0 +1,1 @@
+import{r as e}from"./CcyWYbDU.js";import{Er as t,y as n}from"./BjZqNUbI.js";import{i as r}from"./B0PXqnjO.js";import{n as i}from"./DU3P6G0e.js";import{r as a}from"./DpWBWvTh.js";var o=e(r(),1);function s(){let e=t(),{user:n}=i();return(0,o.useEffect)(()=>{e.replace(a(n?.role)?`/settings/users`:`/settings/account`)},[e,n?.role]),null}n(`e221ee69c034`,{get default(){return s}});

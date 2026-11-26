@@ -8,7 +8,7 @@ S3_BUCKET ?= cvs
 
 .DEFAULT_GOAL := help
 .PHONY: help env up down logs migrate test test-api test-web test-e2e test-e2e-screenshots \
-	lint lint-api lint-web format init-admin seed-demo cleanup-demo reference-data backup \
+	lint lint-api lint-web format init-admin remove-user seed-demo cleanup-demo reference-data backup \
 	backup-nightly restore prod-up prod-down prod-logs prod-migrate
 
 help: ## Show available targets
@@ -31,6 +31,9 @@ migrate: ## Apply Alembic migrations (stack must be up)
 
 init-admin: ## Create or reset a portal account interactively (run once per admin)
 	$(COMPOSE) exec api python -m app.cli.init_admin
+
+remove-user: ## Permanently remove an account (asks first) — make remove-user EMAIL=a@b.com
+	$(COMPOSE) exec api python -m app.cli.remove_user --email "$(EMAIL)"
 
 reference-data: ## Add any missing stages, email templates and departments (idempotent)
 	$(COMPOSE) exec api python -m app.cli.reference_data

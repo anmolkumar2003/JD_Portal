@@ -1,0 +1,2 @@
+import{r as e}from"./rolldown-runtime-XKyaHtl9.js";import{a as t}from"./navigation-DexsN6cG.js";import{t as n}from"./react-CQmtu_zT.js";import{n as r}from"./use-auth-CxTuV3lT.js";import{r as i}from"./permissions-DpWBWvTh.js";var a=e(n(),1);function o(){let e=t(),{user:n}=r();return(0,a.useEffect)(()=>{e.replace(i(n?.role)?`/settings/users`:`/settings/account`)},[e,n?.role]),null}export{o as default};
+//# sourceMappingURL=page-DdUkMKlf.js.map

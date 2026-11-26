@@ -2,12 +2,12 @@
 
 import { useFormContext, useWatch } from "react-hook-form";
 
+import { QuickFillBadge } from "@/components/candidates/quick-fill-context";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { SALARY_CURRENCIES } from "@/lib/quick-fill";
 import type { SalaryUnit } from "@/types/api";
-
-const CURRENCIES = ["INR", "USD", "EUR", "GBP"] as const;
 
 export type SalaryFormSlice = {
   amount: string;
@@ -34,7 +34,10 @@ export function SalaryFields({ title, prefix, description }: SalaryFieldsProps) 
 
   return (
     <fieldset className="glass space-y-3 rounded-xl p-4">
-      <legend className="px-1 text-sm font-medium">{title}</legend>
+      <legend className="px-1 text-sm font-medium">
+        {title}
+        <QuickFillBadge path={`${prefix}.amount`} />
+      </legend>
       {description && <p className="text-xs text-muted-foreground">{description}</p>}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-2 sm:col-span-2">
@@ -49,7 +52,7 @@ export function SalaryFields({ title, prefix, description }: SalaryFieldsProps) 
         <div className="space-y-2">
           <Label htmlFor={`${prefix}.currency`}>Currency</Label>
           <Select id={`${prefix}.currency`} {...register(`${prefix}.currency`)}>
-            {CURRENCIES.map((c) => (
+            {SALARY_CURRENCIES.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
@@ -76,6 +79,7 @@ export function SalaryFields({ title, prefix, description }: SalaryFieldsProps) 
         />
         <Label htmlFor={`${prefix}.negotiable`} className="font-normal">
           Negotiable
+          <QuickFillBadge path={`${prefix}.negotiable`} />
         </Label>
       </div>
     </fieldset>

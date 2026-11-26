@@ -27,7 +27,6 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 REFRESH_COOKIE = "refresh_token"
 REFRESH_COOKIE_PATH = "/api/v1/auth"
 FORGOT_LIMIT_PER_HOUR = 5
-LOGIN_LIMIT_PER_15_MIN = 30
 
 Session = Annotated[AsyncSession, Depends(get_db)]
 RedisClient = Annotated[Redis, Depends(get_redis)]
@@ -79,7 +78,9 @@ async def login(
     redis: RedisClient,
 ) -> TokenResponse:
     ip = client_ip(request)
-    await enforce_rate_limit(redis, f"ratelimit:login:{ip}", LOGIN_LIMIT_PER_15_MIN, 900)
+    await enforce_rate_limit(
+        redis, f"ratelimit:login:{ip}", get_settings().login_limit_per_15_min, 900
+    )
     user = await auth_service.authenticate(session, body.email, body.password, ip=ip)
     tokens = auth_service.issue_tokens(user)
     _set_refresh_cookie(response, tokens.refresh_token)

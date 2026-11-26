@@ -880,3 +880,62 @@ export interface FinalScoreOut {
   final_score: number | null;
   note: string;
 }
+
+// --- Quick fill (POST /candidates/quick-parse): extract only, nothing is saved -----------------
+
+export type QuickFillConfidence = "high" | "medium" | "low";
+
+export type QuickFillFieldName =
+  | "first_name"
+  | "last_name"
+  | "email"
+  | "phone"
+  | "current_location"
+  | "current_company"
+  | "current_title"
+  | "total_experience_years"
+  | "notice_period_days"
+  | "current_ctc"
+  | "expected_ctc"
+  | "offered_ctc"
+  | "current_ctc_negotiable"
+  | "expected_ctc_negotiable"
+  | "offered_ctc_negotiable"
+  | "skills"
+  | "linkedin_url"
+  | "portfolio_url"
+  | "source"
+  | "tags"
+  | "department_hint"
+  | "job_hint";
+
+export type QuickFillValue =
+  string | number | boolean | null | QuickFillValue[] | { [key: string]: QuickFillValue };
+
+export interface QuickParseCandidate {
+  value: QuickFillValue;
+  display: string;
+  reason: string;
+}
+
+export interface QuickParseField {
+  field: QuickFillFieldName;
+  /** Null when the input was ambiguous: pick one of `candidates` instead. */
+  value: QuickFillValue;
+  display: string | null;
+  confidence: QuickFillConfidence;
+  reason: string;
+  candidates: QuickParseCandidate[];
+  warning: string | null;
+}
+
+export interface QuickParseOut {
+  fields: QuickParseField[];
+  warnings: string[];
+  /** The text looks like several people: nothing was extracted, use `segments`. */
+  multiple_candidates: boolean;
+  segments: string[];
+  /** Short pieces of the text that no rule understood. */
+  ignored: string[];
+  truncated: boolean;
+}

@@ -134,9 +134,9 @@ services:
 
   beat:
     <<: *api-common
-    command: ["celery", "-A", "app.workers.celery_app", "beat", "--loglevel=INFO"]
-    profiles:
-      - beat
+    # Always on: it schedules the hourly orphan-file and expired-draft cleanups.
+    # The schedule file goes to /tmp because the app directory is not writable by the app user.
+    command: ["celery", "-A", "app.workers.celery_app", "beat", "--loglevel=INFO", "--schedule", "/tmp/celerybeat-schedule"]
 
   web:
     build:

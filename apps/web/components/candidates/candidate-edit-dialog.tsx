@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { candidateFormSchema, parseTagsInput } from "@/components/candidates/candidate-form-schema";
+import { QuickFillBadge, QuickFillProvider } from "@/components/candidates/quick-fill-context";
 import { CvDropzone, cvFileError } from "@/components/careers/cv-dropzone";
 import { SalaryFields } from "@/components/candidates/salary-fields";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,8 @@ import { CANDIDATE_SOURCE_LABELS } from "@/lib/labels";
 import { normalizeLinkedInUrl } from "@/lib/linkedin";
 import { formSalaryToIn, salaryOutToForm } from "@/lib/salary";
 import type { ApplicationDetail, CandidatePatchInput } from "@/types/api";
+
+const EDIT_SOURCES = ["manual", "referral", "linkedin", "agency", "career_site"] as const;
 
 const editSchema = candidateFormSchema.extend({
   source: z.enum(["manual", "referral", "linkedin", "agency", "career_site"]),
@@ -99,7 +102,16 @@ interface CandidateEditDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CandidateEditDialog({ application, open, onOpenChange }: CandidateEditDialogProps) {
+/** Quick fill remembers which fields it wrote (for the "from quick fill" badges). */
+export function CandidateEditDialog(props: CandidateEditDialogProps) {
+  return (
+    <QuickFillProvider>
+      <CandidateEditDialogInner {...props} />
+    </QuickFillProvider>
+  );
+}
+
+function CandidateEditDialogInner({ application, open, onOpenChange }: CandidateEditDialogProps) {
   const departments = useDepartments();
   const update = useUpdateCandidate();
   const uploadDoc = useUploadCandidateDocument();
@@ -146,58 +158,97 @@ export function CandidateEditDialog({ application, open, onOpenChange }: Candida
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="edit-first_name">First name</Label>
+                <Label htmlFor="edit-first_name">
+                  First name
+                  <QuickFillBadge path="first_name" />
+                </Label>
                 <Input id="edit-first_name" {...register("first_name")} />
                 {errors.first_name && (
                   <p className="text-sm text-destructive">{errors.first_name.message}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-last_name">Last name</Label>
+                <Label htmlFor="edit-last_name">
+                  Last name
+                  <QuickFillBadge path="last_name" />
+                </Label>
                 <Input id="edit-last_name" {...register("last_name")} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-email">Email</Label>
+                <Label htmlFor="edit-email">
+                  Email
+                  <QuickFillBadge path="email" />
+                </Label>
                 <Input id="edit-email" type="email" {...register("email")} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-phone">Phone</Label>
+                <Label htmlFor="edit-phone">
+                  Phone
+                  <QuickFillBadge path="phone" />
+                </Label>
                 <Input id="edit-phone" {...register("phone")} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-location">Location</Label>
+                <Label htmlFor="edit-location">
+                  Location
+                  <QuickFillBadge path="current_location" />
+                </Label>
                 <Input id="edit-location" {...register("current_location")} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-company">Company</Label>
+                <Label htmlFor="edit-company">
+                  Company
+                  <QuickFillBadge path="current_company" />
+                </Label>
                 <Input id="edit-company" {...register("current_company")} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-title">Title</Label>
+                <Label htmlFor="edit-title">
+                  Title
+                  <QuickFillBadge path="current_title" />
+                </Label>
                 <Input id="edit-title" {...register("current_title")} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-experience">Experience (years)</Label>
+                <Label htmlFor="edit-experience">
+                  Experience (years)
+                  <QuickFillBadge path="total_experience_years" />
+                </Label>
                 <Input id="edit-experience" {...register("total_experience_years")} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-notice">Notice (days)</Label>
+                <Label htmlFor="edit-notice">
+                  Notice (days)
+                  <QuickFillBadge path="notice_period_days" />
+                </Label>
                 <Input id="edit-notice" {...register("notice_period_days")} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-linkedin">LinkedIn</Label>
+                <Label htmlFor="edit-linkedin">
+                  LinkedIn
+                  <QuickFillBadge path="linkedin_url" />
+                </Label>
                 <Input id="edit-linkedin" {...register("linkedin_url")} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-portfolio">Portfolio</Label>
+                <Label htmlFor="edit-portfolio">
+                  Portfolio
+                  <QuickFillBadge path="portfolio_url" />
+                </Label>
                 <Input id="edit-portfolio" {...register("portfolio_url")} />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="edit-tags">Tags</Label>
+                <Label htmlFor="edit-tags">
+                  Tags
+                  <QuickFillBadge path="tags" />
+                </Label>
                 <Input id="edit-tags" {...register("tags")} placeholder="Comma-separated" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-department_id">Department</Label>
+                <Label htmlFor="edit-department_id">
+                  Department
+                  <QuickFillBadge path="department_id" />
+                </Label>
                 <Select id="edit-department_id" {...register("department_id")}>
                   <option value="">—</option>
                   {(departments.data ?? []).map((d) => (
@@ -208,15 +259,16 @@ export function CandidateEditDialog({ application, open, onOpenChange }: Candida
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-source">Source</Label>
+                <Label htmlFor="edit-source">
+                  Source
+                  <QuickFillBadge path="source" />
+                </Label>
                 <Select id="edit-source" {...register("source")}>
-                  {(["manual", "referral", "linkedin", "agency", "career_site"] as const).map(
-                    (s) => (
-                      <option key={s} value={s}>
-                        {CANDIDATE_SOURCE_LABELS[s]}
-                      </option>
-                    ),
-                  )}
+                  {EDIT_SOURCES.map((s) => (
+                    <option key={s} value={s}>
+                      {CANDIDATE_SOURCE_LABELS[s]}
+                    </option>
+                  ))}
                 </Select>
               </div>
             </div>

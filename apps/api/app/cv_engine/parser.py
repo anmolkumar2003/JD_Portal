@@ -16,11 +16,15 @@ from app.cv_engine.types import (
     ExperienceEntry,
     ExtractResult,
     ParsedCV,
+    ProjectEntry,
 )
 
 logger = logging.getLogger(__name__)
 
-PARSER_VERSION = "rule-1.1"
+PARSER_VERSION = "rule-1.3"
+
+# Autofill only when the parser is at least this sure (else leave the field blank).
+AUTOFILL_MIN_CONFIDENCE = 0.6
 
 EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 # Broad candidate; digit-count validated in _extract_phone (10–15 digits).
@@ -75,18 +79,158 @@ MONTH_MAP = {
 }
 
 SECTION_ALIASES: dict[str, tuple[str, ...]] = {
-    "summary": ("summary", "profile", "about", "objective"),
+    "summary": (
+        "summary",
+        "professional summary",
+        "career summary",
+        "executive summary",
+        "profile",
+        "professional profile",
+        "about",
+        "about me",
+        "objective",
+        "career objective",
+        "professional objective",
+    ),
     "experience": (
         "experience",
         "work experience",
         "employment",
+        "employment history",
         "professional experience",
         "work history",
+        "career history",
+        "relevant experience",
     ),
-    "education": ("education", "academic", "academics"),
-    "skills": ("skills", "technical skills", "core competencies", "technologies"),
-    "certifications": ("certifications", "certificates", "licenses"),
+    "projects": (
+        "projects",
+        "project",
+        "personal projects",
+        "key projects",
+        "selected projects",
+        "academic projects",
+        "side projects",
+        "notable projects",
+    ),
+    "education": (
+        "education",
+        "academic",
+        "academics",
+        "academic background",
+        "education and training",
+    ),
+    "skills": (
+        "skills",
+        "technical skills",
+        "core competencies",
+        "competencies",
+        "technologies",
+        "tech stack",
+        "key skills",
+    ),
+    "certifications": (
+        "certifications",
+        "certificates",
+        "licenses",
+        "licenses and certifications",
+    ),
 }
+
+# Tokens that mark CV section headings — never accept these as a person name.
+_HEADING_NAME_TOKENS = frozenset(
+    {
+        "summary",
+        "professional",
+        "profile",
+        "objective",
+        "about",
+        "experience",
+        "employment",
+        "education",
+        "academic",
+        "academics",
+        "skills",
+        "skill",
+        "projects",
+        "project",
+        "certifications",
+        "certificates",
+        "certification",
+        "licenses",
+        "competencies",
+        "technologies",
+        "history",
+        "references",
+        "interests",
+        "hobbies",
+        "achievements",
+        "awards",
+        "publications",
+        "languages",
+        "declaration",
+        "curriculum",
+        "vitae",
+        "resume",
+        "contact",
+        "details",
+        "personal",
+        "information",
+        "career",
+        "work",
+        "training",
+    }
+)
+
+# Words that may decorate a section title ("Technical Skills") without being the section itself.
+_HEADING_MODIFIERS = frozenset(
+    {
+        "professional",
+        "career",
+        "executive",
+        "personal",
+        "key",
+        "selected",
+        "notable",
+        "relevant",
+        "academic",
+        "side",
+        "technical",
+        "core",
+        "work",
+        "employment",
+        "additional",
+        "other",
+        "my",
+        "and",
+        "the",
+        "of",
+    }
+)
+
+# Common job-title heads — never accept these as a person name.
+_TITLE_NAME_TOKENS = frozenset(
+    {
+        "engineer",
+        "developer",
+        "manager",
+        "analyst",
+        "consultant",
+        "architect",
+        "designer",
+        "specialist",
+        "lead",
+        "director",
+        "intern",
+        "officer",
+        "executive",
+        "associate",
+        "scientist",
+        "administrator",
+        "coordinator",
+        "programmer",
+        "technician",
+    }
+)
 
 
 class CVParser(ABC):
@@ -177,29 +321,217 @@ def _extract_phone(text: str) -> str | None:
     return best
 
 
-def _clean_name(value: str | None) -> str | None:
-    if not value:
-        return None
-    # Take first line only; reject emails / phones leaking into the name span.
-    line = value.splitlines()[0].strip()
-    if not line or "@" in line or EMAIL_RE.search(line) or _extract_phone(line):
-        return None
-    parts = line.split()
-    if not (1 <= len(parts) <= 4):
-        return None
-    if not all(p[0].isalpha() for p in parts if p):
-        return None
-    return line[:120]
+def _heading_tokens(line: str) -> list[str]:
+    cleaned = re.sub(r"[^a-zA-Z\s]", "", line).strip().lower()
+    return cleaned.split() if cleaned else []
 
 
 def _heading_key(line: str) -> str | None:
+    """Map a line to a section key by identity (aliases), not by position in the file."""
     cleaned = re.sub(r"[^a-zA-Z\s]", "", line).strip().lower()
-    if not cleaned or len(cleaned) > 40:
+    if not cleaned or len(cleaned) > 60:
+        return None
+    words = cleaned.split()
+    # Headings are short labels; long sentences are content even if they contain the word.
+    if len(words) > 6:
         return None
     for key, aliases in SECTION_ALIASES.items():
         if cleaned in aliases:
             return key
+    # "Professional Summary" / "KEY PROJECTS": alias as whole phrase, or token + modifiers only.
+    # Never treat job titles like "Project Manager" as a Projects heading.
+    for key, aliases in SECTION_ALIASES.items():
+        for alias in sorted(aliases, key=len, reverse=True):
+            if cleaned == alias:
+                return key
+            if " " in alias and (cleaned.endswith(" " + alias) or cleaned.startswith(alias + " ")):
+                return key
+            if " " not in alias and alias in words and len(words) <= 4:
+                if all(w == alias or w in _HEADING_MODIFIERS for w in words):
+                    return key
     return None
+
+
+def _looks_like_section_heading(line: str) -> bool:
+    """True when a short line is a CV section title, not a person or job title."""
+    words = _heading_tokens(line)
+    if not words or len(words) > 6:
+        return False
+    if _heading_key(line):
+        return True
+    # Unknown short lines that are mostly heading vocabulary.
+    heading_hits = sum(1 for w in words if w in _HEADING_NAME_TOKENS)
+    return heading_hits >= 1 and heading_hits >= (len(words) + 1) // 2
+
+
+_HONORIFICS = frozenset({"mr", "mrs", "ms", "miss", "mx", "dr", "prof", "sir", "madam", "shri", "smt"})
+_CREDENTIALS = frozenset(
+    {
+        "phd",
+        "ph",
+        "mba",
+        "mtech",
+        "btech",
+        "msc",
+        "bsc",
+        "ba",
+        "ma",
+        "md",
+        "esq",
+        "cpa",
+        "cfa",
+        "pmp",
+        "pe",
+    }
+)
+# Split contact header cells: "Jane Doe | email | phone" or multi-column PDF extract.
+_NAME_CELL_SPLIT = re.compile(r"\s*[|•·/]\s*|\s+[—–-]\s+|\t+|\s{2,}")
+
+
+def _contains_place(parts: list[str]) -> bool:
+    """True when any word (or the whole phrase) is a known city / state / country."""
+    from app.cv_engine.quick_fill.data import get_gazetteer, get_rules, norm_key
+
+    places = get_gazetteer().places
+    first_names = get_rules().first_names
+    if norm_key(" ".join(parts)) in places:
+        return True
+    for part in parts:
+        word = part.strip(".'’-")
+        if not word:
+            continue
+        if norm_key(word) in places and word.casefold() not in first_names:
+            return True
+    return False
+
+
+def _find_location(blob: str) -> str | None:
+    """Most specific known place in the contact header, as 'City, State' when both appear.
+
+    Identity comes from the gazetteer (a place is a place by name), not from line order.
+    """
+    from app.cv_engine.quick_fill.data import get_gazetteer, norm_key
+
+    gaz = get_gazetteer()
+    cities: list[Any] = []
+    states: list[Any] = []
+    countries: list[Any] = []
+    for match in gaz.place_re.finditer(blob):
+        place = gaz.places.get(norm_key(match.group(0)))
+        if place is None or norm_key(match.group(0)) in gaz.weak_aliases:
+            continue
+        bucket = {"city": cities, "state": states, "country": countries}.get(place.kind)
+        if bucket is not None and place not in bucket:
+            bucket.append(place)
+    if len({c.name for c in cities}) > 1:
+        return None  # several cities in the header: ambiguous, leave empty
+    if cities:
+        city = cities[0]
+        state = city.state
+        if state and any(s.name == state for s in states):
+            return f"{city.name}, {state}"
+        return city.name
+    if len({s.name for s in states}) == 1:
+        return states[0].name
+    return None
+
+
+def _title_case_token(token: str) -> str:
+    if not token:
+        return token
+    if "-" in token:
+        return "-".join(_title_case_token(p) for p in token.split("-"))
+    if "'" in token or "’" in token:
+        sep = "'" if "'" in token else "’"
+        return sep.join(_title_case_token(b) for b in token.split(sep))
+    if len(token) <= 2 and token.isupper():
+        return token.upper()
+    return token[:1].upper() + token[1:].lower()
+
+
+def _title_case_name(parts: list[str]) -> str:
+    """Normalise ALL-CAPS / odd casing for form display without inventing a new name."""
+    return " ".join(_title_case_token(p) for p in parts)
+
+
+def _normalize_name_candidate(raw: str) -> str | None:
+    """Validate and normalise one name candidate (no contact separators)."""
+    line = raw.strip(" .,;:|-")
+    if not line or "@" in line or EMAIL_RE.search(line) or _extract_phone(line):
+        return None
+    if _looks_like_section_heading(line) or _heading_key(line):
+        return None
+    # "Doe, Jane" / "Jane Doe, PhD" / "Doe, Jane, PhD"
+    if "," in line:
+        bits = [b.strip() for b in line.split(",") if b.strip()]
+        if not bits:
+            return None
+        trailing = re.sub(r"[^a-zA-Z]", "", bits[-1]).lower()
+        if trailing in _CREDENTIALS or bits[-1].lower().rstrip(".") in _CREDENTIALS:
+            bits = bits[:-1]
+        if not bits:
+            return None
+        if len(bits) == 1:
+            line = bits[0]  # "Jane Doe, PhD" → "Jane Doe"
+        elif len(bits) == 2 and " " not in bits[0] and len(bits[1].split()) <= 2:
+            line = f"{bits[1]} {bits[0]}"  # "Doe, Jane" → "Jane Doe"
+        else:
+            # Three+ comma parts are addresses / skill lists, never a person name.
+            return None
+    parts = [p for p in re.split(r"\s+", line) if p]
+    # Drop leading honorifics: "Mr. Jane Doe" → "Jane Doe"
+    while parts and re.sub(r"[^a-zA-Z]", "", parts[0]).lower() in _HONORIFICS:
+        parts = parts[1:]
+    # Drop trailing credentials stuck without comma: "Jane Doe PhD"
+    while parts and re.sub(r"[^a-zA-Z]", "", parts[-1]).lower() in _CREDENTIALS:
+        parts = parts[:-1]
+    if not (1 <= len(parts) <= 4):
+        return None
+    if not all(re.match(r"^[A-Za-z][A-Za-z'.’-]*$", p) for p in parts):
+        return None
+    alpha_parts = [re.sub(r"[^a-zA-Z]", "", p).lower() for p in parts]
+    if any(p in _HEADING_NAME_TOKENS for p in alpha_parts if p):
+        return None
+    from app.cv_engine.skills import is_known_skill
+
+    if any(is_known_skill(p) for p in alpha_parts if p):
+        return None
+    if any(p in _TITLE_NAME_TOKENS for p in alpha_parts if p):
+        return None
+    # Never accept place text (Punjab, India, Ludhiana) as a person name.
+    if _contains_place(parts):
+        return None
+    return _title_case_name(parts)[:120]
+
+
+def _clean_name(value: str | None) -> str | None:
+    """Return a display-ready person name from a line or contact cell, or None."""
+    if not value:
+        return None
+    line = value.splitlines()[0].strip()
+    if not line:
+        return None
+    # Prefer the first cell that looks like a name on pipe/column contact rows.
+    cells = [c.strip() for c in _NAME_CELL_SPLIT.split(line) if c.strip()]
+    if not cells:
+        cells = [line]
+    for cell in cells:
+        cleaned = _normalize_name_candidate(cell)
+        if cleaned and len(cleaned.split()) >= 1:
+            return cleaned
+    return None
+
+
+def _best_name_from_text(blob: str) -> str | None:
+    """First reliable multi-token name in a contact/preamble blob."""
+    best: str | None = None
+    for line in blob.splitlines():
+        cleaned = _clean_name(line)
+        if cleaned and len(cleaned.split()) >= 2:
+            return cleaned
+        if cleaned and best is None:
+            best = cleaned
+    return best
 
 
 def segment_sections(text: str) -> dict[str, str]:
@@ -259,6 +591,95 @@ def _orgs_and_locations(nlp: Any, text: str) -> tuple[list[str], list[str]]:
     return orgs, locs
 
 
+def _contact_blob(text: str, sections: dict[str, str]) -> str:
+    """Text most likely to hold identity/contact facts (not projects or job bullets)."""
+    preamble = (sections.get("_preamble") or "").strip()
+    if preamble:
+        return preamble
+    # When a heading opens the CV, the name/contact lines often sit under summary.
+    summary = (sections.get("summary") or "").strip()
+    if summary:
+        # Keep only leading contact-like lines; skip long prose paragraphs.
+        lines: list[str] = []
+        for line in summary.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                if lines:
+                    break
+                continue
+            if len(stripped.split()) > 12 and not EMAIL_RE.search(stripped):
+                # Prose summary sentence — stop before treating it as identity.
+                if lines:
+                    break
+                continue
+            lines.append(stripped)
+            if len(lines) >= 8:
+                break
+        if lines:
+            return "\n".join(lines)
+    # Lines before the first recognised section heading only (never Experience/Projects).
+    before: list[str] = []
+    for line in text.splitlines():
+        if _heading_key(line.strip()):
+            break
+        before.append(line)
+    return "\n".join(before).strip()
+
+
+def _pick_location(
+    nlp: Any | None, text: str, sections: dict[str, str]
+) -> tuple[str | None, float]:
+    """Prefer places near the contact header; never take the first GPE from Projects."""
+    # Contact header only (never Experience / Projects); gazetteer decides what is a place.
+    contact = _contact_blob(text, sections)
+    found = _find_location(contact) if contact.strip() else None
+    if found:
+        return found, 0.85
+    # Labelled location line near the top of the document.
+    for line in text.splitlines()[:20]:
+        low = line.strip().lower()
+        if low.startswith(("location", "based in", "city", "address", "residing")):
+            labelled = _find_location(line)
+            if labelled:
+                return labelled, 0.8
+    # Uncertain or only in body sections: leave unmapped.
+    return None, 0.0
+
+
+def _is_plausible_job_entry(entry: ExperienceEntry) -> bool:
+    """Reject section headings / project blocks that leaked into Experience."""
+    title = (entry.title or "").strip()
+    if not title:
+        return False
+    if _looks_like_section_heading(title) or _heading_key(title):
+        return False
+    company = (entry.company or "").strip()
+    if company and (_looks_like_section_heading(company) or _heading_key(company)):
+        return False
+    return True
+
+
+def _name_near_email(text: str, email: str | None) -> str | None:
+    """Prefer a multi-token name sitting just above / beside the email (contact identity)."""
+    if not email:
+        return None
+    idx = text.find(email)
+    if idx < 0:
+        return None
+    window = text[max(0, idx - 240) : idx]
+    # Same-line contact: "Jane Doe | jane@x.com" → cell before the address.
+    same_line = window.splitlines()[-1] if window else ""
+    for cell in reversed([c.strip() for c in _NAME_CELL_SPLIT.split(same_line) if c.strip()]):
+        cleaned = _normalize_name_candidate(cell)
+        if cleaned and len(cleaned.split()) >= 2:
+            return cleaned
+    for line in reversed(window.splitlines()):
+        cleaned = _clean_name(line)
+        if cleaned and len(cleaned.split()) >= 2:
+            return cleaned
+    return None
+
+
 def _parse_experience_block(block: str, orgs: list[str]) -> list[ExperienceEntry]:
     entries: list[ExperienceEntry] = []
     if not block:
@@ -268,6 +689,12 @@ def _parse_experience_block(block: str, orgs: list[str]) -> list[ExperienceEntry
         lines = [ln.strip() for ln in chunk.splitlines() if ln.strip()]
         if not lines:
             continue
+        # Drop a leading section heading that was not segmented out.
+        if _heading_key(lines[0]) or _looks_like_section_heading(lines[0]):
+            lines = lines[1:]
+            if not lines:
+                continue
+            chunk = "\n".join(lines)
         date_match = DATE_RANGE_RE.search(chunk)
         start = end = None
         if date_match:
@@ -279,17 +706,17 @@ def _parse_experience_block(block: str, orgs: list[str]) -> list[ExperienceEntry
             if org.lower() in chunk.lower():
                 company = org
                 break
-        if company is None and len(lines) > 1:
+        if company is None and len(lines) > 1 and not _looks_like_section_heading(lines[1]):
             company = lines[1][:120]
-        entries.append(
-            ExperienceEntry(
-                title=title,
-                company=company,
-                start_date=start,
-                end_date=end,
-                description=chunk[:1000],
-            )
+        entry = ExperienceEntry(
+            title=title,
+            company=company,
+            start_date=start,
+            end_date=end,
+            description=chunk[:1000],
         )
+        if _is_plausible_job_entry(entry):
+            entries.append(entry)
     return entries[:20]
 
 
@@ -324,6 +751,22 @@ def _parse_education_block(block: str) -> list[EducationEntry]:
     return entries[:15]
 
 
+def _parse_projects_block(block: str) -> list[ProjectEntry]:
+    """Projects keep their own section: never merged into Experience or contact fields."""
+    entries: list[ProjectEntry] = []
+    for chunk in re.split(r"\n{2,}", block or ""):
+        lines = [ln.strip(" -•\t") for ln in chunk.splitlines() if ln.strip(" -•\t")]
+        if not lines:
+            continue
+        entries.append(
+            ProjectEntry(
+                name=lines[0][:200],
+                description="\n".join(lines[1:])[:1000] or None,
+            )
+        )
+    return entries[:20]
+
+
 def _parse_certs(block: str) -> list[CertificationEntry]:
     if not block:
         return []
@@ -342,17 +785,22 @@ class RuleBasedParser(CVParser):
     ) -> ParsedCV:
         sections = segment_sections(text)
         email_m = EMAIL_RE.search(text)
+        email = email_m.group(0) if email_m else None
         phone = _extract_phone(text)
         links = list(dict.fromkeys(URL_RE.findall(text)))[:20]
 
         nlp = _load_nlp()
         full_name = None
+        name_confidence = 0.0
         orgs: list[str] = []
-        locs: list[str] = []
-        preamble = sections.get("_preamble", text[:500])
+        contact = _contact_blob(text, sections)
         if nlp is not None:
-            full_name = _clean_name(_first_person_name(nlp, preamble))
-            orgs, locs = _orgs_and_locations(nlp, text)
+            full_name = _clean_name(_first_person_name(nlp, contact))
+            if full_name:
+                name_confidence = 0.85 if len(full_name.split()) >= 2 else 0.55
+            orgs, _ = _orgs_and_locations(nlp, text)
+
+        location, location_confidence = _pick_location(nlp, text, sections)
 
         skills_text = sections.get("skills", "") or text
         skills = find_skills_in_text(skills_text)
@@ -362,6 +810,7 @@ class RuleBasedParser(CVParser):
         experience = _parse_experience_block(sections.get("experience", ""), orgs)
         education = _parse_education_block(sections.get("education", ""))
         certifications = _parse_certs(sections.get("certifications", ""))
+        projects = _parse_projects_block(sections.get("projects", ""))
 
         ranges: list[tuple[date, date]] = []
         for exp in experience:
@@ -387,45 +836,69 @@ class RuleBasedParser(CVParser):
             # Prefer the larger of timeline merge vs explicit "N years" claim.
             years = mentioned if years is None else max(years, mentioned)
 
-        # Prefer a multi-token preamble name over a single-token NER hit ("Jane").
-        preamble_name: str | None = None
-        for line in (preamble or text).splitlines():
-            cleaned = _clean_name(line)
-            if cleaned and len(cleaned.split()) >= 2:
-                preamble_name = cleaned
-                break
-        if not full_name:
-            full_name = preamble_name or next(
-                (
-                    cleaned
-                    for line in (preamble or text).splitlines()
-                    if (cleaned := _clean_name(line))
-                ),
-                None,
-            )
-        elif preamble_name and len(full_name.split()) < 2:
-            full_name = preamble_name
+        # Identity: prefer name next to email, then contact-block lines, never headings.
+        near_email = _name_near_email(text, email)
+        contact_name = _best_name_from_text(contact)
+        if near_email:
+            full_name = near_email
+            name_confidence = 0.9
+        elif contact_name and len(contact_name.split()) >= 2:
+            if not full_name or len(full_name.split()) < 2:
+                full_name = contact_name
+                name_confidence = max(name_confidence, 0.85)
+            elif full_name and len(full_name.split()) < 2:
+                full_name = contact_name
+                name_confidence = max(name_confidence, 0.85)
+        # No whole-document name scan: job titles / skill rows must not become the name.
+        # If the contact block has no reliable name, leave it unmapped for manual review.
+
+        # Re-normalise NER hits (honorifics, ALL CAPS, "Last, First").
+        if full_name:
+            normalised = _clean_name(full_name)
+            if not normalised:
+                full_name = None
+                name_confidence = 0.0
+            else:
+                full_name = normalised
+                if len(full_name.split()) >= 2:
+                    name_confidence = max(name_confidence, 0.75)
+
+        current = experience[0] if experience else None
+        title_confidence = 0.0
+        company_confidence = 0.0
+        if current and _is_plausible_job_entry(current):
+            if current.start_date or current.end_date:
+                title_confidence = 0.8 if current.title else 0.0
+                company_confidence = 0.75 if current.company else 0.0
+            else:
+                title_confidence = 0.55 if current.title else 0.0
+                company_confidence = 0.5 if current.company else 0.0
 
         found_sections = [k for k in SECTION_ALIASES if sections.get(k)]
         confidence: dict[str, float] = {
-            "email": 0.95 if email_m else 0.0,
+            "email": 0.95 if email else 0.0,
             "phone": 0.85 if phone else 0.0,
-            "name": 0.7 if full_name else 0.2,
-            "skills": min(1.0, len(skills) / 10),
-            "experience": min(1.0, len(experience) / 3),
+            "name": name_confidence if full_name else 0.0,
+            "location": location_confidence if location else 0.0,
+            "title": title_confidence,
+            "company": company_confidence,
+            # Lexicon-matched skill tokens are identified by name, not position.
+            "skills": 0.75 if skills else 0.0,
+            "experience": min(1.0, len(experience) / 3) if experience else 0.0,
         }
 
         return ParsedCV(
             full_name=full_name,
-            email=email_m.group(0) if email_m else None,
+            email=email,
             phone=phone,
-            location=locs[0] if locs else None,
+            location=location,
             links=links,
             summary=(sections.get("summary") or "")[:1500] or None,
             skills=skills,
             experience=experience,
             education=education,
             certifications=certifications,
+            projects=projects,
             total_experience_years=years,
             sections_found=found_sections,
             confidence=confidence,

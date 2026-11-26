@@ -1,0 +1,2 @@
+import{t as e}from"./error-state-BmFiIJXp.js";import{t}from"./jsx-runtime-LKYXHABd.js";var n=t();function r({reset:t}){return(0,n.jsx)(`div`,{className:`container py-14`,children:(0,n.jsx)(e,{error:null,title:`We couldn't load our open roles`,onRetry:t})})}export{r as default};
+//# sourceMappingURL=error-Dgsc9av0.js.map

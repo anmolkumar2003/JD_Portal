@@ -196,7 +196,8 @@ export function CandidateProfileHeader({
                     aria-label="Candidate actions"
                     data-testid="candidate-actions-menu"
                   >
-                    <MoreHorizontal className="h-4 w-4" aria-hidden />
+                    <MoreHorizontal className="mr-1 h-4 w-4" aria-hidden />
+                    Actions
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

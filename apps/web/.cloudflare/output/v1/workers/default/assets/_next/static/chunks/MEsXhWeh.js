@@ -1,0 +1,1 @@
+import{t as e}from"./BCUcwpfR.js";import{t}from"./D75mlXbt.js";import{r as n}from"./B0PXqnjO.js";var r=n();function i({status:n,className:i}){return n===`unknown`?null:n===`above`?(0,r.jsx)(e,{variant:`warning`,className:t(`whitespace-nowrap`,i),children:`Above budget`}):(0,r.jsx)(e,{variant:`success`,className:t(`whitespace-nowrap`,i),children:`Within budget`})}export{i as t};

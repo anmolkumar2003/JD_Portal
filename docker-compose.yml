@@ -126,6 +126,11 @@ services:
       retries: 3
       start_period: 20s
 
+  beat:
+    <<: *api-common
+    # Schedules the hourly orphan-file and expired-draft cleanups.
+    command: ["celery", "-A", "app.workers.celery_app", "beat", "--loglevel=INFO", "--schedule", "/tmp/celerybeat-schedule"]
+
   web:
     build:
       context: ./apps/web

@@ -1,0 +1,2 @@
+import{t as e}from"./server-Cu9W9-ub.js";var t=e(()=>{throw Error(`Unexpectedly client reference export 'default' is called on server`)},`d6ad3843ca5c`,`default`);export{t as default};
+//# sourceMappingURL=page-DMy9IAUh.js.map

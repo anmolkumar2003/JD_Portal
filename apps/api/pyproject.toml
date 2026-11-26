@@ -69,6 +69,8 @@ ignore = ["PLR2004"]
 "scripts/**" = ["PLC0415", "PLR0912", "PLR0915", "SIM105", "S110"]
 "app/cli/**" = ["ASYNC250", "PLR0913"]
 "app/cv_engine/**" = ["PLC0415", "PLR0913", "PLR0915", "PLW2901", "RUF001", "RUF002", "RUF003", "RUF046", "RUF100", "RUF005", "C420", "E501", "S105"]
+# Quick fill reads messy human text: many small heuristic branches and early returns are the point.
+"app/cv_engine/quick_fill/**" = ["PLR0911", "PLR0912"]
 "app/services/analysis.py" = ["PLC0415", "PLR0912", "PLR0915", "E501"]
 "app/services/cv_processing.py" = ["PLR0912", "SIM105", "E501"]
 "app/services/analytics.py" = ["E501"]

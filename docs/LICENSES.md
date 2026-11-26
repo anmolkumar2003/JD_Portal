@@ -47,6 +47,22 @@ openpyxl builds Excel exports (MIT). Neither stores files on the server after do
 
 Development only: pytest, ruff, mypy (MIT), httpx (BSD-3-Clause).
 
+### Quick fill (candidate form helper)
+
+Quick fill adds **no new dependency** (Python or JavaScript). It reuses packages already listed
+above and ships its own data files:
+
+| Part                                        | License / source                                   |
+| ------------------------------------------- | -------------------------------------------------- |
+| spaCy and `en_core_web_sm` (person/place/organisation hints) | MIT (listed above)                |
+| Python standard library (`re`, `json`, `decimal`, `unicodedata`) | PSF License                    |
+| Skills taxonomy (`cv_engine/skills.py`)     | Written for this project                           |
+| `quick_fill/data/locations.json` (Indian cities, states, spelling variants) | Written for this project; facts only, no copied dataset |
+| `quick_fill/data/first_names.json`, `rules.json` (label words, title words, company suffixes, well-known employers) | Written for this project; used only to raise or lower confidence, never as a scoring input |
+| Web UI (card, preview table, badges)        | Existing React, react-hook-form, TanStack Query, sonner and lucide-react packages |
+
+No text is sent to any outside service, and the pasted text is neither stored nor logged.
+
 ## Web (JavaScript)
 
 | Package                                   | License    |

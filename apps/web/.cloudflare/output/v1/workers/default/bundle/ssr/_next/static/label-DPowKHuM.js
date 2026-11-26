@@ -1,0 +1,2 @@
+import{r as e}from"./rolldown-runtime-XKyaHtl9.js";import{t}from"./react-CQmtu_zT.js";import{t as n}from"./utils-D75mlXbt.js";import{t as r}from"./jsx-runtime-LKYXHABd.js";var i=e(t(),1),a=r(),o=i.forwardRef(({className:e,...t},r)=>(0,a.jsx)(`label`,{ref:r,className:n(`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70`,e),...t}));o.displayName=`Label`;export{o as t};
+//# sourceMappingURL=label-DPowKHuM.js.map

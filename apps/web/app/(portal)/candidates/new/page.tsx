@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
 import { AddCandidateForm } from "@/components/candidates/add-candidate-form";
+import { QuickFillChatbot } from "@/components/candidates/quick-fill-chatbot";
 import { EmptyState } from "@/components/empty-state";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,7 +27,10 @@ function NewCandidatePageContent() {
         <h1 className="text-2xl font-semibold tracking-tight">Add candidate</h1>
       </div>
       {canManageJobs(user?.role) ? (
-        <AddCandidateForm sharedJobId={jobId} sharedDepartmentId={departmentId} />
+        <>
+          <AddCandidateForm sharedJobId={jobId} sharedDepartmentId={departmentId} />
+          <QuickFillChatbot />
+        </>
       ) : (
         <EmptyState
           icon={Lock}

@@ -21,7 +21,8 @@ import { Select } from "@/components/ui/select";
 import { ROLE_LABELS } from "@/lib/labels";
 import type { AssignableRole, Role, User } from "@/types/api";
 
-export const ASSIGNABLE_ROLES: AssignableRole[] = ["hr_admin", "recruiter", "super_admin"];
+// HR-only portal: new accounts are HR Admin or Super Admin.
+export const ASSIGNABLE_ROLES: AssignableRole[] = ["hr_admin", "super_admin"];
 const ROLES = ASSIGNABLE_ROLES;
 
 const schema = z.object({
@@ -63,7 +64,7 @@ export function UserDialog({
     reset({
       full_name: user?.full_name ?? "",
       email: user?.email ?? "",
-      role: user?.role ?? "recruiter",
+      role: user?.role ?? "hr_admin",
     });
   }, [open, user, reset]);
 
@@ -118,7 +119,7 @@ export function UserDialog({
               ))}
             </Select>
             <p className="text-sm text-muted-foreground">
-              HR Admins manage users and settings. Recruiters work with jobs and candidates.
+              HR Admins work with jobs and candidates and manage settings. Super Admins can also grant Super Admin.
             </p>
           </div>
         </form>

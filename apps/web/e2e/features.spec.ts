@@ -24,7 +24,9 @@ function makeOversizedPdf(): string {
 async function openSeededCandidate(page: Page): Promise<void> {
   await open(page, `/candidates?q=${encodeURIComponent(SEEDED_DEMO_EMAIL)}`);
   await expect(page.getByText(SEEDED_DEMO_EMAIL)).toBeVisible({ timeout: 20_000 });
-  await page.getByText(SEEDED_DEMO_EMAIL).click();
+  await page.getByRole("row").filter({ hasText: SEEDED_DEMO_EMAIL }).locator("td").nth(2).click();
+  // A row click opens the side drawer; "Full profile" navigates to the candidate page.
+  await page.getByRole("link", { name: "Full profile" }).click();
   await page.waitForURL(/\/candidates\/[^/?]+/, { timeout: 20_000 });
 }
 
@@ -41,8 +43,8 @@ test.describe("Feature coverage", () => {
     await page.getByLabel("Last name").fill(`Add${stamp}`);
     await page.getByLabel("Email", { exact: true }).fill(email);
     await page.getByLabel("Phone").fill("+91 90000 11122");
-    await page.getByLabel(/Current company/i).fill("Acme Tools");
-    await page.getByLabel(/Current (job )?title/i).fill("Engineer");
+    await page.getByLabel("Company", { exact: true }).fill("Acme Tools");
+    await page.getByLabel("Title", { exact: true }).fill("Engineer");
     await page
       .getByLabel(/Location/i)
       .first()
@@ -52,7 +54,7 @@ test.describe("Feature coverage", () => {
     await page.locator("#expected_ctc\\.amount").fill("1200000");
     await page.locator("#notice_period_days").fill("30");
     await page.getByRole("button", { name: /Save|Add candidate|Create/i }).click();
-    await expect(page.getByText(email).or(page.getByText(/Manual Add/i))).toBeVisible({
+    await expect(page.getByRole("heading", { name: /Manual Add/i })).toBeVisible({
       timeout: 30_000,
     });
   });
@@ -157,7 +159,7 @@ test.describe("Feature coverage", () => {
     const modifier = process.platform === "darwin" ? "Meta" : "Control";
     await page.keyboard.press(`${modifier}+KeyK`);
     await expect(
-      page.getByPlaceholder(/Search|Jump|Command/i).or(page.getByRole("dialog")),
+      page.getByRole("dialog").getByPlaceholder(/Search|Jump|Command/i),
     ).toBeVisible({ timeout: 10_000 });
     await page.keyboard.type("Candidates");
     await page.keyboard.press("Enter");

@@ -12,7 +12,7 @@ This guide is for **HR administrators, recruiters, and hiring managers** using t
 ![Login screen](screenshots/login.png)  
 *Placeholder — add `docs/screenshots/login.png` after go-live.*
 
-Administrators create additional users under **Settings → Users** (roles: `hr_admin`, `super_admin`, `recruiter`).
+Administrators create additional users under **Settings → Users**. The portal is HR-only: new accounts are **HR Admin** or **Super Admin**. To remove an account entirely, ask your technical team to run `make remove-user EMAIL=…` (it is audited and never removes the last active admin).
 
 ## Navigation
 
@@ -69,6 +69,56 @@ On **Candidates**, use the search bar and filter popover (skills, score, departm
 
 ![Add candidate form](screenshots/add-candidate.png)
 
+### Quick fill chatbot
+
+HR Admin and Super Admin see a floating **message** button at the bottom right of **Add candidate** (the page with CV drag-and-drop). Click it to open Quick fill. It runs on our own server (rules, place list, skills list, spaCy) — no text is sent to an outside service.
+
+1. Paste a sentence or a few lines (2,000 character limit) and click **Extract**.
+2. Review and edit the fields. For a **new** candidate, choose a **Job**, then click **Add**.
+3. If the email or phone already matches someone, Add becomes **Update candidate** and only that person is changed. Other records are left alone.
+4. CV drag-and-drop on **Add candidate** is unchanged: you can still drop PDFs/DOCX to prefill the form and save there as before.
+
+**Nothing is guessed.** Ambiguous text (for example two salaries with no label) is left empty or asked about — details are never mixed across several people in one paste.
+
+How values are normalised:
+
+| Field | What is stored |
+| --- | --- |
+| Salary | A number, a currency (INR unless the text says otherwise) and per annum or per month. `8 LPA`, `8 lakh`, `1.2 cr`, `65k`, `₹80,000 pm`, `14,00,000` all work. Lakh, crore and LPA mean per annum. A plain amount under ₹1.5 lakh is read as per month. After a CTC label a small plain number such as `ctc 10` means lakhs. |
+| Salary range | The **maximum** is filled with a note, and the lower end and midpoint are offered as other readings. |
+| Notice | Days. `1 month` is 30 days, `2 weeks` is 14 days, `immediate` is 0. `serving notice` alone gives no number. |
+| Experience | Years with decimals. `2 yrs 6 months` is 2.5, `fresher` is 0. |
+| Phone | A standard format (`+91 98765 43210`) for Indian and international numbers. |
+| Skills | Added to the form's **Tags** field (merged with what is there, never replacing it). |
+| Source | Only the sources the form offers (Manual, Referral, LinkedIn, Agency, Career site). |
+
+Example sentences that work well:
+
+- `Rahul Sharma, Pune, 5 years, current 8 LPA, expected 12 LPA, 30 days notice, rahul@mail.com`
+- `Name: Priya Nair; Email: priya@example.com; Phone: 9876543210; Location: Bengaluru; Exp: 3.5 years; Current CTC: 9 LPA; Expected CTC: 14 LPA; Notice: 60 days` (also fine one item per line)
+- `Amit Verma; Noida; 7 yrs; CCTC 18 LPA; ECTC 24 LPA; NP 90 days; amit.verma@corp.in`
+- `Sneha Iyer - Chennai - 2 years exp - python, django, sql - immediate joiner`
+- `Vikram Singh, Gurgaon, 10 years, Engineering Manager at Accenture, 35 LPA current, 45 LPA expected, 2 months notice`
+- `Candidate: Varun Sethi. Currently in Pune. 6 years of experience. Current CTC is 17 LPA. Expected CTC is 22 LPA. Can join in 45 days.`
+- `Rahul Sharma is a full stack developer at Infosys in Pune with 5 years of experience`
+- `Neha Kapoor, Delhi, 8 yrs, ctc 22L, ectc 30L, 45 days np`
+- `Sanjay Patil, Nagpur, 3 years, current 25000 per month, expected 35000 per month`
+- `Source: LinkedIn; Name: Omar Farooq; Location: Srinagar; Experience: 9 years`
+
+Tips for best results: say **current** and **expected** next to each salary; use a comma, semicolon or new line between items; write the name first or after `Name:`. Labels without a colon also work for two-word labels (`current location Pune`, `notice period 30 days`, `NP 45`).
+
+What Quick fill does **not** understand (it shows these under "not understood" or leaves the field empty):
+
+- Names written in non-Latin scripts (for example Devanagari). The rest of the line is still read.
+- Lines with only spaces between facts and no capital letters (`rahul sharma pune 5 years 8 lpa`). Add commas.
+- Two salaries without current/expected words. You are asked which is which.
+- Percent hikes (`30% hike`) and in-hand pay as CTC.
+- Another company's offer (`offered 36 lpa by Flipkart`): shown with a warning, never filled.
+- Place names that are also common surnames (for example a bare `Salem` between commas) unless a cue such as `from`, `in` or `Location:` is present.
+- Job-portal names as the source (Naukri, Indeed): the form's source list does not include them.
+- Currencies other than INR, USD, EUR, GBP, AED, SAR, QAR, SGD, AUD and CAD.
+- Text of more than 2,000 characters is refused.
+
 ### Candidate profile
 
 Open a candidate to see tabs:
@@ -83,7 +133,7 @@ Open a candidate to see tabs:
 
 Use **Move to** or **Reject** with an optional reason. **Email** opens the composer with templates.
 
-**HR administrators** (`hr_admin`, `super_admin`) can open the actions menu to **Anonymize** (scrub personal details, keep applications and documents) or **Delete candidate** (permanent). Delete asks you to type the candidate’s full name, lists what will be removed, and cannot be undone. The same roles can **Delete** from the bulk toolbar (type `DELETE` to confirm). Recruiters and other roles never see these controls. Deletion is audited with row counts only — never name, email, or phone.
+**HR administrators** (`hr_admin`, `super_admin`) can open the **Actions** menu (top right of the profile, next to Download PDF summary) to **Anonymize** (scrub personal details, keep applications and documents) or **Delete candidate** (permanent). Delete asks you to type the candidate’s full name, lists what will be removed, and cannot be undone. The same roles can **Delete** from the bulk toolbar (type `DELETE` to confirm). Recruiters and other roles never see these controls. Deletion is audited with row counts only — never name, email, or phone.
 
 **HR administrators** can also **Download PDF summary** from the profile header (or from the bulk toolbar for several candidates at once — one PDF each, as a ZIP). A short dialog chooses whether to include contact details (on by default), salary details (off), and HR notes (off). The PDF is one to two A4 pages with organization branding, scores, interview ratings, and a note that scores are advisory. Files are generated on the fly and not stored on the server; the export is written to the audit log without personal data.
 

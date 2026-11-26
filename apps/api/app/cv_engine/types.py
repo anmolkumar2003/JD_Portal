@@ -45,6 +45,12 @@ class CertificationEntry:
 
 
 @dataclass(slots=True)
+class ProjectEntry:
+    name: str | None = None
+    description: str | None = None
+
+
+@dataclass(slots=True)
 class ParsedCV:
     full_name: str | None = None
     email: str | None = None
@@ -56,6 +62,7 @@ class ParsedCV:
     experience: list[ExperienceEntry] = field(default_factory=list)
     education: list[EducationEntry] = field(default_factory=list)
     certifications: list[CertificationEntry] = field(default_factory=list)
+    projects: list[ProjectEntry] = field(default_factory=list)
     total_experience_years: float | None = None
     sections_found: list[str] = field(default_factory=list)
     confidence: dict[str, float] = field(default_factory=dict)
@@ -95,6 +102,7 @@ class ParsedCV:
             "certifications": [
                 {"name": c.name, "issuer": c.issuer, "date": c.date} for c in self.certifications
             ],
+            "projects": [{"name": p.name, "description": p.description} for p in self.projects],
             "sections_found": list(self.sections_found),
         }
 

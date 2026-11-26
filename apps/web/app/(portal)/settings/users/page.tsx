@@ -108,7 +108,7 @@ function UsersAdmin() {
       create.mutate({
         full_name: values.full_name,
         email: values.email,
-        role: role ?? "recruiter",
+        role: role ?? "hr_admin",
       });
       return;
     }
